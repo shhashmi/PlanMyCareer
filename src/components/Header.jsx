@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Brain, User, LogOut } from 'lucide-react'
+import { Sparkles, User, LogOut } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 export default function Header() {
@@ -44,7 +44,7 @@ export default function Header() {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Brain size={24} color="white" />
+            <Sparkles size={24} color="white" />
           </div>
           <div>
             <h1 style={{ 
