@@ -1,55 +1,110 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { roleSkillsMap } from '../data/skillsData'
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building, Globe } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { fluencyService } from '../services/fluencyService';
+import type { ProfileFormData } from '../types/api.types';
 
-const roles = ['Software Engineer', 'Product Manager', 'Data Analyst', 'Marketing Manager', 'Designer', 'HR Manager', 'Other']
+const roles = ['Software Engineer', 'Product Manager', 'Data Analyst', 'Marketing Manager', 'Designer', 'HR Manager', 'Other'];
+const companyTypes = ['Startup', 'Scale-up', 'Enterprise', 'Government', 'Non-profit', 'Freelance'];
 
 export default function Home() {
-  const navigate = useNavigate()
-  const { setProfileData, setSkills } = useApp()
-  
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  const { setProfileData, setSkills, setApiProfile } = useApp();
+
+  const [formData, setFormData] = useState<ProfileFormData>({
     experience: '',
     role: '',
     title: '',
     company: '',
     country: '',
+    company_type: '',
+    geography: '',
     goal: ''
-  })
+  });
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string>('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof ProfileFormData]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-    if (!formData.experience) newErrors.experience = 'Experience is required'
-    if (!formData.role) newErrors.role = 'Role is required'
-    if (!formData.title) newErrors.title = 'Job title is required'
-    if (!formData.company) newErrors.company = 'Company is required'
-    if (!formData.country) newErrors.country = 'Country is required'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (validateForm()) {
-      setProfileData(formData)
-      const roleKey = roles.includes(formData.role) ? formData.role : 'Other'
-      setSkills(roleSkillsMap[roleKey] || roleSkillsMap['Other'])
-      navigate('/skills')
+    if (apiError) {
+      setApiError('');
     }
-  }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof ProfileFormData, string>> = {};
+    if (!formData.experience) newErrors.experience = 'Experience is required';
+    if (!formData.role) newErrors.role = 'Role is required';
+    if (!formData.title) newErrors.title = 'Job title is required';
+    if (!formData.company) newErrors.company = 'Company is required';
+    if (!formData.country) newErrors.country = 'Country is required';
+    if (!formData.company_type) newErrors.company_type = 'Company type is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setApiError('');
+
+    try {
+      // Map form data to API request format
+      const requestData = fluencyService.mapFormDataToRequest(formData);
+
+      // Call the API
+      const response = await fluencyService.resolveProfile(requestData);
+
+      if (response.success && response.data) {
+        // Store the API profile response in context
+        setApiProfile(response.data);
+
+        // Store form data in context
+        setProfileData({
+          experience: formData.experience,
+          role: formData.role,
+          title: formData.title,
+          company: formData.company,
+          country: formData.country,
+          company_type: formData.company_type,
+          geography: formData.geography || formData.country,
+          goal: formData.goal
+        });
+
+        // Map API profile data to skills format
+        const apiSkills = response.data.profile.map(skillDimension => ({
+          name: skillDimension.name,
+          level: skillDimension.proficiency.toLowerCase(),
+          description: `${skillDimension.dimension}: ${skillDimension.proficiency} level proficiency required`
+        }));
+
+        setSkills(apiSkills);
+
+        // Navigate to skills page
+        navigate('/skills');
+      } else {
+        setApiError(response.error?.message || 'Failed to analyze your profile. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error calling fluency API:', error);
+      setApiError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const inputStyle = {
     width: '100%',
@@ -62,7 +117,7 @@ export default function Home() {
     fontSize: '16px',
     outline: 'none',
     transition: 'border-color 0.2s'
-  }
+  };
 
   const labelStyle = {
     display: 'block',
@@ -70,7 +125,7 @@ export default function Home() {
     fontSize: '14px',
     fontWeight: '500',
     color: 'var(--text-secondary)'
-  }
+  };
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
@@ -97,9 +152,9 @@ export default function Home() {
             <Sparkles size={16} color="var(--primary-light)" />
             <span style={{ fontSize: '14px', color: 'var(--primary-light)' }}>AI-Powered Skill Analysis</span>
           </div>
-          
-          <h1 style={{ 
-            fontSize: 'clamp(32px, 5vw, 48px)', 
+
+          <h1 style={{
+            fontSize: 'clamp(32px, 5vw, 48px)',
             fontWeight: '700',
             lineHeight: '1.2',
             marginBottom: '16px'
@@ -111,14 +166,14 @@ export default function Home() {
               WebkitTextFillColor: 'transparent'
             }}>Build Your Future</span>
           </h1>
-          
-          <p style={{ 
-            fontSize: '18px', 
+
+          <p style={{
+            fontSize: '18px',
             color: 'var(--text-secondary)',
             maxWidth: '600px',
             margin: '0 auto 40px'
           }}>
-            Get a personalized analysis of AI skills you need for your role, 
+            Get a personalized analysis of AI skills you need for your role,
             assess your current level, and get a tailored upskilling plan.
           </p>
         </motion.div>
@@ -146,6 +201,20 @@ export default function Home() {
             We'll analyze the AI skills most relevant to your career
           </p>
 
+          {apiError && (
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '8px',
+              color: 'var(--error)',
+              marginBottom: '24px',
+              fontSize: '14px'
+            }}>
+              {apiError}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gap: '24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
@@ -164,6 +233,7 @@ export default function Home() {
                     }}
                     min="0"
                     max="50"
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.experience && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.experience}</span>}
@@ -182,6 +252,7 @@ export default function Home() {
                       cursor: 'pointer',
                       borderColor: errors.role ? 'var(--error)' : 'var(--border)'
                     }}
+                    disabled={isLoading}
                   >
                     <option value="">Select role</option>
                     {roles.map(role => (
@@ -207,6 +278,7 @@ export default function Home() {
                     ...inputStyle,
                     borderColor: errors.title ? 'var(--error)' : 'var(--border)'
                   }}
+                  disabled={isLoading}
                 />
               </div>
               {errors.title && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.title}</span>}
@@ -227,6 +299,7 @@ export default function Home() {
                       ...inputStyle,
                       borderColor: errors.company ? 'var(--error)' : 'var(--border)'
                     }}
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.company && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.company}</span>}
@@ -246,9 +319,54 @@ export default function Home() {
                       ...inputStyle,
                       borderColor: errors.country ? 'var(--error)' : 'var(--border)'
                     }}
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.country && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.country}</span>}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={labelStyle}>Company Type *</label>
+                <div style={{ position: 'relative' }}>
+                  <Building size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <select
+                    name="company_type"
+                    value={formData.company_type}
+                    onChange={handleChange}
+                    style={{
+                      ...inputStyle,
+                      cursor: 'pointer',
+                      borderColor: errors.company_type ? 'var(--error)' : 'var(--border)'
+                    }}
+                    disabled={isLoading}
+                  >
+                    <option value="">Select type</option>
+                    {companyTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+                {errors.company_type && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.company_type}</span>}
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  Geography <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Globe size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    name="geography"
+                    placeholder="e.g., Asia Pacific"
+                    value={formData.geography}
+                    onChange={handleChange}
+                    style={inputStyle}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
 
@@ -270,17 +388,28 @@ export default function Home() {
                     resize: 'vertical',
                     minHeight: '80px'
                   }}
+                  disabled={isLoading}
                 />
               </div>
             </div>
 
-            <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-              Analyze My Skills
-              <ArrowRight size={18} />
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? 'not-allowed' : 'pointer'
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Analyzing...' : 'Analyze My Skills'}
+              {!isLoading && <ArrowRight size={18} />}
             </button>
           </div>
         </motion.form>
       </section>
     </div>
-  )
+  );
 }

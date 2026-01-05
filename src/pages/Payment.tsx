@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CreditCard, Lock, Check, Shield, ArrowRight } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { CreditCard, Lock, Check, Shield, ArrowRight } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function Payment() {
   const navigate = useNavigate()

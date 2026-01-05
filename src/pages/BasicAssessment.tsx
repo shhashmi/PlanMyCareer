@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { assessmentQuestions } from '../data/skillsData'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { assessmentQuestions } from '../data/skillsData';
 
 export default function BasicAssessment() {
   const navigate = useNavigate()
@@ -42,8 +42,11 @@ export default function BasicAssessment() {
       setCurrentQuestionIndex(0)
     } else {
       const results = skills.map(skill => ({
-        ...skill,
-        score: calculateScore(skill.name)
+        skillName: skill.name,
+        score: calculateScore(skill.name),
+        level: skill.level,
+        name: skill.name,
+        description: skill.description
       }))
       setAssessmentResults(results)
       navigate('/basic-results')

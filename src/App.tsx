@@ -1,15 +1,15 @@
-import { Routes, Route } from 'react-router-dom'
-import Header from './components/Header'
-import Home from './pages/Home'
-import Skills from './pages/Skills'
-import Login from './pages/Login'
-import AssessmentChoice from './pages/AssessmentChoice'
-import BasicAssessment from './pages/BasicAssessment'
-import BasicResults from './pages/BasicResults'
-import Payment from './pages/Payment'
-import AdvancedAssessment from './pages/AdvancedAssessment'
-import AdvancedResults from './pages/AdvancedResults'
-import UpskillPlan from './pages/UpskillPlan'
+import { Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import Home from './pages/Home';
+import Skills from './pages/Skills';
+import Login from './pages/Login';
+import AssessmentChoice from './pages/AssessmentChoice';
+import BasicAssessment from './pages/BasicAssessment';
+import BasicResults from './pages/BasicResults';
+import Payment from './pages/Payment';
+import AdvancedAssessment from './pages/AdvancedAssessment';
+import AdvancedResults from './pages/AdvancedResults';
+import UpskillPlan from './pages/UpskillPlan';
 
 function App() {
   return (
@@ -28,7 +28,7 @@ function App() {
         <Route path="/upskill-plan" element={<UpskillPlan />} />
       </Routes>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

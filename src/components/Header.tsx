@@ -1,15 +1,15 @@
-import { useNavigate } from 'react-router-dom'
-import { Brain, User, LogOut } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useNavigate } from 'react-router-dom';
+import { Brain, User, LogOut } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function Header() {
-  const navigate = useNavigate()
-  const { isLoggedIn, user, logout } = useApp()
+  const navigate = useNavigate();
+  const { isLoggedIn, user, logout } = useApp();
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+    logout();
+    navigate('/');
+  };
 
   return (
     <header style={{
@@ -94,5 +94,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
