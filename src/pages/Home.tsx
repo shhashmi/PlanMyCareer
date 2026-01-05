@@ -88,7 +88,7 @@ export default function Home() {
         const apiSkills = response.data.profile.map(skillDimension => ({
           name: skillDimension.name,
           level: skillDimension.proficiency.toLowerCase(),
-          description: `${skillDimension.dimension}: ${skillDimension.proficiency} level proficiency required`
+          description: skillDimension.description
         }));
 
         setSkills(apiSkills);

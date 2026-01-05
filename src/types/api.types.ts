@@ -8,8 +8,8 @@ export type ProficiencyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Exper
 
 // Skill dimension from API
 export interface SkillDimension {
-  dimension: string;
   name: string;
+  description: string;
   proficiency: ProficiencyLevel;
 }
 
