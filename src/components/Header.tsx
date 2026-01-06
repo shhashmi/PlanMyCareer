@@ -15,9 +15,9 @@ export default function Header() {
   return (
     <header
       style={{
-        background: "rgba(15, 23, 42, 0.95)",
+        background: "linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 55, 0.98) 50%, rgba(20, 25, 45, 0.98) 100%)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border)",
+        borderBottom: "1px solid rgba(45, 212, 191, 0.15)",
         position: "sticky",
         top: 0,
         zIndex: 100,
