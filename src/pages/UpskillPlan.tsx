@@ -161,7 +161,7 @@ export default function UpskillPlan() {
                     style={{
                       padding: '20px 24px',
                       background: selectedTime === option.value 
-                        ? 'rgba(99, 102, 241, 0.2)' 
+                        ? 'rgba(20, 184, 166, 0.2)' 
                         : 'var(--surface-light)',
                       border: selectedTime === option.value 
                         ? '2px solid var(--primary)' 
@@ -202,7 +202,7 @@ export default function UpskillPlan() {
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: '600',
-                      background: 'rgba(99, 102, 241, 0.1)',
+                      background: 'rgba(20, 184, 166, 0.1)',
                       color: 'var(--primary-light)'
                     }}>
                       {option.intensity}

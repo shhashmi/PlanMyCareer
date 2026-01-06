@@ -201,7 +201,7 @@ export default function BasicResults() {
           style={{
             textAlign: 'center',
             padding: '40px',
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+            background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
             borderRadius: '24px',
             border: '1px solid var(--primary)'
           }}

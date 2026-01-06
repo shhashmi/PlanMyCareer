@@ -54,7 +54,7 @@ export default function AssessmentChoice() {
               width: '56px',
               height: '56px',
               borderRadius: '16px',
-              background: 'rgba(99, 102, 241, 0.1)',
+              background: 'rgba(20, 184, 166, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -71,7 +71,7 @@ export default function AssessmentChoice() {
             </p>
 
             <div style={{ 
-              background: 'rgba(99, 102, 241, 0.1)', 
+              background: 'rgba(20, 184, 166, 0.1)', 
               padding: '16px', 
               borderRadius: '12px',
               marginBottom: '24px'
@@ -106,7 +106,7 @@ export default function AssessmentChoice() {
             transition={{ delay: 0.2 }}
             onClick={() => navigate('/payment')}
             style={{
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+              background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
               borderRadius: '24px',
               padding: '32px',
               border: '2px solid var(--primary)',
@@ -155,7 +155,7 @@ export default function AssessmentChoice() {
             </p>
 
             <div style={{ 
-              background: 'rgba(99, 102, 241, 0.15)', 
+              background: 'rgba(20, 184, 166, 0.15)', 
               padding: '16px', 
               borderRadius: '12px',
               marginBottom: '24px'

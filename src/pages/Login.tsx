@@ -54,7 +54,7 @@ export default function Login() {
       alignItems: 'center', 
       justifyContent: 'center',
       padding: '40px 24px',
-      background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.1) 0%, transparent 50%)'
+      background: 'radial-gradient(ellipse at center, rgba(20, 184, 166, 0.1) 0%, transparent 50%)'
     }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

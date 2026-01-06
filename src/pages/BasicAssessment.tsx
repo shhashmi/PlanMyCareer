@@ -128,7 +128,7 @@ export default function BasicAssessment() {
                   style={{
                     padding: '16px 20px',
                     background: answers[currentAnswerKey] === index 
-                      ? 'rgba(99, 102, 241, 0.2)' 
+                      ? 'rgba(20, 184, 166, 0.2)' 
                       : 'var(--surface-light)',
                     border: answers[currentAnswerKey] === index 
                       ? '2px solid var(--primary)' 

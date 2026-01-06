@@ -132,7 +132,7 @@ export default function Home() {
       <section style={{
         padding: '60px 24px',
         textAlign: 'center',
-        background: 'radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%)'
+        background: 'radial-gradient(ellipse at top, rgba(20, 184, 166, 0.15) 0%, transparent 50%)'
       }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -144,10 +144,10 @@ export default function Home() {
             alignItems: 'center',
             gap: '8px',
             padding: '8px 16px',
-            background: 'rgba(99, 102, 241, 0.1)',
+            background: 'rgba(20, 184, 166, 0.1)',
             borderRadius: '20px',
             marginBottom: '24px',
-            border: '1px solid rgba(99, 102, 241, 0.3)'
+            border: '1px solid rgba(20, 184, 166, 0.3)'
           }}>
             <Sparkles size={16} color="var(--primary-light)" />
             <span style={{ fontSize: '14px', color: 'var(--primary-light)' }}>AI-Powered Skill Analysis</span>
