@@ -15,7 +15,7 @@ export default function Header() {
   return (
     <header
       style={{
-        background: "linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 55, 0.98) 50%, rgba(20, 25, 45, 0.98) 100%)",
+        background: "linear-gradient(135deg, rgba(18, 20, 35, 1) 0%, rgba(25, 25, 50, 1) 50%, rgba(18, 22, 40, 1) 100%)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgba(45, 212, 191, 0.15)",
         position: "sticky",
@@ -46,6 +46,8 @@ export default function Header() {
             style={{
               height: "50px",
               width: "auto",
+              borderRadius: "8px",
+              boxShadow: "0 0 20px rgba(30, 27, 55, 0.8)",
             }}
           />
         </div>
