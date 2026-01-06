@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { getLevelColor } from '../data/skillsData'
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { getLevelColor } from '../data/skillsData';
 
 export default function Skills() {
   const navigate = useNavigate()
@@ -13,12 +13,8 @@ export default function Skills() {
     return null
   }
 
-  const levelLabels = {
-    basic: 'Basic',
-    intermediate: 'Intermediate',
-    advanced: 'Advanced',
-    expert: 'Expert'
-  }
+  // Map proficiency levels (case-insensitive)
+  const normalizeLevel = (level: string) => level.toLowerCase();
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
@@ -76,12 +72,12 @@ export default function Skills() {
                     width: '40px',
                     height: '40px',
                     borderRadius: '10px',
-                    background: `${getLevelColor(skill.level)}20`,
+                    background: `${getLevelColor(normalizeLevel(skill.level))}20`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <CheckCircle size={20} color={getLevelColor(skill.level)} />
+                    <CheckCircle size={20} color={getLevelColor(normalizeLevel(skill.level))} />
                   </div>
                   <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{skill.name}</h3>
                 </div>
@@ -97,12 +93,12 @@ export default function Skills() {
                   borderRadius: '8px',
                   fontSize: '12px',
                   fontWeight: '600',
-                  background: `${getLevelColor(skill.level)}20`,
-                  color: getLevelColor(skill.level),
-                  textTransform: 'uppercase',
+                  background: `${getLevelColor(normalizeLevel(skill.level))}20`,
+                  color: getLevelColor(normalizeLevel(skill.level)),
+                  textTransform: 'capitalize',
                   letterSpacing: '0.5px'
                 }}>
-                  {levelLabels[skill.level]} Required
+                  {skill.level} Required
                 </span>
                 <div style={{
                   display: 'flex',

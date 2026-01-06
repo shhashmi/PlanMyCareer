@@ -1,39 +1,39 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Mail, Lock, User, ArrowRight, Chrome, Github } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Mail, Lock, User, ArrowRight, Chrome, Github } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function Login() {
-  const navigate = useNavigate()
-  const { login, skills } = useApp()
-  const [isLogin, setIsLogin] = useState(true)
+  const navigate = useNavigate();
+  const { login, skills } = useApp();
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: ''
-  })
+  });
 
   if (skills.length === 0) {
-    navigate('/')
-    return null
+    navigate('/');
+    return null;
   }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    login({ name: formData.name || 'User', email: formData.email })
-    navigate('/assessment')
-  }
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    login({ name: formData.name || 'User', email: formData.email });
+    navigate('/assessment');
+  };
 
-  const handleSocialLogin = (provider) => {
-    login({ name: 'User', provider })
-    navigate('/assessment')
-  }
+  const handleSocialLogin = (provider: string) => {
+    login({ name: 'User', email: `user@${provider}.com`, provider });
+    navigate('/assessment');
+  };
 
   const inputStyle = {
     width: '100%',

@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { getLevelNumber, getLevelColor } from '../data/skillsData'
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { getLevelNumber, getLevelColor } from '../data/skillsData';
 
 export default function BasicResults() {
   const navigate = useNavigate()

@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Clock, BookOpen, ExternalLink, CheckCircle, Play, Target } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { studyMaterials, getLevelNumber } from '../data/skillsData'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Clock, BookOpen, ExternalLink, CheckCircle, Play, Target } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { studyMaterials, getLevelNumber } from '../data/skillsData';
 
 const timeOptions = [
   { value: 2, label: '2 hours/week', intensity: 'Light' },

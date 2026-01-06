@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, User, Sparkles, Loader } from 'lucide-react'
-import { useApp } from '../context/AppContext'
-import { getLevelNumber } from '../data/skillsData'
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Bot, User, Sparkles, Loader } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { getLevelNumber } from '../data/skillsData';
 
 const aiResponses = [
   "Great! Let's start by understanding your experience with AI tools in your daily work. Can you describe a recent project where you used AI assistance?",

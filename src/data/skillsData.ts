@@ -1,4 +1,29 @@
-export const roleSkillsMap = {
+import { Skill } from '../types/context.types';
+
+interface Question {
+  question: string;
+  options: string[];
+}
+
+interface StudyMaterial {
+  title: string;
+  url: string;
+  type: string;
+}
+
+type RoleSkillsMap = {
+  [key: string]: Skill[];
+};
+
+type AssessmentQuestionsMap = {
+  [key: string]: Question[];
+};
+
+type StudyMaterialsMap = {
+  [key: string]: StudyMaterial[];
+};
+
+export const roleSkillsMap: RoleSkillsMap = {
   'Software Engineer': [
     { name: 'Prompt Engineering', level: 'intermediate', description: 'Crafting effective prompts for AI models' },
     { name: 'AI-Assisted Coding', level: 'advanced', description: 'Using GitHub Copilot and similar tools' },
@@ -53,29 +78,29 @@ export const roleSkillsMap = {
     { name: 'AI Ethics', level: 'basic', description: 'Understanding AI ethics' },
     { name: 'AI Productivity', level: 'intermediate', description: 'Using AI to boost productivity' },
   ]
-}
+};
 
-export const getLevelColor = (level) => {
-  const colors = {
-    basic: '#6366f1',
+export const getLevelColor = (level: string): string => {
+  const colors: Record<string, string> = {
+    beginner: '#6366f1',
     intermediate: '#10b981',
     advanced: '#f59e0b',
     expert: '#ef4444'
-  }
-  return colors[level] || colors.basic
-}
+  };
+  return colors[level.toLowerCase()] || colors.beginner;
+};
 
-export const getLevelNumber = (level) => {
-  const numbers = {
-    basic: 3,
+export const getLevelNumber = (level: string): number => {
+  const numbers: Record<string, number> = {
+    beginner: 3,
     intermediate: 5,
     advanced: 7,
     expert: 9
-  }
-  return numbers[level] || 3
-}
+  };
+  return numbers[level.toLowerCase()] || 3;
+};
 
-export const assessmentQuestions = {
+export const assessmentQuestions: AssessmentQuestionsMap = {
   'Prompt Engineering': [
     { question: 'How often do you write prompts for AI tools?', options: ['Never', 'Occasionally', 'Regularly', 'Daily'] },
     { question: 'Can you effectively use system prompts and context?', options: ['No', 'Basic understanding', 'Comfortable', 'Expert'] },
@@ -88,9 +113,9 @@ export const assessmentQuestions = {
     { question: 'How would you rate your knowledge in this area?', options: ['Beginner', 'Some experience', 'Proficient', 'Expert'] },
     { question: 'How often do you apply this skill?', options: ['Never', 'Occasionally', 'Regularly', 'Daily'] },
   ]
-}
+};
 
-export const studyMaterials = {
+export const studyMaterials: StudyMaterialsMap = {
   'Prompt Engineering': [
     { title: 'Prompt Engineering Guide', url: 'https://www.promptingguide.ai/', type: 'Guide' },
     { title: 'OpenAI Prompt Best Practices', url: 'https://platform.openai.com/docs/guides/prompting', type: 'Documentation' },
@@ -108,4 +133,4 @@ export const studyMaterials = {
     { title: 'AI Fundamentals Course', url: 'https://www.coursera.org/learn/ai-for-everyone', type: 'Course' },
     { title: 'Google AI Education', url: 'https://ai.google/education/', type: 'Learning Hub' },
   ]
-}
+};

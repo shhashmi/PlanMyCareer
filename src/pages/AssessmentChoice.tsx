@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ClipboardList, Sparkles, ArrowRight, Check, Crown } from 'lucide-react'
-import { useApp } from '../context/AppContext'
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ClipboardList, Sparkles, ArrowRight, Check, Crown } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
