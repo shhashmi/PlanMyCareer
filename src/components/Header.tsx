@@ -44,8 +44,10 @@ export default function Header() {
             src={logoImage}
             alt="AI Fluens"
             style={{
-              height: "44px",
+              height: "48px",
               width: "auto",
+              filter: "brightness(1.1)",
+              mixBlendMode: "lighten",
             }}
           />
         </div>
