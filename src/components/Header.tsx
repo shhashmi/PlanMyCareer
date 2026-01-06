@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Brain, User, LogOut } from "lucide-react";
+import { Brain, User, LogOut, Sparkles } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 export default function Header() {
