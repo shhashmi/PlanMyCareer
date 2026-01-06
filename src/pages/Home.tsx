@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { fluencyService } from '../services/fluencyService';
 import type { ProfileFormData } from '../types/api.types';
 
-const roles = ['Software Engineer', 'Product Manager', 'Data Analyst', 'Marketing Manager', 'Designer', 'HR Manager', 'Other'];
+const roles = ['Backend Engineer', 'Frontend Engineer', 'Full Stack Engineer', 'QA Engineer', 'DevOps Engineer', 'SRE', 'Engineering Manager', 'Architect', 'Principal Engineer', 'Product Manager'];
 const companyTypes = ['Startup', 'Scale-up', 'Enterprise', 'Government', 'Non-profit', 'Freelance'];
 
 export default function Home() {
