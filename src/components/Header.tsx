@@ -63,7 +63,7 @@ export default function Header() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              AI SkillGap
+              AI Fluens
             </h1>
             <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
               Skill Analysis & Upskilling

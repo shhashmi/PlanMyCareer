@@ -1,8 +1,8 @@
-# AI SkillGap - Replit Agent Guide
+# AI Fluens - Replit Agent Guide
 
 ## Overview
 
-AI SkillGap is a web application that helps users identify AI skill gaps for their current role and provides personalized upskilling plans. Users can:
+AI Fluens is a web application that helps users identify AI skill gaps for their current role and provides personalized upskilling plans. Users can:
 1. Enter their professional details (no login required)
 2. See AI skills needed for their role with required expertise levels
 3. Take assessments (basic or advanced) after logging in
