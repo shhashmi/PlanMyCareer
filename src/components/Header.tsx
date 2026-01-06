@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { Brain, User, LogOut, Sparkles } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import logoImage from "@assets/AIFluensLogo_1767737423397.png";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -36,39 +37,17 @@ export default function Header() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "12px",
             cursor: "pointer",
           }}
         >
-          <div
+          <img
+            src={logoImage}
+            alt="AI Fluens"
             style={{
-              width: "44px",
               height: "44px",
-              borderRadius: "12px",
-              background: "var(--gradient-1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: "auto",
             }}
-          >
-            <Sparkles size={24} color="white" />
-          </div>
-          <div>
-            <h1
-              style={{
-                fontSize: "20px",
-                fontWeight: "700",
-                background: "var(--gradient-1)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              AI Fluens
-            </h1>
-            <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              Skill Analysis & Upskilling
-            </p>
-          </div>
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
