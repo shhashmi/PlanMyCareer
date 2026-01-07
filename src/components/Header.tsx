@@ -44,9 +44,9 @@ export default function Header() {
             src={logoImage}
             alt="AI Fluens"
             style={{
-              height: "50px",
+              height: "70px",
               width: "auto",
-              borderRadius: "8px",
+              borderRadius: "10px",
               boxShadow: "0 0 20px rgba(30, 27, 55, 0.8)",
             }}
           />
