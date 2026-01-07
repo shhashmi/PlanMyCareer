@@ -29,7 +29,7 @@ export default function Header() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "16px 24px",
+          padding: "20px 24px",
         }}
       >
         <div
@@ -44,10 +44,10 @@ export default function Header() {
             src={logoImage}
             alt="AI Fluens"
             style={{
-              height: "70px",
+              height: "100px",
               width: "auto",
-              borderRadius: "10px",
-              boxShadow: "0 0 20px rgba(30, 27, 55, 0.8)",
+              borderRadius: "12px",
+              boxShadow: "0 0 25px rgba(30, 27, 55, 0.9)",
             }}
           />
         </div>
