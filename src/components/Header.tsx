@@ -29,7 +29,7 @@ export default function Header() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "20px 24px",
+          padding: "8px 24px",
         }}
       >
         <div
