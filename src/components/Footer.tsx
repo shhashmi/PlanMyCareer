@@ -29,6 +29,16 @@ export default function Footer() {
         >
           Privacy Policy
         </Link>
+        <Link
+          to="/terms-of-use"
+          style={{
+            color: "var(--text-muted)",
+            fontSize: "14px",
+            textDecoration: "none",
+          }}
+        >
+          Terms of Use
+        </Link>
         <span style={{ color: "var(--text-muted)", fontSize: "14px" }}>
           © {new Date().getFullYear()} AI Fluens. All rights reserved.
         </span>

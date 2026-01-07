@@ -12,6 +12,7 @@ import AdvancedAssessment from './pages/AdvancedAssessment';
 import AdvancedResults from './pages/AdvancedResults';
 import UpskillPlan from './pages/UpskillPlan';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfUse from './pages/TermsOfUse';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/advanced-results" element={<AdvancedResults />} />
         <Route path="/upskill-plan" element={<UpskillPlan />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
       </Routes>
       <Footer />
     </div>
