@@ -15,7 +15,7 @@ export default function Header() {
   return (
     <header
       style={{
-        background: "#152540",
+        background: "radial-gradient(ellipse at left, #14254a 0%, #0f1e3b 50%, #091225 100%)",
         backdropFilter: "blur(12px)",
         borderBottom: "none",
         position: "sticky",
@@ -47,7 +47,6 @@ export default function Header() {
               height: "100px",
               width: "auto",
               display: "block",
-              mixBlendMode: "screen",
             }}
           />
         </div>
