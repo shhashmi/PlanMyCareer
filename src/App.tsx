@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Skills from './pages/Skills';
 import Login from './pages/Login';
@@ -10,10 +11,11 @@ import Payment from './pages/Payment';
 import AdvancedAssessment from './pages/AdvancedAssessment';
 import AdvancedResults from './pages/AdvancedResults';
 import UpskillPlan from './pages/UpskillPlan';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function App() {
   return (
-    <div className="app">
+    <div className="app" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -26,7 +28,9 @@ function App() {
         <Route path="/advanced-assessment" element={<AdvancedAssessment />} />
         <Route path="/advanced-results" element={<AdvancedResults />} />
         <Route path="/upskill-plan" element={<UpskillPlan />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Routes>
+      <Footer />
     </div>
   );
 }
