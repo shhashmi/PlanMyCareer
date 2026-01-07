@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import logoImage from "@assets/Gemini_Generated_Image_1j8i461j8i461j8i_1767740297706.png";
+import logoImage from "@assets/Gemini_Generated_Image_8mnr4y8mnr4y8mnr_1767797968635.png";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function Header() {
   return (
     <header
       style={{
-        background: "linear-gradient(90deg, #071220 0%, #0d1f30 25%, #1a2540 50%, #1e1e45 75%, #2A1B54 100%)",
+        background: "#1a2743",
         backdropFilter: "blur(12px)",
         borderBottom: "none",
         position: "sticky",
@@ -38,17 +38,36 @@ export default function Header() {
             display: "flex",
             alignItems: "center",
             cursor: "pointer",
+            position: "relative",
           }}
         >
-          <img
-            src={logoImage}
-            alt="AI Fluens"
+          <div
             style={{
-              height: "100px",
-              width: "auto",
-              filter: "drop-shadow(0 0 18px rgba(32, 224, 213, 0.35))",
+              position: "relative",
+              overflow: "hidden",
             }}
-          />
+          >
+            <img
+              src={logoImage}
+              alt="AI Fluens"
+              style={{
+                height: "100px",
+                width: "auto",
+                display: "block",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                boxShadow: "inset 0 0 8px 8px #1a2743",
+                pointerEvents: "none",
+              }}
+            />
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
