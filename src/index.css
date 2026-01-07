@@ -10,7 +10,7 @@
   --primary-light: #2dd4bf;
   --secondary: #0891b2;
   --accent: #06b6d4;
-  --background: #0f172a;
+  --background: #0a1628;
   --surface: #1e293b;
   --surface-light: #334155;
   --text-primary: #f8fafc;
@@ -26,7 +26,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--background);
+  background: linear-gradient(180deg, #112C40 0%, #0a1628 15%, #0a1628 100%);
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
