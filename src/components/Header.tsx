@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { User, LogOut } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import logoImage from "@assets/Gemini_Generated_Image_8mnr4y8mnr4y8mnr_1767797968635.png";
+import logoImage from "@assets/Logo_1767799527170.png";
 
 export default function Header() {
   const navigate = useNavigate();
