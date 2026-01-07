@@ -15,7 +15,7 @@ export default function Header() {
   return (
     <header
       style={{
-        background: "#1a2743",
+        background: "#152540",
         backdropFilter: "blur(12px)",
         borderBottom: "none",
         position: "sticky",
@@ -38,36 +38,18 @@ export default function Header() {
             display: "flex",
             alignItems: "center",
             cursor: "pointer",
-            position: "relative",
           }}
         >
-          <div
+          <img
+            src={logoImage}
+            alt="AI Fluens"
             style={{
-              position: "relative",
-              overflow: "hidden",
+              height: "100px",
+              width: "auto",
+              display: "block",
+              mixBlendMode: "screen",
             }}
-          >
-            <img
-              src={logoImage}
-              alt="AI Fluens"
-              style={{
-                height: "100px",
-                width: "auto",
-                display: "block",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                boxShadow: "inset 0 0 8px 8px #1a2743",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
