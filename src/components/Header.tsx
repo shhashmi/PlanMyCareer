@@ -44,7 +44,7 @@ export default function Header() {
             src={logoImage}
             alt="AI Fluens"
             style={{
-              height: "100px",
+              height: "75px",
               width: "auto",
               display: "block",
               maskImage: "linear-gradient(to right, black 90%, transparent 100%), linear-gradient(to bottom, black 90%, transparent 100%)",
