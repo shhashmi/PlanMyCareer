@@ -47,6 +47,10 @@ export default function Header() {
               height: "100px",
               width: "auto",
               display: "block",
+              maskImage: "linear-gradient(to right, black 90%, transparent 100%), linear-gradient(to bottom, black 90%, transparent 100%)",
+              maskComposite: "intersect",
+              WebkitMaskImage: "linear-gradient(to right, black 90%, transparent 100%), linear-gradient(to bottom, black 90%, transparent 100%)",
+              WebkitMaskComposite: "destination-in",
             }}
           />
         </div>
