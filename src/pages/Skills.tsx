@@ -6,7 +6,7 @@ import { getLevelColor } from '../data/skillsData';
 
 export default function Skills() {
   const navigate = useNavigate()
-  const { profileData, skills } = useApp()
+  const { profileData, skills, isLoggedIn } = useApp()
 
   if (!profileData || skills.length === 0) {
     navigate('/')
@@ -37,18 +37,18 @@ export default function Skills() {
             <Sparkles size={16} color="var(--secondary)" />
             <span style={{ fontSize: '14px', color: 'var(--secondary)' }}>Skills Identified</span>
           </div>
-          
+
           <h1 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '12px' }}>
             AI Skills for Your Success
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-            As a <strong>{profileData.title}</strong> at <strong>{profileData.company}</strong>, 
+            As a <strong>{profileData.title}</strong> at <strong>{profileData.company}</strong>,
             here are the AI skills you need to thrive and grow
           </p>
         </motion.div>
 
-        <div style={{ 
-          display: 'grid', 
+        <div style={{
+          display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: '20px',
           marginBottom: '48px'
@@ -82,7 +82,7 @@ export default function Skills() {
                   <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{skill.name}</h3>
                 </div>
               </div>
-              
+
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', flex: 1 }}>
                 {skill.description}
               </p>
@@ -131,11 +131,11 @@ export default function Skills() {
             Ready to Assess Your Skills?
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
-            Take our assessment to see where you stand against these requirements 
+            Take our assessment to see where you stand against these requirements
             and get a personalized upskilling plan
           </p>
-          <button 
-            onClick={() => navigate('/login')}
+          <button
+            onClick={() => navigate(isLoggedIn ? '/assessment' : '/login')}
             className="btn-primary"
             style={{ padding: '16px 40px', fontSize: '18px' }}
           >
