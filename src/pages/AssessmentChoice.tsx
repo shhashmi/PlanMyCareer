@@ -5,7 +5,11 @@ import { useApp } from '../context/AppContext';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
-  const { isLoggedIn, skills } = useApp()
+  const { isLoggedIn, skills, loading } = useApp()
+
+  if (loading) {
+    return null // Wait for session check to complete
+  }
 
   if (!isLoggedIn || skills.length === 0) {
     navigate('/')
