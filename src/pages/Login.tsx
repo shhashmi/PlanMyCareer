@@ -49,7 +49,8 @@ export default function Login() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `http://localhost:3000/api/auth/login/${provider}`;
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.aifluens.com';
+    window.location.href = `${apiUrl}/api/auth/login/${provider}`;
   };
 
   const inputStyle = {
