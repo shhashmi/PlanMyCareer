@@ -4,7 +4,7 @@
  * Extensible for additional fluency-related endpoints
  */
 
-import ApiService from './apiService';
+import api from './api';
 import type {
   ProfileRequestData,
   ProfileFormData,
@@ -13,33 +13,24 @@ import type {
   ValidationResult,
 } from '../types/api.types';
 
-class FluencyService extends ApiService {
-  constructor() {
-    // Development: Use relative URL (proxied via Vite to localhost:8080)
-    // Production: Use production API domain directly
-    const baseURL = import.meta.env.PROD
-      ? 'https://api.aifluens.com'
-      : '';
-    super(baseURL);
-  }
-
+class FluencyService {
   /**
    * Resolve user profile and get AI skill proficiency analysis
    */
   async resolveProfile(profileData: ProfileRequestData): Promise<ApiResponse<FluencyProfileResponse>> {
     try {
-      const response = await this.post<FluencyProfileResponse>('/api/fluency/resolve', profileData);
+      const response = await api.post<FluencyProfileResponse>('/fluency/resolve', profileData);
       return {
         success: true,
-        data: response,
+        data: response.data,
       };
     } catch (error: any) {
       return {
         success: false,
         error: {
-          status: error.status || 0,
-          message: error.message || 'Failed to resolve profile',
-          details: error.data,
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to resolve profile',
+          details: error.response?.data,
         },
       };
     }

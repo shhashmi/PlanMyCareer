@@ -13,6 +13,7 @@ import AdvancedResults from './pages/AdvancedResults';
 import UpskillPlan from './pages/UpskillPlan';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -22,13 +23,13 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/skills" element={<Skills />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/assessment" element={<AssessmentChoice />} />
-        <Route path="/basic-assessment" element={<BasicAssessment />} />
-        <Route path="/basic-results" element={<BasicResults />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/advanced-assessment" element={<AdvancedAssessment />} />
-        <Route path="/advanced-results" element={<AdvancedResults />} />
-        <Route path="/upskill-plan" element={<UpskillPlan />} />
+        <Route path="/assessment" element={<ProtectedRoute><AssessmentChoice /></ProtectedRoute>} />
+        <Route path="/basic-assessment" element={<ProtectedRoute><BasicAssessment /></ProtectedRoute>} />
+        <Route path="/basic-results" element={<ProtectedRoute><BasicResults /></ProtectedRoute>} />
+        <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+        <Route path="/advanced-assessment" element={<ProtectedRoute><AdvancedAssessment /></ProtectedRoute>} />
+        <Route path="/advanced-results" element={<ProtectedRoute><AdvancedResults /></ProtectedRoute>} />
+        <Route path="/upskill-plan" element={<ProtectedRoute><UpskillPlan /></ProtectedRoute>} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-use" element={<TermsOfUse />} />
       </Routes>

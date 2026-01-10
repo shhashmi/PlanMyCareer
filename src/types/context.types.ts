@@ -38,6 +38,7 @@ export interface AssessmentResult {
 export interface AppContextType {
   user: User | null;
   isLoggedIn: boolean;
+  loading: boolean;
   login: (userData: User) => void;
   logout: () => void;
   profileData: ProfileData | null;

@@ -1,23 +1,39 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Chrome, Github } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Chrome, Github, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, skills } = useApp();
+  const [searchParams] = useSearchParams();
+  const { login, isLoggedIn, skills } = useApp();
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    if (skills.length === 0) {
+      navigate('/');
+    }
+  }, [skills.length, navigate]);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: ''
   });
 
-  if (skills.length === 0) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/assessment');
+    }
+  }, [isLoggedIn, navigate]);
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(errorParam === 'auth_failed' ? 'Authentication failed. Please try again.' : `Login failed: ${errorParam}`);
+    }
+  }, [searchParams]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,13 +42,14 @@ export default function Login() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // For now, keep the local mock login if needed, 
+    // but the goal is to shift to social auth.
     login({ name: formData.name || 'User', email: formData.email });
     navigate('/assessment');
   };
 
   const handleSocialLogin = (provider: string) => {
-    login({ name: 'User', email: `user@${provider}.com`, provider });
-    navigate('/assessment');
+    window.location.href = `http://localhost:3000/api/auth/login/${provider}`;
   };
 
   const inputStyle = {
@@ -48,10 +65,10 @@ export default function Login() {
   }
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px',
       background: 'radial-gradient(ellipse at center, rgba(20, 184, 166, 0.1) 0%, transparent 50%)'
@@ -76,6 +93,24 @@ export default function Login() {
             {isLogin ? 'Sign in to continue your assessment' : 'Sign up to start your assessment'}
           </p>
         </div>
+
+        {error && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            borderRadius: '12px',
+            color: '#ef4444',
+            fontSize: '14px',
+            marginBottom: '24px'
+          }}>
+            <AlertCircle size={18} />
+            {error}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
           <button
@@ -120,11 +155,11 @@ export default function Login() {
           </button>
         </div>
 
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '16px', 
-          marginBottom: '24px' 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          marginBottom: '24px'
         }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>or</span>
