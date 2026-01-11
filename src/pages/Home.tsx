@@ -1,13 +1,12 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building, Globe } from 'lucide-react';
+import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { fluencyService } from '../services/fluencyService';
 import type { ProfileFormData } from '../types/api.types';
 
 const roles = ['Backend Engineer', 'Frontend Engineer', 'Full Stack Engineer', 'QA Engineer', 'DevOps Engineer', 'SRE', 'Engineering Manager', 'Architect', 'Principal Engineer', 'Product Manager'];
-const companyTypes = ['Startup', 'Scale-up', 'Enterprise', 'Government', 'Non-profit', 'Freelance'];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -23,6 +22,10 @@ export default function Home() {
     geography: '',
     goal: ''
   });
+  
+  formData.title = formData.role;
+  formData.company_type = 'Enterprise';
+  formData.geography = formData.country;
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -43,10 +46,8 @@ export default function Home() {
     const newErrors: Partial<Record<keyof ProfileFormData, string>> = {};
     if (!formData.experience) newErrors.experience = 'Experience is required';
     if (!formData.role) newErrors.role = 'Role is required';
-    if (!formData.title) newErrors.title = 'Job title is required';
     if (!formData.company) newErrors.company = 'Company is required';
     if (!formData.country) newErrors.country = 'Country is required';
-    if (!formData.company_type) newErrors.company_type = 'Company type is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -264,26 +265,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div>
-              <label style={labelStyle}>Job Title *</label>
-              <div style={{ position: 'relative' }}>
-                <Briefcase size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="e.g., Senior Software Engineer"
-                  value={formData.title}
-                  onChange={handleChange}
-                  style={{
-                    ...inputStyle,
-                    borderColor: errors.title ? 'var(--error)' : 'var(--border)'
-                  }}
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.title && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.title}</span>}
-            </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Company *</label>
@@ -323,50 +304,6 @@ export default function Home() {
                   />
                 </div>
                 {errors.country && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.country}</span>}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Company Type *</label>
-                <div style={{ position: 'relative' }}>
-                  <Building size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <select
-                    name="company_type"
-                    value={formData.company_type}
-                    onChange={handleChange}
-                    style={{
-                      ...inputStyle,
-                      cursor: 'pointer',
-                      borderColor: errors.company_type ? 'var(--error)' : 'var(--border)'
-                    }}
-                    disabled={isLoading}
-                  >
-                    <option value="">Select type</option>
-                    {companyTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-                {errors.company_type && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.company_type}</span>}
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  Geography <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Globe size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    name="geography"
-                    placeholder="e.g., Asia Pacific"
-                    value={formData.geography}
-                    onChange={handleChange}
-                    style={inputStyle}
-                    disabled={isLoading}
-                  />
-                </div>
               </div>
             </div>
 
