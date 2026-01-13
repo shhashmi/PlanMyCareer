@@ -1,24 +1,18 @@
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Chrome, Github, Linkedin, AlertCircle } from 'lucide-react';
+import { Chrome, Github, Linkedin, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isLoggedIn } = useApp();
-  const [isLogin, setIsLogin] = useState(true);
+  const { isLoggedIn } = useApp();
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
-  });
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate('/assessment');
+      navigate('/');
     }
   }, [isLoggedIn, navigate]);
 
@@ -29,35 +23,10 @@ export default function Login() {
     }
   }, [searchParams]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // For now, keep the local mock login if needed, 
-    // but the goal is to shift to social auth.
-    login({ name: formData.name || 'User', email: formData.email });
-    navigate('/assessment');
-  };
-
   const handleSocialLogin = (provider: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.aifluens.com';
     window.location.href = `${apiUrl}/api/auth/login/${provider}`;
   };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '14px 16px',
-    paddingLeft: '44px',
-    background: 'var(--surface-light)',
-    border: '2px solid var(--border)',
-    borderRadius: '12px',
-    color: 'var(--text-primary)',
-    fontSize: '16px',
-    outline: 'none'
-  }
 
   return (
     <div style={{
@@ -82,10 +51,10 @@ export default function Login() {
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            Welcome
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>
-            {isLogin ? 'Sign in to continue your assessment' : 'Sign up to start your assessment'}
+            Sign in to continue
           </p>
         </div>
 
@@ -172,95 +141,6 @@ export default function Login() {
             LinkedIn
           </button>
         </div>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>or</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px' }}>
-          {!isLogin && (
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                Full Name
-              </label>
-              <div style={{ position: 'relative' }}>
-                <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={handleChange}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              Email Address
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                type="email"
-                name="email"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                style={inputStyle}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                style={inputStyle}
-                required
-              />
-            </div>
-          </div>
-
-          <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            {isLogin ? 'Sign In' : 'Create Account'}
-            <ArrowRight size={18} />
-          </button>
-        </form>
-
-        <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '14px' }}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary-light)',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            {isLogin ? 'Sign Up' : 'Sign In'}
-          </button>
-        </p>
       </motion.div>
     </div>
   )
