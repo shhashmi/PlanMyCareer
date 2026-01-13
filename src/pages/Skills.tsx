@@ -1,12 +1,19 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelColor } from '../data/skillsData';
+import { engineeringRoles, skillDescriptions } from '../data/skillDescriptions';
 
 export default function Skills() {
   const navigate = useNavigate()
   const { profileData, skills, isLoggedIn } = useApp()
+  const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
+
+  const isEngineeringRole = profileData?.title && engineeringRoles.some(
+    role => profileData.title.toLowerCase().includes(role.toLowerCase())
+  )
 
   if (!profileData || skills.length === 0) {
     navigate('/')
@@ -100,16 +107,64 @@ export default function Skills() {
                 }}>
                   {skill.level} Required
                 </span>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: 'var(--text-muted)',
-                  fontSize: '12px'
-                }}>
-                  <Info size={14} />
-                  <span>Hover for details</span>
-                </div>
+                {isEngineeringRole && skillDescriptions[skill.name] && (
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: 'var(--text-muted)',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={() => setHoveredSkill(skill.name)}
+                    onMouseLeave={() => setHoveredSkill(null)}
+                  >
+                    <Info size={14} />
+                    <span>Hover for details</span>
+
+                    <AnimatePresence>
+                      {hoveredSkill === skill.name && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                          style={{
+                            position: 'absolute',
+                            bottom: '100%',
+                            right: 0,
+                            marginBottom: '12px',
+                            width: '380px',
+                            maxHeight: '300px',
+                            overflowY: 'auto',
+                            padding: '16px',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                            zIndex: 100,
+                            fontSize: '13px',
+                            lineHeight: '1.6',
+                            color: 'var(--text-secondary)',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <div style={{
+                            fontWeight: '600',
+                            color: 'var(--text-primary)',
+                            marginBottom: '8px',
+                            fontSize: '14px'
+                          }}>
+                            {skill.name}
+                          </div>
+                          {skillDescriptions[skill.name]}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
