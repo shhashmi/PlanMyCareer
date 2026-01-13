@@ -1,20 +1,14 @@
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowRight, Chrome, Github, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Chrome, Github, Linkedin, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isLoggedIn, skills } = useApp();
+  const { login, isLoggedIn } = useApp();
   const [isLogin, setIsLogin] = useState(true);
-
-  useEffect(() => {
-    if (skills.length === 0) {
-      navigate('/');
-    }
-  }, [skills.length, navigate]);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -128,7 +122,8 @@ export default function Login() {
               borderRadius: '12px',
               color: 'var(--text-primary)',
               fontSize: '14px',
-              fontWeight: '500'
+              fontWeight: '500',
+              cursor: 'pointer'
             }}
           >
             <Chrome size={18} />
@@ -148,11 +143,33 @@ export default function Login() {
               borderRadius: '12px',
               color: 'var(--text-primary)',
               fontSize: '14px',
-              fontWeight: '500'
+              fontWeight: '500',
+              cursor: 'pointer'
             }}
           >
             <Github size={18} />
             GitHub
+          </button>
+          <button
+            onClick={() => handleSocialLogin('linkedin')}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '12px',
+              background: 'var(--surface-light)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            <Linkedin size={18} />
+            LinkedIn
           </button>
         </div>
 
