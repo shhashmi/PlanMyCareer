@@ -140,14 +140,14 @@ export default function Skills() {
                             maxHeight: '300px',
                             overflowY: 'auto',
                             padding: '16px',
-                            background: 'var(--bg-primary)',
-                            border: '1px solid var(--border)',
+                            background: '#0a1628',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '12px',
-                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
                             zIndex: 100,
                             fontSize: '13px',
                             lineHeight: '1.6',
-                            color: 'var(--text-secondary)',
+                            color: '#e2e8f0',
                             textAlign: 'left'
                           }}
                         >
