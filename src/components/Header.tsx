@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, LogIn } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import logoImage from "@assets/logo-1_1767800057394.png";
 
@@ -79,13 +79,34 @@ export default function Header() {
                   alignItems: "center",
                   gap: "6px",
                   fontSize: "14px",
+                  cursor: "pointer",
                 }}
               >
                 <LogOut size={16} />
                 Logout
               </button>
             </>
-          ) : null}
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              style={{
+                background: "var(--gradient-1)",
+                border: "none",
+                borderRadius: "8px",
+                padding: "10px 20px",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              <LogIn size={16} />
+              Login
+            </button>
+          )}
         </div>
       </div>
     </header>
