@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Chrome, Github, Linkedin, AlertCircle } from 'lucide-react';
+import { Chrome, Github, Linkedin, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Login() {
@@ -141,6 +141,27 @@ export default function Login() {
             LinkedIn
           </button>
         </div>
+
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '12px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            color: 'var(--text-muted)',
+            fontSize: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          <ArrowLeft size={16} />
+          Cancel
+        </button>
       </motion.div>
     </div>
   )
