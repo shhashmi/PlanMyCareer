@@ -7,27 +7,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const { isLoggedIn, loading, skills } = useApp();
-
-    // Optionally show a loading spinner while checking auth status
-    if (loading) {
-        return (
-            <div style={{
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--surface-dark)',
-                color: 'var(--text-primary)'
-            }}>
-                Loading session...
-            </div>
-        );
-    }
-
-    if (!isLoggedIn) {
-        return <Navigate to="/login" replace />;
-    }
+    const { skills } = useApp();
 
     if (skills.length === 0) {
         return <Navigate to="/" replace />;
