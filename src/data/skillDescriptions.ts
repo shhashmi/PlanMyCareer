@@ -4,7 +4,10 @@ export const engineeringRoles = [
   'Full Stack Engineer',
   'Principal Engineer',
   'Data Engineer',
-  'Architect'
+  'Architect',
+  'QA Engineer',
+  'DevOps Engineer',
+  'SRE'
 ];
 
 const descriptions: Record<string, string> = {
