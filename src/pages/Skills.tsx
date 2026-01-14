@@ -107,7 +107,7 @@ export default function Skills() {
                 }}>
                   {skill.level} Required
                 </span>
-                {isEngineeringRole && getSkillDescription(skill.name) && (
+                {isEngineeringRole && getSkillDescription(skill.name, profileData.title) && (
                   <div
                     style={{
                       position: 'relative',
@@ -159,7 +159,7 @@ export default function Skills() {
                           }}>
                             {skill.name}
                           </div>
-                          {getSkillDescription(skill.name)}
+                          {getSkillDescription(skill.name, profileData.title)}
                         </motion.div>
                       )}
                     </AnimatePresence>
