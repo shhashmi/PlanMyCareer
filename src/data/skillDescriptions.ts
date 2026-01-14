@@ -7,7 +7,7 @@ export const engineeringRoles = [
   'Architect'
 ];
 
-export const skillDescriptions: Record<string, string> = {
+const descriptions: Record<string, string> = {
   'AI Foundations & Mental Models': `For software engineers, understanding AI foundations means developing accurate intuitions about how modern AI systems—particularly large language models—actually work under the hood. This includes grasping concepts like token prediction, context windows, attention mechanisms, and the statistical nature of model outputs without needing to implement these systems yourself. Having the right mental models helps you understand why an AI tool excels at certain tasks (like code completion or pattern matching) while struggling with others (like maintaining state across long interactions or performing precise arithmetic). This foundational knowledge enables you to set appropriate expectations, architect systems that play to AI strengths, and avoid the common pitfall of anthropomorphizing these tools in ways that lead to poor technical decisions. It's the difference between treating AI as magic versus understanding it as a sophisticated but bounded technology with specific capabilities and limitations.`,
 
   'Prompting & Human-AI Interaction': `Effective prompting for software engineers goes far beyond casual chatbot interactions—it's about systematically communicating requirements, constraints, and context to AI systems in ways that produce reliable, high-quality outputs. This includes mastering techniques like few-shot prompting with code examples, chain-of-thought reasoning for complex debugging scenarios, and structured output formats that integrate cleanly with existing toolchains. Engineers fluent in this area understand how to decompose complex tasks, provide relevant context without overwhelming token limits, and iteratively refine prompts based on output quality. They also recognize when a prompt engineering approach is appropriate versus when fine-tuning, retrieval augmentation, or traditional programming would be more effective. This fluency transforms AI from an occasionally helpful assistant into a predictable, powerful component of your development workflow.`,
@@ -28,3 +28,23 @@ export const skillDescriptions: Record<string, string> = {
 
   'AI Tool & Ecosystem Literacy': `The AI tooling landscape evolves rapidly, and software engineers need frameworks for evaluating, adopting, and staying current with relevant tools without succumbing to every new trend. This fluency includes understanding the major categories of AI tools relevant to software engineering—code assistants, chat interfaces, specialized agents, embedding models, local versus cloud options—and their respective strengths and integration points. Engineers should know how to evaluate tools against criteria like accuracy, latency, cost, privacy, and workflow integration. They should understand the ecosystem of APIs, SDKs, and platforms that enable building AI-powered features into their own applications. Crucially, this fluency includes developing efficient learning strategies: knowing which sources to follow, how to quickly prototype with new tools, and how to distinguish genuinely useful innovations from hype. The goal isn't encyclopedic knowledge of every tool, but the ability to rapidly assess and adopt the right tools when needed.`
 };
+
+const normalizeSkillName = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const normalizedDescriptions: Record<string, string> = {};
+Object.entries(descriptions).forEach(([key, value]) => {
+  normalizedDescriptions[normalizeSkillName(key)] = value;
+});
+
+export const getSkillDescription = (skillName: string): string | undefined => {
+  return normalizedDescriptions[normalizeSkillName(skillName)];
+};
+
+export const skillDescriptions = descriptions;

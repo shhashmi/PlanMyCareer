@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelColor } from '../data/skillsData';
-import { engineeringRoles, skillDescriptions } from '../data/skillDescriptions';
+import { engineeringRoles, getSkillDescription } from '../data/skillDescriptions';
 
 export default function Skills() {
   const navigate = useNavigate()
@@ -107,7 +107,7 @@ export default function Skills() {
                 }}>
                   {skill.level} Required
                 </span>
-                {isEngineeringRole && skillDescriptions[skill.name] && (
+                {isEngineeringRole && getSkillDescription(skill.name) && (
                   <div
                     style={{
                       position: 'relative',
