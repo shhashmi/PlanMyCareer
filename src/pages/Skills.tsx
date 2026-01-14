@@ -159,7 +159,7 @@ export default function Skills() {
                           }}>
                             {skill.name}
                           </div>
-                          {skillDescriptions[skill.name]}
+                          {getSkillDescription(skill.name)}
                         </motion.div>
                       )}
                     </AnimatePresence>
