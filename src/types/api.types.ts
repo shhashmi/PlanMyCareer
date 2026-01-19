@@ -124,3 +124,42 @@ export interface Role {
   name: string;
   created_at: string;
 }
+
+// Save Answer types
+export type SelectedOption = 'A' | 'B' | 'C' | 'D';
+
+export interface SaveAnswerRequest {
+  session_id: number;
+  question_id: number;
+  selected_option: SelectedOption;
+}
+
+export interface SaveAnswerResponse {
+  is_correct: boolean;
+  message: string;
+}
+
+// Assessment Summary types
+export interface AssessmentMetadata {
+  experience_years: number;
+  company: string;
+  country: string;
+  role: string;
+}
+
+export interface CompetencyBreakdown {
+  dimension: DimensionCode;
+  total_questions: number;
+  correct_answers: number;
+}
+
+export interface AssessmentSummary {
+  session_id: number;
+  assessment_type: 'basic' | 'advanced';
+  started_at: string;
+  completed_at: string | null;
+  metadata: AssessmentMetadata;
+  total_questions: number;
+  total_correct: number;
+  competency_breakdown: CompetencyBreakdown[];
+}

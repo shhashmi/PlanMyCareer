@@ -1,28 +1,117 @@
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { getLevelNumber, getLevelColor } from '../data/skillsData';
+import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { assessmentService } from '../services/assessmentService';
+import type { AssessmentSummary, CompetencyBreakdown, Dimension } from '../types/api.types';
 
 export default function BasicResults() {
   const navigate = useNavigate()
-  const { assessmentResults, profileData } = useApp()
+  const location = useLocation()
 
-  if (!assessmentResults || assessmentResults.length === 0) {
-    navigate('/')
-    return null
+  // Get session_id from route state
+  const sessionId = location.state?.sessionId as number | undefined
+
+  const [summary, setSummary] = useState<AssessmentSummary | null>(null)
+  const [dimensions, setDimensions] = useState<Dimension[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch summary and dimensions on mount
+  useEffect(() => {
+    if (!sessionId) {
+      navigate('/assessment-choice')
+      return
+    }
+
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        // Fetch summary and dimensions in parallel
+        const [summaryResponse, dims] = await Promise.all([
+          assessmentService.getAssessmentSummary(sessionId),
+          assessmentService.getCachedDimensions()
+        ])
+
+        if (summaryResponse.success && summaryResponse.data) {
+          setSummary(summaryResponse.data)
+        } else {
+          setError(summaryResponse.error?.message || 'Failed to load assessment summary')
+        }
+
+        setDimensions(dims)
+      } catch (err) {
+        setError('An unexpected error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [sessionId, navigate])
+
+  // Get full dimension name from code
+  const getDimensionName = (code: string): string => {
+    const dim = dimensions.find(d => d.dimension_code === code)
+    return dim?.name || code
   }
 
-  const getGapStatus = (score, requiredLevel) => {
-    const required = getLevelNumber(requiredLevel)
-    const gap = required - score
-    if (gap <= 0) return { status: 'met', label: 'Meets Expectations', color: 'var(--secondary)' }
-    if (gap <= 2) return { status: 'close', label: 'Almost There', color: 'var(--accent)' }
-    return { status: 'gap', label: 'Needs Improvement', color: 'var(--error)' }
+  // Get status based on percentage correct
+  const getCompetencyStatus = (breakdown: CompetencyBreakdown) => {
+    const percentage = breakdown.total_questions > 0
+      ? (breakdown.correct_answers / breakdown.total_questions) * 100
+      : 0
+
+    if (percentage >= 80) return { status: 'excellent', label: 'Excellent', color: 'var(--secondary)' }
+    if (percentage >= 60) return { status: 'good', label: 'Good', color: 'var(--primary-light)' }
+    if (percentage >= 40) return { status: 'fair', label: 'Needs Work', color: 'var(--accent)' }
+    return { status: 'poor', label: 'Needs Improvement', color: 'var(--error)' }
   }
 
-  const averageScore = Math.round(assessmentResults.reduce((acc, s) => acc + s.score, 0) / assessmentResults.length)
-  const skillsNeedingWork = assessmentResults.filter(s => getGapStatus(s.score, s.level).status === 'gap').length
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: 'calc(100vh - 80px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 size={48} className="animate-spin" style={{ color: 'var(--primary-light)', marginBottom: '16px' }} />
+          <p style={{ color: 'var(--text-muted)' }}>Loading your results...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !summary) {
+    return (
+      <div style={{
+        minHeight: 'calc(100vh - 80px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px'
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <AlertCircle size={48} style={{ color: 'var(--error)', marginBottom: '16px' }} />
+          <h2 style={{ marginBottom: '12px' }}>Unable to Load Results</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>{error || 'Something went wrong'}</p>
+          <button onClick={() => navigate('/assessment-choice')} className="btn-primary">
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const overallPercentage = summary.total_questions > 0
+    ? Math.round((summary.total_correct / summary.total_questions) * 100)
+    : 0
+
+  const excellentCount = summary.competency_breakdown.filter(c => getCompetencyStatus(c).status === 'excellent').length
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
@@ -36,13 +125,13 @@ export default function BasicResults() {
             Your Assessment Results
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
-            Here's how you stand against the AI skills needed for your role
+            Here's how you performed in the {summary.assessment_type} assessment
           </p>
         </motion.div>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '20px',
           marginBottom: '40px'
         }}>
@@ -54,9 +143,9 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--primary-light)', marginBottom: '8px' }}>
-              {averageScore}/10
+              {overallPercentage}%
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Average Score</p>
+            <p style={{ color: 'var(--text-muted)' }}>Overall Score</p>
           </motion.div>
 
           <motion.div
@@ -67,9 +156,9 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--secondary)', marginBottom: '8px' }}>
-              {assessmentResults.length - skillsNeedingWork}
+              {summary.total_correct}/{summary.total_questions}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Skills On Track</p>
+            <p style={{ color: 'var(--text-muted)' }}>Correct Answers</p>
           </motion.div>
 
           <motion.div
@@ -80,9 +169,9 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px' }}>
-              {skillsNeedingWork}
+              {excellentCount}/{summary.competency_breakdown.length}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Needs Improvement</p>
+            <p style={{ color: 'var(--text-muted)' }}>Strong Areas</p>
           </motion.div>
         </div>
 
@@ -94,17 +183,19 @@ export default function BasicResults() {
           style={{ marginBottom: '40px' }}
         >
           <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '24px' }}>
-            Skill Gap Analysis
+            Competency Breakdown
           </h2>
 
           <div style={{ display: 'grid', gap: '20px' }}>
-            {assessmentResults.map((skill, index) => {
-              const required = getLevelNumber(skill.level)
-              const gapInfo = getGapStatus(skill.score, skill.level)
-              
+            {summary.competency_breakdown.map((competency, index) => {
+              const statusInfo = getCompetencyStatus(competency)
+              const percentage = competency.total_questions > 0
+                ? Math.round((competency.correct_answers / competency.total_questions) * 100)
+                : 0
+
               return (
                 <motion.div
-                  key={skill.name}
+                  key={competency.dimension}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + index * 0.05 }}
@@ -120,72 +211,56 @@ export default function BasicResults() {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '500' }}>{skill.name}</h3>
+                      <h3 style={{ fontSize: '16px', fontWeight: '500' }}>
+                        {getDimensionName(competency.dimension)}
+                      </h3>
                       <span style={{
                         padding: '4px 8px',
                         borderRadius: '6px',
                         fontSize: '11px',
                         fontWeight: '600',
-                        background: `${gapInfo.color}20`,
-                        color: gapInfo.color
+                        background: `${statusInfo.color}20`,
+                        color: statusInfo.color
                       }}>
-                        {gapInfo.label}
+                        {statusInfo.label}
                       </span>
                     </div>
-                    
+
                     <div style={{ position: 'relative', height: '8px', background: 'var(--surface)', borderRadius: '4px' }}>
-                      <div style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        height: '100%',
-                        width: `${required * 10}%`,
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '4px'
-                      }} />
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${skill.score * 10}%` }}
+                        animate={{ width: `${percentage}%` }}
                         transition={{ delay: 0.5 + index * 0.05, duration: 0.5 }}
                         style={{
                           position: 'absolute',
                           left: 0,
                           top: 0,
                           height: '100%',
-                          background: gapInfo.color,
+                          background: statusInfo.color,
                           borderRadius: '4px'
                         }}
                       />
-                      <div style={{
-                        position: 'absolute',
-                        left: `${required * 10}%`,
-                        top: '-4px',
-                        width: '2px',
-                        height: '16px',
-                        background: getLevelColor(skill.level),
-                        borderRadius: '1px'
-                      }} />
                     </div>
-                    
-                    <div style={{ 
-                      display: 'flex', 
+
+                    <div style={{
+                      display: 'flex',
                       justifyContent: 'space-between',
                       marginTop: '8px',
                       fontSize: '12px',
                       color: 'var(--text-muted)'
                     }}>
-                      <span>Your level: {skill.score}/10</span>
-                      <span>Required: {required}/10 ({skill.level})</span>
+                      <span>{competency.correct_answers} of {competency.total_questions} correct</span>
+                      <span>{percentage}%</span>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {gapInfo.status === 'met' ? (
+                    {statusInfo.status === 'excellent' ? (
                       <CheckCircle size={24} color="var(--secondary)" />
-                    ) : gapInfo.status === 'close' ? (
-                      <TrendingUp size={24} color="var(--accent)" />
+                    ) : statusInfo.status === 'good' ? (
+                      <TrendingUp size={24} color="var(--primary-light)" />
                     ) : (
-                      <AlertCircle size={24} color="var(--error)" />
+                      <AlertCircle size={24} color={statusInfo.color} />
                     )}
                   </div>
                 </motion.div>
@@ -193,6 +268,39 @@ export default function BasicResults() {
             })}
           </div>
         </motion.div>
+
+        {/* Assessment metadata */}
+        {summary.metadata && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="card"
+            style={{ marginBottom: '40px' }}
+          >
+            <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
+              Assessment Details
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Role</p>
+                <p style={{ fontWeight: '500' }}>{summary.metadata.role}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Experience</p>
+                <p style={{ fontWeight: '500' }}>{summary.metadata.experience_years} years</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Company</p>
+                <p style={{ fontWeight: '500' }}>{summary.metadata.company}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Country</p>
+                <p style={{ fontWeight: '500' }}>{summary.metadata.country}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -211,10 +319,10 @@ export default function BasicResults() {
             Want a Detailed Analysis & Upskill Plan?
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
-            Get AI-powered deep assessment with personalized learning paths, 
+            Get AI-powered deep assessment with personalized learning paths,
             curated resources, and weekly action plans
           </p>
-          <button 
+          <button
             onClick={() => navigate('/payment')}
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}

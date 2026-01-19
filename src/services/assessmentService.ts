@@ -15,6 +15,9 @@ import type {
   FluencyProfileResponse,
   Dimension,
   Role,
+  SaveAnswerRequest,
+  SaveAnswerResponse,
+  AssessmentSummary,
 } from '../types/api.types';
 
 // Mapping from proficiency levels to difficulty levels
@@ -91,6 +94,50 @@ class AssessmentService {
         error: {
           status: error.response?.status || 0,
           message: error.response?.data?.error || error.message || 'Failed to start assessment',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Save an answer for a question
+   */
+  async saveAnswer(request: SaveAnswerRequest): Promise<ApiResponse<SaveAnswerResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/v1/assessments/save-answer', request);
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to save answer',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Get assessment summary
+   */
+  async getAssessmentSummary(sessionId: number): Promise<ApiResponse<AssessmentSummary>> {
+    try {
+      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/v1/assessments/${sessionId}/summary`);
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to get assessment summary',
           details: error.response?.data,
         },
       };
