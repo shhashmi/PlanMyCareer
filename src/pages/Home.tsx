@@ -1,16 +1,18 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { fluencyService } from '../services/fluencyService';
-import type { ProfileFormData } from '../types/api.types';
-
-const roles = ['Backend Engineer', 'Frontend Engineer', 'Full Stack Engineer', 'QA Engineer', 'DevOps Engineer', 'SRE', 'Engineering Manager', 'Architect', 'Principal Engineer', 'Product Manager'];
+import { assessmentService } from '../services/assessmentService';
+import type { ProfileFormData, Role } from '../types/api.types';
 
 export default function Home() {
   const navigate = useNavigate();
   const { setProfileData, setSkills, setApiProfile } = useApp();
+
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   const [formData, setFormData] = useState<ProfileFormData>({
     experience: '',
@@ -22,7 +24,7 @@ export default function Home() {
     geography: '',
     goal: ''
   });
-  
+
   formData.title = formData.role;
   formData.company_type = 'Enterprise';
   formData.geography = formData.country;
@@ -30,6 +32,18 @@ export default function Home() {
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string>('');
+
+  // Fetch roles from API on mount
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const response = await assessmentService.getRoles();
+      if (response.success && response.data) {
+        setRoles(response.data);
+      }
+      setRolesLoading(false);
+    };
+    fetchRoles();
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -253,11 +267,11 @@ export default function Home() {
                       cursor: 'pointer',
                       borderColor: errors.role ? 'var(--error)' : 'var(--border)'
                     }}
-                    disabled={isLoading}
+                    disabled={isLoading || rolesLoading}
                   >
-                    <option value="">Select role</option>
+                    <option value="">{rolesLoading ? 'Loading roles...' : 'Select role'}</option>
                     {roles.map(role => (
-                      <option key={role} value={role}>{role}</option>
+                      <option key={role.role_id} value={role.name}>{role.name}</option>
                     ))}
                   </select>
                 </div>

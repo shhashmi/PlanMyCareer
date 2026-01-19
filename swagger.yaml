@@ -1,0 +1,865 @@
+openapi: 3.0.3
+info:
+  title: AI Fluency Assessment API
+  description: |
+    API for AI Fluency assessment platform. Allows users to take assessments,
+    track progress, and view analytics.
+
+    ## Authentication
+    Most endpoints require authentication via JWT token stored in a cookie.
+    Users authenticate via OAuth providers (Google, GitHub, LinkedIn).
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.aifluens.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Auth
+    description: Authentication endpoints
+  - name: Questions
+    description: Question and metadata endpoints
+  - name: Assessments
+    description: Assessment session management
+  - name: Fluency
+    description: Fluency profile resolution
+
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Welcome message
+      responses:
+        '200':
+          description: Welcome message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "AI Fluency API Server - Endpoint: POST /api/fluency/resolve"
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  /api/v1/fluency/resolve:
+    post:
+      tags:
+        - Fluency
+      summary: Resolve fluency profile
+      description: Resolves a user's fluency profile based on their experience and role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FluencyInput'
+      responses:
+        '200':
+          description: Fluency profile resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FluencyProfile'
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/login/{provider}:
+    get:
+      tags:
+        - Auth
+      summary: Initiate OAuth login
+      description: Redirects user to OAuth provider for authentication
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github, linkedin]
+          description: OAuth provider
+      responses:
+        '302':
+          description: Redirect to OAuth provider
+        '400':
+          description: Invalid provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/callback/google:
+    get:
+      tags:
+        - Auth
+      summary: Google OAuth callback
+      description: Handles Google OAuth callback and sets JWT cookie
+      responses:
+        '302':
+          description: Redirect to frontend with auth cookie set
+
+  /api/v1/auth/callback/github:
+    get:
+      tags:
+        - Auth
+      summary: GitHub OAuth callback
+      description: Handles GitHub OAuth callback and sets JWT cookie
+      responses:
+        '302':
+          description: Redirect to frontend with auth cookie set
+
+  /api/v1/auth/callback/linkedin:
+    get:
+      tags:
+        - Auth
+      summary: LinkedIn OAuth callback
+      description: Handles LinkedIn OAuth callback and sets JWT cookie
+      responses:
+        '302':
+          description: Redirect to frontend with auth cookie set
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      description: Returns the currently authenticated user's information
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      description: Clears the authentication cookie
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+
+  /api/v1/questions/dimensions:
+    get:
+      tags:
+        - Questions
+      summary: Get all dimensions
+      description: Returns all available assessment dimensions
+      responses:
+        '200':
+          description: List of dimensions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      dimensions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Dimension'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/questions/roles:
+    get:
+      tags:
+        - Questions
+      summary: Get all roles
+      description: Returns all available job roles for assessments
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      roles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Role'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/start:
+    post:
+      tags:
+        - Assessments
+      summary: Start a new assessment
+      description: Creates a new assessment session and returns questions
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentStartRequest'
+            example:
+              assessment_type: "basic"
+              role: "Software Engineer"
+              evaluated_dimensions:
+                - dimension: "FND"
+                  difficulty_level: "Basic"
+                - dimension: "PRM"
+                  difficulty_level: "Intermediate"
+                - dimension: "ASE"
+                  difficulty_level: "Basic"
+              question_count: 15
+              experience_years: 5
+              company: "Tech Corp"
+              country: "United States"
+      responses:
+        '201':
+          description: Assessment started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/AssessmentStartResponse'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/resume:
+    post:
+      tags:
+        - Assessments
+      summary: Resume incomplete assessment
+      description: Resumes the user's last incomplete assessment session
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Assessment resumed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/AssessmentResumeResponse'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No incomplete assessment found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/save-answer:
+    post:
+      tags:
+        - Assessments
+      summary: Save an answer
+      description: Saves the user's answer for a specific question
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAnswerRequest'
+            example:
+              session_id: 1
+              question_id: 101
+              selected_option: "A"
+      responses:
+        '200':
+          description: Answer saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      is_correct:
+                        type: boolean
+                        example: true
+                      message:
+                        type: string
+                        example: "Answer saved successfully"
+        '400':
+          description: Missing required fields or assessment already completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invalid session or question not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/submit:
+    post:
+      tags:
+        - Assessments
+      summary: Submit assessment
+      description: Submits the assessment and returns final results with dimension scores
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAssessmentRequest'
+            example:
+              session_id: 1
+      responses:
+        '200':
+          description: Assessment submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/AssessmentResults'
+        '400':
+          description: Missing session_id or assessment already completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invalid session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/analytics:
+    get:
+      tags:
+        - Assessments
+      summary: Get user analytics
+      description: Returns the user's assessment performance analytics
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/UserAnalytics'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: JWT token stored in cookie after OAuth login
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "Error message"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123"
+        loginId:
+          type: string
+          example: "google-oauth-id"
+        name:
+          type: string
+          example: "John Doe"
+        provider:
+          type: string
+          enum: [google, github, linkedin]
+          example: "google"
+
+    Dimension:
+      type: object
+      properties:
+        dimension_id:
+          type: integer
+          example: 1
+        dimension_code:
+          type: string
+          enum: [FND, PRM, ASE, ETH, COL]
+          example: "FND"
+        name:
+          type: string
+          example: "Foundational"
+        description:
+          type: string
+          example: "Core AI/ML concepts and fundamentals"
+        display_order:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+
+    Role:
+      type: object
+      properties:
+        role_id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Software Engineer"
+        created_at:
+          type: string
+          format: date-time
+
+    Question:
+      type: object
+      properties:
+        question_id:
+          type: integer
+          example: 101
+        question_text:
+          type: string
+          example: "What is the primary purpose of a neural network?"
+        difficulty_level:
+          type: string
+          enum: [Basic, Intermediate, Advanced, Expert]
+          example: "Basic"
+        dimension:
+          type: string
+          enum: [FND, PRM, ASE, ETH, COL]
+          example: "FND"
+        option_a:
+          type: string
+          example: "To store data"
+        option_b:
+          type: string
+          example: "To learn patterns from data"
+        option_c:
+          type: string
+          example: "To connect computers"
+        option_d:
+          type: string
+          example: "To encrypt information"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    QuestionWithState:
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          properties:
+            is_answered:
+              type: boolean
+              example: false
+            selected_option:
+              type: string
+              enum: [A, B, C, D, null]
+              nullable: true
+              example: null
+
+    EvaluatedDimension:
+      type: object
+      required:
+        - dimension
+        - difficulty_level
+      properties:
+        dimension:
+          type: string
+          enum: [FND, PRM, ASE, ETH, COL]
+          description: |
+            Dimension code:
+            - FND: Foundational
+            - PRM: Prompting
+            - ASE: AI-assisted Software Engineering
+            - ETH: Ethics
+            - COL: Collaboration
+          example: "FND"
+        difficulty_level:
+          type: string
+          enum: [Basic, Intermediate, Advanced, Expert]
+          example: "Basic"
+
+    AssessmentStartRequest:
+      type: object
+      required:
+        - assessment_type
+        - role
+        - evaluated_dimensions
+        - question_count
+        - experience_years
+        - company
+        - country
+      properties:
+        assessment_type:
+          type: string
+          enum: [basic, advanced]
+          example: "basic"
+        role:
+          type: string
+          example: "Software Engineer"
+        evaluated_dimensions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluatedDimension'
+          minItems: 1
+        question_count:
+          type: integer
+          example: 15
+        experience_years:
+          type: integer
+          example: 5
+        company:
+          type: string
+          example: "Tech Corp"
+        country:
+          type: string
+          example: "United States"
+
+    AssessmentStartResponse:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          example: 1
+        assessment_type:
+          type: string
+          enum: [basic, advanced]
+          example: "basic"
+        started_at:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+
+    AssessmentResumeResponse:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          example: 1
+        assessment_type:
+          type: string
+          enum: [basic, advanced]
+          example: "basic"
+        started_at:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionWithState'
+        answered_count:
+          type: integer
+          example: 5
+        total_questions:
+          type: integer
+          example: 15
+
+    SaveAnswerRequest:
+      type: object
+      required:
+        - session_id
+        - question_id
+        - selected_option
+      properties:
+        session_id:
+          type: integer
+          example: 1
+        question_id:
+          type: integer
+          example: 101
+        selected_option:
+          type: string
+          enum: [A, B, C, D]
+          example: "A"
+
+    SubmitAssessmentRequest:
+      type: object
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: integer
+          example: 1
+
+    DimensionScores:
+      type: object
+      additionalProperties:
+        type: integer
+        minimum: 0
+        maximum: 100
+      example:
+        FND: 80
+        PRM: 65
+        ASE: 90
+
+    AssessmentResults:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          example: 1
+        total_questions:
+          type: integer
+          example: 15
+        dimension_scores:
+          $ref: '#/components/schemas/DimensionScores'
+        completed_at:
+          type: string
+          format: date-time
+
+    UserAnalytics:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 123
+        last_completed_session:
+          $ref: '#/components/schemas/AssessmentSession'
+        total_completed_assessments:
+          type: integer
+          example: 5
+
+    AssessmentSession:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 123
+        assessment_type:
+          type: string
+          enum: [basic, advanced]
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    FluencyInput:
+      type: object
+      required:
+        - experience
+        - role
+        - company
+        - country
+      properties:
+        experience:
+          type: integer
+          description: Years of experience
+          example: 5
+        role:
+          type: string
+          example: "Software Engineer"
+        title:
+          type: string
+          example: "Senior Developer"
+        company:
+          type: string
+          example: "Tech Corp"
+        country:
+          type: string
+          example: "United States"
+        company_type:
+          type: string
+          example: "Startup"
+        geography:
+          type: string
+          example: "North America"
+        goal:
+          type: string
+          example: "Career growth"
+
+    FluencyProfile:
+      type: object
+      properties:
+        overall_level:
+          type: string
+          example: "Intermediate"
+        dimension_levels:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            FND: "Intermediate"
+            PRM: "Basic"
+            ASE: "Advanced"
+        recommendations:
+          type: array
+          items:
+            type: string
+          example:
+            - "Focus on improving prompting skills"
+            - "Explore advanced AI-assisted tools"

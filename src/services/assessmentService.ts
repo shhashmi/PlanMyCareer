@@ -145,7 +145,7 @@ class AssessmentService {
   async buildStartRequest(
     apiProfile: FluencyProfileResponse,
     assessmentType: 'basic' | 'advanced' = 'basic',
-    questionCount?: number
+    questionCount: number = 15
   ): Promise<AssessmentStartRequest> {
     // Fetch dimensions if not cached
     let dimensions = this.dimensionsCache;
@@ -164,11 +164,10 @@ class AssessmentService {
       assessment_type: assessmentType,
       role: apiProfile.metadata.role,
       evaluated_dimensions: evaluatedDimensions,
-      ...(questionCount && { question_count: questionCount }),
-      metadata: {
-        experience_years: parseInt(apiProfile.metadata.experience_range) || undefined,
-        company: apiProfile.metadata.company || undefined,
-      },
+      question_count: questionCount,
+      experience_years: parseInt(apiProfile.metadata.experience_range) || 0,
+      company: apiProfile.metadata.company,
+      country: apiProfile.metadata.country,
     };
   }
 

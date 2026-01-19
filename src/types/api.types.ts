@@ -86,11 +86,10 @@ export interface AssessmentStartRequest {
   assessment_type: 'basic' | 'advanced';
   role: string;
   evaluated_dimensions: EvaluatedDimension[];
-  question_count?: number;
-  metadata?: {
-    experience_years?: number;
-    company?: string;
-  };
+  question_count: number;
+  experience_years: number;
+  company: string;
+  country: string;
 }
 
 export interface AssessmentQuestion {
