@@ -1,0 +1,202 @@
+/**
+ * Assessment API Service
+ * Handles all interactions with the Assessment API
+ * Extensible for additional assessment-related endpoints
+ */
+
+import api from './api';
+import type {
+  AssessmentStartRequest,
+  AssessmentStartResponse,
+  EvaluatedDimension,
+  DimensionCode,
+  DifficultyLevel,
+  ApiResponse,
+  FluencyProfileResponse,
+  Dimension,
+  Role,
+} from '../types/api.types';
+
+// Mapping from proficiency levels to difficulty levels
+const PROFICIENCY_TO_DIFFICULTY: Record<string, DifficultyLevel> = {
+  'Beginner': 'Basic',
+  'Intermediate': 'Intermediate',
+  'Advanced': 'Advanced',
+  'Expert': 'Expert',
+};
+
+class AssessmentService {
+  private dimensionsCache: Dimension[] | null = null;
+  private rolesCache: Role[] | null = null;
+
+  /**
+   * Get all available dimensions
+   */
+  async getDimensions(): Promise<ApiResponse<Dimension[]>> {
+    try {
+      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/v1/questions/dimensions');
+      this.dimensionsCache = response.data.data.dimensions;
+      return {
+        success: true,
+        data: response.data.data.dimensions,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to fetch dimensions',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Get all available roles
+   */
+  async getRoles(): Promise<ApiResponse<Role[]>> {
+    try {
+      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/v1/questions/roles');
+      this.rolesCache = response.data.data.roles;
+      return {
+        success: true,
+        data: response.data.data.roles,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to fetch roles',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Start a new assessment session
+   */
+  async startAssessment(request: AssessmentStartRequest): Promise<ApiResponse<AssessmentStartResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/start', request);
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to start assessment',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Map API profile to evaluated dimensions for assessment
+   * Uses fetched dimensions to map skill names to dimension codes
+   */
+  mapProfileToDimensions(apiProfile: FluencyProfileResponse, dimensions: Dimension[]): EvaluatedDimension[] {
+    console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions });
+    
+    const nameToCode: Record<string, DimensionCode> = {};
+    dimensions.forEach(dim => {
+      nameToCode[dim.name.toLowerCase().trim()] = dim.dimension_code;
+    });
+
+    const result = apiProfile.profile
+      .map(skill => {
+        const normalizedName = skill.name.toLowerCase().trim();
+        const dimensionCode = nameToCode[normalizedName];
+        const difficultyLevel = PROFICIENCY_TO_DIFFICULTY[skill.proficiency];
+
+        console.log('🔍 Mapping skill:', { 
+          skillName: skill.name, 
+          normalizedName,
+          proficiency: skill.proficiency,
+          dimensionCode, 
+          difficultyLevel 
+        });
+
+        if (!dimensionCode || !difficultyLevel) {
+          console.warn('⚠️ Failed to map:', { skillName: skill.name, dimensionCode, difficultyLevel });
+          return null;
+        }
+
+        return {
+          dimension: dimensionCode,
+          difficulty_level: difficultyLevel,
+        };
+      })
+      .filter((dim): dim is EvaluatedDimension => dim !== null);
+
+    console.log('✅ Mapped dimensions:', result);
+    return result;
+  }
+
+  /**
+   * Build assessment start request from profile data
+   */
+  async buildStartRequest(
+    apiProfile: FluencyProfileResponse,
+    assessmentType: 'basic' | 'advanced' = 'basic',
+    questionCount?: number
+  ): Promise<AssessmentStartRequest> {
+    // Fetch dimensions if not cached
+    let dimensions = this.dimensionsCache;
+    if (!dimensions) {
+      const response = await this.getDimensions();
+      if (response.success && response.data) {
+        dimensions = response.data;
+      } else {
+        dimensions = [];
+      }
+    }
+
+    const evaluatedDimensions = this.mapProfileToDimensions(apiProfile, dimensions);
+
+    return {
+      assessment_type: assessmentType,
+      role: apiProfile.metadata.role,
+      evaluated_dimensions: evaluatedDimensions,
+      ...(questionCount && { question_count: questionCount }),
+      metadata: {
+        experience_years: parseInt(apiProfile.metadata.experience_range) || undefined,
+        company: apiProfile.metadata.company || undefined,
+      },
+    };
+  }
+
+  /**
+   * Get cached dimensions or fetch them
+   */
+  async getCachedDimensions(): Promise<Dimension[]> {
+    if (this.dimensionsCache) {
+      return this.dimensionsCache;
+    }
+    const response = await this.getDimensions();
+    return response.data || [];
+  }
+
+  /**
+   * Get cached roles or fetch them
+   */
+  async getCachedRoles(): Promise<Role[]> {
+    if (this.rolesCache) {
+      return this.rolesCache;
+    }
+    const response = await this.getRoles();
+    return response.data || [];
+  }
+}
+
+// Export singleton instance
+export const assessmentService = new AssessmentService();
+
+// Export class for creating new instances if needed
+export default AssessmentService;

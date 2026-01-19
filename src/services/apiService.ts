@@ -64,6 +64,12 @@ class ApiService {
       },
     };
 
+    console.log('🚀 API Request:', {
+      method: config.method || 'GET',
+      url,
+      body: config.body ? JSON.parse(config.body as string) : undefined,
+    });
+
     try {
       const response = await fetch(url, config);
 
@@ -74,6 +80,12 @@ class ApiService {
       const data = isJson ? await response.json() : await response.text();
 
       if (!response.ok) {
+        console.error('❌ API Error:', {
+          method: config.method || 'GET',
+          url,
+          status: response.status,
+          response: data,
+        });
         throw {
           status: response.status,
           statusText: response.statusText,
@@ -82,6 +94,13 @@ class ApiService {
         } as ErrorResponse;
       }
 
+      console.log('✅ API Response:', {
+        method: config.method || 'GET',
+        url,
+        status: response.status,
+        data,
+      });
+
       return data as T;
     } catch (error) {
       // Network error or parsing error
@@ -89,6 +108,11 @@ class ApiService {
       if (err.status) {
         throw err;
       }
+      console.error('❌ Network Error:', {
+        method: config.method || 'GET',
+        url,
+        error: (error as Error).message,
+      });
       throw {
         status: 0,
         message: (error as Error).message || 'Network error occurred',
