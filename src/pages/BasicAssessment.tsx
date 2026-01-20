@@ -1,75 +1,119 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { assessmentQuestions } from '../data/skillsData';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { assessmentService } from '../services/assessmentService';
+import type { AssessmentStartResponse, AssessmentQuestion, SelectedOption, Dimension, DimensionCode } from '../types/api.types';
+
+// Map option index to option letter
+const OPTION_LETTERS: SelectedOption[] = ['A', 'B', 'C', 'D'];
 
 export default function BasicAssessment() {
   const navigate = useNavigate()
-  const { skills, setAssessmentResults } = useApp()
-  const [currentSkillIndex, setCurrentSkillIndex] = useState(0)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState({})
+  const location = useLocation()
 
-  if (skills.length === 0) {
-    navigate('/')
+  // Get assessment data from route state
+  const assessmentData = location.state?.assessmentData as AssessmentStartResponse | undefined
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [answers, setAnswers] = useState<Record<number, SelectedOption>>({})
+  const [savingAnswer, setSavingAnswer] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [dimensions, setDimensions] = useState<Dimension[]>([])
+
+  // Fetch dimensions for display names
+  useEffect(() => {
+    const fetchDimensions = async () => {
+      const dims = await assessmentService.getCachedDimensions()
+      setDimensions(dims)
+    }
+    fetchDimensions()
+  }, [])
+
+  // Redirect if no assessment data
+  useEffect(() => {
+    if (!assessmentData) {
+      navigate('/assessment-choice')
+    }
+  }, [assessmentData, navigate])
+
+  // Get full dimension name from code
+  const getDimensionName = (code: DimensionCode): string => {
+    const dim = dimensions.find(d => d.dimension_code === code)
+    return dim?.name || code
+  }
+
+  if (!assessmentData) {
     return null
   }
 
-  const currentSkill = skills[currentSkillIndex]
-  const questions = assessmentQuestions[currentSkill.name] || assessmentQuestions['default']
+  const questions = assessmentData.questions
+  const totalQuestions = questions.length
   const currentQuestion = questions[currentQuestionIndex]
-  const totalQuestions = skills.length * 2
-  const currentProgress = currentSkillIndex * 2 + currentQuestionIndex + 1
+  const currentProgress = currentQuestionIndex + 1
 
-  const handleAnswer = (optionIndex) => {
-    const key = `${currentSkill.name}-${currentQuestionIndex}`
-    setAnswers(prev => ({ ...prev, [key]: optionIndex }))
+  // Get options as array for the current question
+  const getOptions = (question: AssessmentQuestion): string[] => {
+    return [question.option_a, question.option_b, question.option_c, question.option_d]
   }
 
-  const calculateScore = (skillName) => {
-    const q1 = answers[`${skillName}-0`] || 0
-    const q2 = answers[`${skillName}-1`] || 0
-    return Math.min(10, Math.round(((q1 + q2) / 6) * 10) + 1)
+  const handleAnswer = (optionIndex: number) => {
+    const selectedOption = OPTION_LETTERS[optionIndex]
+    const questionId = currentQuestion.question_id
+    setAnswers(prev => ({ ...prev, [questionId]: selectedOption }))
+    setError(null)
   }
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
-    } else if (currentSkillIndex < skills.length - 1) {
-      setCurrentSkillIndex(currentSkillIndex + 1)
-      setCurrentQuestionIndex(0)
-    } else {
-      const results = skills.map(skill => ({
-        skillName: skill.name,
-        score: calculateScore(skill.name),
-        level: skill.level,
-        name: skill.name,
-        description: skill.description
-      }))
-      setAssessmentResults(results)
-      navigate('/basic-results')
+  const handleNext = async () => {
+    const questionId = currentQuestion.question_id
+    const selectedOption = answers[questionId]
+
+    if (!selectedOption) return
+
+    setSavingAnswer(true)
+    setError(null)
+
+    try {
+      const response = await assessmentService.saveAnswer({
+        session_id: assessmentData.session_id,
+        question_id: questionId,
+        selected_option: selectedOption,
+      })
+
+      if (!response.success) {
+        setError(response.error?.message || 'Failed to save answer')
+        return
+      }
+
+      // Move to next question or results
+      if (currentQuestionIndex < totalQuestions - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1)
+      } else {
+        // Assessment complete - navigate to results with session_id
+        navigate('/basic-results', { state: { sessionId: assessmentData.session_id } })
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setSavingAnswer(false)
     }
   }
 
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1)
-    } else if (currentSkillIndex > 0) {
-      setCurrentSkillIndex(currentSkillIndex - 1)
-      setCurrentQuestionIndex(1)
+      setError(null)
     }
   }
 
-  const currentAnswerKey = `${currentSkill.name}-${currentQuestionIndex}`
-  const hasAnswer = answers[currentAnswerKey] !== undefined
+  const hasAnswer = answers[currentQuestion.question_id] !== undefined
+  const options = getOptions(currentQuestion)
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
@@ -80,12 +124,12 @@ export default function BasicAssessment() {
               Question {currentProgress} of {totalQuestions}
             </span>
             <span style={{ color: 'var(--primary-light)', fontSize: '14px', fontWeight: '500' }}>
-              {currentSkill.name}
+              {getDimensionName(currentQuestion.dimension)} • {currentQuestion.difficulty_level}
             </span>
           </div>
-          <div style={{ 
-            height: '6px', 
-            background: 'var(--surface-light)', 
+          <div style={{
+            height: '6px',
+            background: 'var(--surface-light)',
             borderRadius: '3px',
             overflow: 'hidden'
           }}>
@@ -101,9 +145,23 @@ export default function BasicAssessment() {
           </div>
         </div>
 
+        {error && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            color: '#ef4444',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentAnswerKey}
+            key={currentQuestion.question_id}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -115,47 +173,86 @@ export default function BasicAssessment() {
             }}
           >
             <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '32px', lineHeight: '1.4' }}>
-              {currentQuestion.question}
+              {currentQuestion.question_text}
             </h2>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-              {currentQuestion.options.map((option, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => handleAnswer(index)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    padding: '16px 20px',
-                    background: answers[currentAnswerKey] === index 
-                      ? 'rgba(20, 184, 166, 0.2)' 
-                      : 'var(--surface-light)',
-                    border: answers[currentAnswerKey] === index 
-                      ? '2px solid var(--primary)' 
-                      : '2px solid transparent',
-                    borderRadius: '12px',
-                    color: 'var(--text-primary)',
-                    fontSize: '16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {option}
-                </motion.button>
-              ))}
+              {options.map((option, index) => {
+                const optionLetter = OPTION_LETTERS[index]
+                const isSelected = answers[currentQuestion.question_id] === optionLetter
+
+                return (
+                  <motion.button
+                    key={index}
+                    onClick={() => handleAnswer(index)}
+                    disabled={savingAnswer}
+                    whileHover={{ scale: savingAnswer ? 1 : 1.02 }}
+                    whileTap={{ scale: savingAnswer ? 1 : 0.98 }}
+                    style={{
+                      padding: '16px 20px',
+                      background: isSelected
+                        ? 'rgba(20, 184, 166, 0.2)'
+                        : 'var(--surface-light)',
+                      border: isSelected
+                        ? '2px solid var(--primary)'
+                        : '2px solid transparent',
+                      borderRadius: '12px',
+                      color: 'var(--text-primary)',
+                      fontSize: '16px',
+                      textAlign: 'left',
+                      cursor: savingAnswer ? 'wait' : 'pointer',
+                      transition: 'all 0.2s',
+                      opacity: savingAnswer && !isSelected ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <span style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '8px',
+                      background: isSelected ? 'var(--primary)' : 'var(--surface)',
+                      color: isSelected ? 'white' : 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      flexShrink: 0
+                    }}>
+                      {optionLetter}
+                    </span>
+                    {option}
+                  </motion.button>
+                )
+              })}
             </div>
+
+            {savingAnswer && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginTop: '16px',
+                color: 'var(--text-muted)',
+                fontSize: '14px'
+              }}>
+                <Loader2 size={16} className="animate-spin" />
+                Saving answer...
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          marginTop: '24px' 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '24px'
         }}>
           <button
             onClick={handlePrev}
-            disabled={currentSkillIndex === 0 && currentQuestionIndex === 0}
+            disabled={currentQuestionIndex === 0}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -165,8 +262,8 @@ export default function BasicAssessment() {
               border: '2px solid var(--border)',
               borderRadius: '12px',
               color: 'var(--text-secondary)',
-              opacity: currentSkillIndex === 0 && currentQuestionIndex === 0 ? 0.5 : 1,
-              cursor: currentSkillIndex === 0 && currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
+              opacity: currentQuestionIndex === 0 ? 0.5 : 1,
+              cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer'
             }}
           >
             <ChevronLeft size={18} />
@@ -175,15 +272,15 @@ export default function BasicAssessment() {
 
           <button
             onClick={handleNext}
-            disabled={!hasAnswer}
+            disabled={!hasAnswer || savingAnswer}
             className="btn-primary"
             style={{
-              opacity: hasAnswer ? 1 : 0.5,
-              cursor: hasAnswer ? 'pointer' : 'not-allowed'
+              opacity: hasAnswer && !savingAnswer ? 1 : 0.5,
+              cursor: hasAnswer && !savingAnswer ? 'pointer' : 'not-allowed'
             }}
           >
-            {currentSkillIndex === skills.length - 1 && currentQuestionIndex === questions.length - 1 
-              ? 'View Results' 
+            {currentQuestionIndex === totalQuestions - 1
+              ? 'View Results'
               : 'Next'}
             <ChevronRight size={18} />
           </button>

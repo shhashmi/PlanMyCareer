@@ -25,7 +25,7 @@ export default function Login() {
 
   const handleSocialLogin = (provider: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.aifluens.com';
-    window.location.href = `${apiUrl}/api/auth/login/${provider}`;
+    window.location.href = `${apiUrl}/api/v1/auth/login/${provider}`;
   };
 
   return (

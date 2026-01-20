@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ClipboardList, Sparkles, ArrowRight, Check, Crown } from 'lucide-react';
+import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { assessmentService } from '../services/assessmentService';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
-  const { isLoggedIn, skills, loading } = useApp()
+  const { isLoggedIn, skills, loading, apiProfile } = useApp()
+  const [startingAssessment, setStartingAssessment] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (loading) {
     return null // Wait for session check to complete
@@ -14,6 +18,32 @@ export default function AssessmentChoice() {
   if (!isLoggedIn || skills.length === 0) {
     navigate('/')
     return null
+  }
+
+  const handleStartBasicAssessment = async () => {
+    if (!apiProfile) {
+      setError('Profile data not available. Please complete your profile first.')
+      return
+    }
+
+    setStartingAssessment(true)
+    setError(null)
+
+    try {
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15)
+      const response = await assessmentService.startAssessment(request)
+
+      if (response.success && response.data) {
+        // Store session data and navigate to assessment
+        navigate('/basic-assessment', { state: { assessmentData: response.data } })
+      } else {
+        setError(response.error?.message || 'Failed to start assessment')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setStartingAssessment(false)
+    }
   }
 
   return (
@@ -38,21 +68,36 @@ export default function AssessmentChoice() {
           </p>
         </motion.div>
 
+        {error && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            color: '#ef4444',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            onClick={() => navigate('/basic-assessment')}
+            onClick={handleStartBasicAssessment}
             style={{
               background: 'var(--surface)',
               borderRadius: '24px',
               padding: '32px',
               border: '2px solid var(--border)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
+              cursor: startingAssessment ? 'wait' : 'pointer',
+              transition: 'all 0.3s ease',
+              opacity: startingAssessment ? 0.7 : 1
             }}
-            whileHover={{ borderColor: 'var(--primary)', scale: 1.02 }}
+            whileHover={!startingAssessment ? { borderColor: 'var(--primary)', scale: 1.02 } : {}}
           >
             <div style={{
               width: '56px',
@@ -98,9 +143,22 @@ export default function AssessmentChoice() {
               ))}
             </ul>
 
-            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-              Start Basic Assessment
-              <ArrowRight size={18} />
+            <button
+              className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center' }}
+              disabled={startingAssessment}
+            >
+              {startingAssessment ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  Start Basic Assessment
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </motion.div>
 
