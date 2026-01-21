@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { assessmentService } from '../services/assessmentService';
+import type { Role } from '../types/api.types';
 
 interface ProfileFormData {
   name: string;
@@ -20,6 +22,8 @@ export default function Profile() {
   const { user, isLoggedIn, profileData } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
   
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '',
@@ -39,6 +43,20 @@ export default function Profile() {
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const rolesData = await assessmentService.getRoles();
+        setRoles(rolesData);
+      } catch (error) {
+        console.error('Failed to fetch roles:', error);
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
+
+  useEffect(() => {
     setFormData({
       name: user?.name || '',
       email: user?.email || '',
@@ -56,6 +74,11 @@ export default function Profile() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -293,15 +316,22 @@ export default function Profile() {
                   <Briefcase size={12} style={{ display: 'inline', marginRight: '6px' }} />
                   Role / Function
                 </label>
-                <input
-                  type="text"
+                <select
                   name="role"
                   value={formData.role}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  style={inputStyle(isEditing)}
-                  placeholder="e.g., Software Engineer"
-                />
+                  onChange={handleSelectChange}
+                  disabled={!isEditing || rolesLoading}
+                  style={{
+                    ...inputStyle(isEditing),
+                    cursor: isEditing ? 'pointer' : 'default',
+                    appearance: isEditing ? 'auto' : 'none'
+                  }}
+                >
+                  <option value="">{rolesLoading ? 'Loading roles...' : 'Select role'}</option>
+                  {roles.map(role => (
+                    <option key={role.role_id} value={role.name}>{role.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
