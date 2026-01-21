@@ -45,8 +45,10 @@ export default function Profile() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const rolesData = await assessmentService.getRoles();
-        setRoles(rolesData);
+        const response = await assessmentService.getRoles();
+        if (response.success && response.data) {
+          setRoles(response.data);
+        }
       } catch (error) {
         console.error('Failed to fetch roles:', error);
       } finally {
@@ -70,7 +72,16 @@ export default function Profile() {
   }, [user, profileData]);
 
   if (!isLoggedIn) {
-    return null;
+    return (
+      <div style={{ 
+        minHeight: 'calc(100vh - 80px)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <p style={{ color: 'var(--text-secondary)' }}>Redirecting to login...</p>
+      </div>
+    );
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
