@@ -191,9 +191,12 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--secondary)', marginBottom: '8px' }}>
-              {summary.total_correct}/{summary.total_questions}
+              {summary.competency_breakdown.filter(c => {
+                const status = getCompetencyStatus(c).status
+                return status === 'excellent' || status === 'good'
+              }).length}/{summary.competency_breakdown.length}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Correct Answers</p>
+            <p style={{ color: 'var(--text-muted)' }}>Strengths</p>
           </motion.div>
 
           <motion.div
