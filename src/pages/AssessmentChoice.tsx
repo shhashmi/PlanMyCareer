@@ -119,7 +119,7 @@ export default function AssessmentChoice() {
               Basic Assessment
             </h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-              Quick self-evaluation to understand where you stand
+              A quick, personalized evaluation with instant insights
             </p>
 
             <div style={{ 
@@ -134,10 +134,10 @@ export default function AssessmentChoice() {
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
               {[
-                'Self-evaluation questionnaire',
-                'Skill gap visualization',
-                'Basic recommendations',
-                'Instant results'
+                'Short personalized assessment',
+                'Instant skill gap visualization',
+                'Actionable recommendations',
+                'Results delivered immediately'
               ].map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
@@ -216,7 +216,7 @@ export default function AssessmentChoice() {
               Advanced Assessment
             </h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-              AI-powered deep analysis with personalized upskilling plan
+              Comprehensive evaluation with structured learning and hands-on practice
             </p>
 
             <div style={{ 
@@ -231,11 +231,11 @@ export default function AssessmentChoice() {
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
               {[
-                'AI-driven interactive assessment',
-                'Short assignments & case studies',
-                'Detailed skill analysis with reasoning',
-                'Personalized weekly upskill plan',
-                'Curated learning resources'
+                'Detailed personalized assessment',
+                'Instant skill gap visualization',
+                'Weekly learning plan tailored to your schedule',
+                'Hands-on assignments for practical experience',
+                'Extended support to complete assignments'
               ].map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
