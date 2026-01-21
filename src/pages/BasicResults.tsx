@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2, RefreshCw, BarChart3 } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
+import { useApp } from '../context/AppContext';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension } from '../types/api.types';
 
 export default function BasicResults() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { apiProfile } = useApp()
 
   // Get session_id from route state
   const sessionId = location.state?.sessionId as number | undefined
@@ -16,6 +18,7 @@ export default function BasicResults() {
   const [dimensions, setDimensions] = useState<Dimension[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retakingAssessment, setRetakingAssessment] = useState(false)
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
@@ -70,6 +73,35 @@ export default function BasicResults() {
     return { status: 'poor', label: 'Needs Improvement', color: 'var(--error)' }
   }
 
+  const handleRetakeAssessment = async () => {
+    if (!apiProfile) {
+      setError('Profile data not available. Please try again.')
+      return
+    }
+
+    setRetakingAssessment(true)
+    setError(null)
+
+    try {
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15)
+      const response = await assessmentService.startAssessment(request)
+
+      if (response.success && response.data) {
+        navigate('/basic-assessment', { state: { assessmentData: response.data } })
+      } else {
+        setError(response.error?.message || 'Failed to start assessment')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setRetakingAssessment(false)
+    }
+  }
+
+  const handleViewAggregate = () => {
+    alert('This feature is coming soon. We are working on aggregating your assessment history.')
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -111,7 +143,10 @@ export default function BasicResults() {
     ? Math.round((summary.total_correct / summary.total_questions) * 100)
     : 0
 
-  const excellentCount = summary.competency_breakdown.filter(c => getCompetencyStatus(c).status === 'excellent').length
+  const improvementCount = summary.competency_breakdown.filter(c => {
+    const status = getCompetencyStatus(c).status
+    return status !== 'excellent' && status !== 'good'
+  }).length
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
@@ -169,9 +204,9 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px' }}>
-              {excellentCount}/{summary.competency_breakdown.length}
+              {improvementCount}/{summary.competency_breakdown.length}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Strong Areas</p>
+            <p style={{ color: 'var(--text-muted)' }}>Areas of Improvement</p>
           </motion.div>
         </div>
 
@@ -269,37 +304,69 @@ export default function BasicResults() {
           </div>
         </motion.div>
 
-        {/* Assessment metadata */}
-        {summary.metadata && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="card"
-            style={{ marginBottom: '40px' }}
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            display: 'flex',
+            gap: '16px',
+            marginBottom: '40px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <button
+            onClick={handleRetakeAssessment}
+            disabled={retakingAssessment}
+            className="btn-secondary"
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              justifyContent: 'center',
+              padding: '16px 24px'
+            }}
           >
-            <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
-              Assessment Details
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Role</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.role}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Experience</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.experience_years} years</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Company</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.company}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Country</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.country}</p>
-              </div>
-            </div>
-          </motion.div>
+            {retakingAssessment ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={18} />
+                Retake Basic Assessment
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleViewAggregate}
+            className="btn-secondary"
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              justifyContent: 'center',
+              padding: '16px 24px'
+            }}
+          >
+            <BarChart3 size={18} />
+            View Aggregate Across All Assessments
+          </button>
+        </motion.div>
+
+        {error && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            color: '#ef4444',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
         )}
 
         <motion.div
@@ -327,7 +394,7 @@ export default function BasicResults() {
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            Get Advanced Assessment - $49
+            Get Advanced Assessment - $20
             <ArrowRight size={18} />
           </button>
         </motion.div>
