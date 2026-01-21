@@ -38,3 +38,8 @@ externalPort = 3000
 [agent]
 expertMode = true
 integrations = ["github:1.0.0"]
+
+[userenv]
+
+[userenv.development]
+VITE_API_URL = "https://api.aifluens.com"
