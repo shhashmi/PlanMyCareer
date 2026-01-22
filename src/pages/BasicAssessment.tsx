@@ -89,7 +89,16 @@ export default function BasicAssessment() {
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
       } else {
-        // Assessment complete - navigate to results with session_id
+        // Assessment complete - submit assessment before navigating to results
+        const submitResponse = await assessmentService.submitAssessment({
+          session_id: assessmentData.session_id,
+        })
+
+        if (!submitResponse.success) {
+          setError(submitResponse.error?.message || 'Failed to submit assessment')
+          return
+        }
+
         navigate('/basic-results', { state: { sessionId: assessmentData.session_id } })
       }
     } catch (err) {

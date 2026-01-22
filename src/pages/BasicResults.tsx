@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
-import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
+import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown, DifficultyLevel } from '../types/api.types';
 
 export default function BasicResults() {
   const navigate = useNavigate()
@@ -127,6 +127,21 @@ export default function BasicResults() {
     if (percentage >= 60) return { status: 'good', label: 'Good', color: 'var(--primary-light)' }
     if (percentage >= 40) return { status: 'fair', label: 'Needs Work', color: 'var(--accent)' }
     return { status: 'poor', label: 'Needs Improvement', color: 'var(--error)' }
+  }
+
+  // Get top 4 focus areas sorted by difficulty level (Expert > Advanced > Intermediate > Basic)
+  // TODO: Consider priority order also when picking top 4 items (e.g., lower score_percentage should have higher priority within same difficulty)
+  const getTopFocusAreas = (scores: DimensionScoreBreakdown[]): DimensionScoreBreakdown[] => {
+    const difficultyOrder: Record<DifficultyLevel, number> = {
+      'Expert': 0,
+      'Advanced': 1,
+      'Intermediate': 2,
+      'Basic': 3
+    }
+
+    return [...scores]
+      .sort((a, b) => difficultyOrder[a.difficulty_level] - difficultyOrder[b.difficulty_level])
+      .slice(0, 4)
   }
 
   if (loading) {
@@ -534,18 +549,39 @@ export default function BasicResults() {
                   </div>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Assessments Taken</p>
                 </div>
+              </div>
 
-                <div style={{
-                  background: 'var(--surface-light)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--accent)' }}>
-                    {aggregateReport.total_correct}/{aggregateReport.total_questions}
+              {/* Top Focus Areas */}
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                Top Focus Areas
+              </h3>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginBottom: '32px'
+              }}>
+                {getTopFocusAreas(aggregateReport.dimension_scores).map((score) => (
+                  <div
+                    key={`${score.dimension}-${score.difficulty_level}`}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                      border: '1px solid var(--primary)',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                      {getDimensionName(score.dimension)}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {score.difficulty_level}
+                    </span>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Total Correct</p>
-                </div>
+                ))}
               </div>
 
               {/* Dimension Breakdown */}

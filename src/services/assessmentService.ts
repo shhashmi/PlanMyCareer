@@ -19,6 +19,8 @@ import type {
   SaveAnswerResponse,
   AssessmentSummary,
   BasicAssessmentReport,
+  SubmitAssessmentRequest,
+  SubmitAssessmentResponse,
 } from '../types/api.types';
 
 // Mapping from proficiency levels to difficulty levels
@@ -117,6 +119,28 @@ class AssessmentService {
         error: {
           status: error.response?.status || 0,
           message: error.response?.data?.error || error.message || 'Failed to save answer',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Submit assessment to mark it as complete
+   */
+  async submitAssessment(request: SubmitAssessmentRequest): Promise<ApiResponse<SubmitAssessmentResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/v1/assessments/submit', request);
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to submit assessment',
           details: error.response?.data,
         },
       };
