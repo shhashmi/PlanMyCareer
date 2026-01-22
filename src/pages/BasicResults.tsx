@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
-import type { AssessmentSummary, CompetencyBreakdown, Dimension } from '../types/api.types';
+import { useApp } from '../context/AppContext';
+import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown, DifficultyLevel } from '../types/api.types';
 
 export default function BasicResults() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { apiProfile } = useApp()
 
   // Get session_id from route state
   const sessionId = location.state?.sessionId as number | undefined
@@ -16,6 +18,11 @@ export default function BasicResults() {
   const [dimensions, setDimensions] = useState<Dimension[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [retakingAssessment, setRetakingAssessment] = useState(false)
+  const [aggregateReport, setAggregateReport] = useState<BasicAssessmentReport | null>(null)
+  const [showAggregateModal, setShowAggregateModal] = useState(false)
+  const [loadingAggregate, setLoadingAggregate] = useState(false)
+  const [aggregateError, setAggregateError] = useState<string | null>(null)
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
@@ -70,6 +77,73 @@ export default function BasicResults() {
     return { status: 'poor', label: 'Needs Improvement', color: 'var(--error)' }
   }
 
+  const handleRetakeAssessment = async () => {
+    if (!apiProfile) {
+      setError('Profile data not available. Please try again.')
+      return
+    }
+
+    setRetakingAssessment(true)
+    setError(null)
+
+    try {
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15)
+      const response = await assessmentService.startAssessment(request)
+
+      if (response.success && response.data) {
+        navigate('/basic-assessment', { state: { assessmentData: response.data } })
+      } else {
+        setError(response.error?.message || 'Failed to start assessment')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setRetakingAssessment(false)
+    }
+  }
+
+  const handleViewAggregate = async () => {
+    setLoadingAggregate(true)
+    setAggregateError(null)
+
+    try {
+      const response = await assessmentService.getBasicAssessmentReport()
+
+      if (response.success && response.data) {
+        setAggregateReport(response.data)
+        setShowAggregateModal(true)
+      } else {
+        setAggregateError(response.error?.message || 'Failed to load aggregate report')
+      }
+    } catch (err) {
+      setAggregateError('An unexpected error occurred')
+    } finally {
+      setLoadingAggregate(false)
+    }
+  }
+
+  const getScoreStatus = (percentage: number) => {
+    if (percentage >= 80) return { status: 'excellent', label: 'Excellent', color: 'var(--secondary)' }
+    if (percentage >= 60) return { status: 'good', label: 'Good', color: 'var(--primary-light)' }
+    if (percentage >= 40) return { status: 'fair', label: 'Needs Work', color: 'var(--accent)' }
+    return { status: 'poor', label: 'Needs Improvement', color: 'var(--error)' }
+  }
+
+  // Get top 4 focus areas sorted by difficulty level (Expert > Advanced > Intermediate > Basic)
+  // TODO: Consider priority order also when picking top 4 items (e.g., lower score_percentage should have higher priority within same difficulty)
+  const getTopFocusAreas = (scores: DimensionScoreBreakdown[]): DimensionScoreBreakdown[] => {
+    const difficultyOrder: Record<DifficultyLevel, number> = {
+      'Expert': 0,
+      'Advanced': 1,
+      'Intermediate': 2,
+      'Basic': 3
+    }
+
+    return [...scores]
+      .sort((a, b) => difficultyOrder[a.difficulty_level] - difficultyOrder[b.difficulty_level])
+      .slice(0, 4)
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -111,7 +185,10 @@ export default function BasicResults() {
     ? Math.round((summary.total_correct / summary.total_questions) * 100)
     : 0
 
-  const excellentCount = summary.competency_breakdown.filter(c => getCompetencyStatus(c).status === 'excellent').length
+  const improvementCount = summary.competency_breakdown.filter(c => {
+    const status = getCompetencyStatus(c).status
+    return status !== 'excellent' && status !== 'good'
+  }).length
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
@@ -156,9 +233,12 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--secondary)', marginBottom: '8px' }}>
-              {summary.total_correct}/{summary.total_questions}
+              {summary.competency_breakdown.filter(c => {
+                const status = getCompetencyStatus(c).status
+                return status === 'excellent' || status === 'good'
+              }).length}/{summary.competency_breakdown.length}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Correct Answers</p>
+            <p style={{ color: 'var(--text-muted)' }}>Strengths</p>
           </motion.div>
 
           <motion.div
@@ -169,9 +249,9 @@ export default function BasicResults() {
             style={{ textAlign: 'center' }}
           >
             <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px' }}>
-              {excellentCount}/{summary.competency_breakdown.length}
+              {improvementCount}/{summary.competency_breakdown.length}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>Strong Areas</p>
+            <p style={{ color: 'var(--text-muted)' }}>Areas of Improvement</p>
           </motion.div>
         </div>
 
@@ -269,37 +349,79 @@ export default function BasicResults() {
           </div>
         </motion.div>
 
-        {/* Assessment metadata */}
-        {summary.metadata && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="card"
-            style={{ marginBottom: '40px' }}
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            display: 'flex',
+            gap: '16px',
+            marginBottom: '40px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <button
+            onClick={handleRetakeAssessment}
+            disabled={retakingAssessment}
+            className="btn-secondary"
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              justifyContent: 'center',
+              padding: '16px 24px'
+            }}
           >
-            <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
-              Assessment Details
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Role</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.role}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Experience</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.experience_years} years</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Company</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.company}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Country</p>
-                <p style={{ fontWeight: '500' }}>{summary.metadata.country}</p>
-              </div>
-            </div>
-          </motion.div>
+            {retakingAssessment ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={18} />
+                Retake Basic Assessment
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleViewAggregate}
+            disabled={loadingAggregate}
+            className="btn-secondary"
+            style={{
+              flex: 1,
+              minWidth: '200px',
+              justifyContent: 'center',
+              padding: '16px 24px'
+            }}
+          >
+            {loadingAggregate ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <BarChart3 size={18} />
+                View Aggregate Across All Assessments
+              </>
+            )}
+          </button>
+        </motion.div>
+
+        {(error || aggregateError) && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            color: '#ef4444',
+            textAlign: 'center'
+          }}>
+            {error || aggregateError}
+          </div>
         )}
 
         <motion.div
@@ -327,11 +449,222 @@ export default function BasicResults() {
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            Get Advanced Assessment - $49
+            Get Advanced Assessment - $20
             <ArrowRight size={18} />
           </button>
         </motion.div>
       </div>
+
+      {/* Aggregate Report Modal */}
+      <AnimatePresence>
+        {showAggregateModal && aggregateReport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              zIndex: 1000
+            }}
+            onClick={() => setShowAggregateModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--surface)',
+                borderRadius: '24px',
+                padding: '32px',
+                maxWidth: '700px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <BarChart3 size={28} color="var(--primary-light)" />
+                  Aggregate Assessment Report
+                </h2>
+                <button
+                  onClick={() => setShowAggregateModal(false)}
+                  style={{
+                    background: 'var(--surface-light)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <X size={20} color="var(--text-muted)" />
+                </button>
+              </div>
+
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Combined results across all your completed basic assessments
+              </p>
+
+              {/* Overall Stats */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                gap: '16px',
+                marginBottom: '32px'
+              }}>
+                <div style={{
+                  background: 'var(--surface-light)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--primary-light)' }}>
+                    {aggregateReport.overall_score_percentage}%
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Overall Score</p>
+                </div>
+
+                <div style={{
+                  background: 'var(--surface-light)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--secondary)' }}>
+                    {aggregateReport.total_assessments}
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Assessments Taken</p>
+                </div>
+              </div>
+
+              {/* Top Focus Areas */}
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                Top Focus Areas
+              </h3>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginBottom: '32px'
+              }}>
+                {getTopFocusAreas(aggregateReport.dimension_scores).map((score) => (
+                  <div
+                    key={`${score.dimension}-${score.difficulty_level}`}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                      border: '1px solid var(--primary)',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                      {getDimensionName(score.dimension)}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {score.difficulty_level}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Dimension Breakdown */}
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+                Performance by Dimension
+              </h3>
+
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {aggregateReport.dimension_scores.map((score: DimensionScoreBreakdown) => {
+                  const statusInfo = getScoreStatus(score.score_percentage)
+
+                  return (
+                    <div
+                      key={score.dimension}
+                      style={{
+                        background: 'var(--surface-light)',
+                        borderRadius: '12px',
+                        padding: '16px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: '500' }}>
+                            {getDimensionName(score.dimension)}
+                          </h4>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            background: `${statusInfo.color}20`,
+                            color: statusInfo.color
+                          }}>
+                            {statusInfo.label}
+                          </span>
+                        </div>
+                        <span style={{ fontWeight: '600', color: statusInfo.color }}>
+                          {score.score_percentage}%
+                        </span>
+                      </div>
+
+                      <div style={{ position: 'relative', height: '8px', background: 'var(--surface)', borderRadius: '4px' }}>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            height: '100%',
+                            width: `${score.score_percentage}%`,
+                            background: statusInfo.color,
+                            borderRadius: '4px',
+                            transition: 'width 0.5s ease'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: 'var(--text-muted)'
+                      }}>
+                        <span>{score.correct_answers} of {score.total_questions} correct</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                <button
+                  onClick={() => setShowAggregateModal(false)}
+                  className="btn-primary"
+                  style={{ padding: '12px 32px' }}
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

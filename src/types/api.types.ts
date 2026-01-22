@@ -163,3 +163,36 @@ export interface AssessmentSummary {
   total_correct: number;
   competency_breakdown: CompetencyBreakdown[];
 }
+
+// Aggregate Report Types
+export interface DimensionScoreBreakdown {
+  dimension: DimensionCode;
+  difficulty_level: DifficultyLevel;
+  total_questions: number;
+  correct_answers: number;
+  score_percentage: number;
+}
+
+export interface BasicAssessmentReport {
+  user_id: number;
+  total_assessments: number;
+  total_questions: number;
+  total_correct: number;
+  overall_score_percentage: number;
+  dimension_scores: DimensionScoreBreakdown[];
+}
+
+// Submit Assessment types
+export interface SubmitAssessmentRequest {
+  session_id: number;
+}
+
+// DimensionScores is a map of dimension code to score percentage (0-100)
+export type DimensionScores = Record<DimensionCode, number>;
+
+export interface SubmitAssessmentResponse {
+  session_id: number;
+  total_questions: number;
+  dimension_scores: DimensionScores;
+  completed_at: string;
+}

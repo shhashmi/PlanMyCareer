@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -13,26 +14,46 @@ import AdvancedResults from './pages/AdvancedResults';
 import UpskillPlan from './pages/UpskillPlan';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
+import Profile from './pages/Profile';
+import ResumeAssessment from './pages/ResumeAssessment';
 import ProtectedRoute from './components/ProtectedRoute';
+import { initGA } from './lib/analytics';
+import { useAnalytics } from './hooks/useAnalytics';
+
+function AppRoutes() {
+  useAnalytics();
+  
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/skills" element={<Skills />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/assessment" element={<ProtectedRoute><AssessmentChoice /></ProtectedRoute>} />
+      <Route path="/basic-assessment" element={<ProtectedRoute><BasicAssessment /></ProtectedRoute>} />
+      <Route path="/basic-results" element={<ProtectedRoute><BasicResults /></ProtectedRoute>} />
+      <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+      <Route path="/advanced-assessment" element={<ProtectedRoute><AdvancedAssessment /></ProtectedRoute>} />
+      <Route path="/advanced-results" element={<ProtectedRoute><AdvancedResults /></ProtectedRoute>} />
+      <Route path="/upskill-plan" element={<ProtectedRoute><UpskillPlan /></ProtectedRoute>} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
+    </Routes>
+  );
+}
 
 function App() {
+  useEffect(() => {
+    if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      initGA();
+    }
+  }, []);
+
   return (
     <div className="app" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/skills" element={<Skills />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/assessment" element={<ProtectedRoute><AssessmentChoice /></ProtectedRoute>} />
-        <Route path="/basic-assessment" element={<ProtectedRoute><BasicAssessment /></ProtectedRoute>} />
-        <Route path="/basic-results" element={<ProtectedRoute><BasicResults /></ProtectedRoute>} />
-        <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
-        <Route path="/advanced-assessment" element={<ProtectedRoute><AdvancedAssessment /></ProtectedRoute>} />
-        <Route path="/advanced-results" element={<ProtectedRoute><AdvancedResults /></ProtectedRoute>} />
-        <Route path="/upskill-plan" element={<ProtectedRoute><UpskillPlan /></ProtectedRoute>} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-use" element={<TermsOfUse />} />
-      </Routes>
+      <AppRoutes />
       <Footer />
     </div>
   );

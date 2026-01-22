@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://aifluens.com/sitemap.xml
+
+# Disallow admin and private paths
+Disallow: /api/
+Disallow: /admin/
+
+# Allow search engines to crawl all public pages
+Allow: /
+Allow: /skills
+Allow: /login
+Allow: /privacy-policy
+Allow: /terms-of-use
+
+# Crawl delay (optional, be respectful to servers)
+Crawl-delay: 1

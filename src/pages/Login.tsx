@@ -23,9 +23,14 @@ export default function Login() {
     }
   }, [searchParams]);
 
-  const handleSocialLogin = (provider: string) => {
+  const getAuthLoginUrl = (provider: string) => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://api.aifluens.com';
-    window.location.href = `${apiUrl}/api/v1/auth/login/${provider}`;
+    const frontend = window.location.hostname.includes('replit.dev') ? 'replit' : 'prod';
+    return `${apiUrl}/api/v1/auth/login/${provider}?frontend=${frontend}`;
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    window.location.href = getAuthLoginUrl(provider);
   };
 
   return (

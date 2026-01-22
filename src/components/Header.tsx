@@ -1,11 +1,24 @@
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LogOut, LogIn } from "lucide-react";
+import { User, LogOut, LogIn, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import logoImage from "@assets/logo-1_1767800057394.png";
 
 export default function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useApp();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -57,35 +70,98 @@ export default function Header() {
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           {isLoggedIn ? (
-            <>
-              <div
+            <div ref={menuRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
+                  padding: "8px 12px",
+                  background: "var(--surface-light)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "8px",
                   color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 <User size={18} />
                 <span>{user?.name || "User"}</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--text-muted)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-              >
-                <LogOut size={16} />
-                Logout
+                <ChevronDown size={16} style={{ 
+                  transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.2s"
+                }} />
               </button>
-            </>
+
+              {menuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 0,
+                    marginTop: "8px",
+                    minWidth: "160px",
+                    background: "#0a1628",
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
+                    overflow: "hidden",
+                    zIndex: 200,
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "12px 16px",
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-secondary)",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <User size={16} />
+                    View Profile
+                  </button>
+                  <div style={{ height: "1px", background: "var(--border)" }} />
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleLogout();
+                    }}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "12px 16px",
+                      background: "transparent",
+                      border: "none",
+                      color: "#ef4444",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button
               onClick={() => navigate("/login")}
