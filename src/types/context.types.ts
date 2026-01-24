@@ -12,7 +12,7 @@ export interface User {
 }
 
 export interface ProfileData {
-  experience: string;
+  experience_years: string;
   role: string;
   title: string;
   company: string;

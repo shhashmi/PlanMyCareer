@@ -10,7 +10,7 @@ interface ProfileFormData {
   name: string;
   email: string;
   phone: string;
-  experience: string;
+  experience_years: string;
   role: string;
   company: string;
   country: string;
@@ -29,7 +29,7 @@ export default function Profile() {
     name: '',
     email: '',
     phone: '',
-    experience: '',
+    experience_years: '',
     role: '',
     company: '',
     country: '',
@@ -63,7 +63,7 @@ export default function Profile() {
       name: user?.name || '',
       email: user?.email || '',
       phone: '',
-      experience: profileData?.experience || '',
+      experience_years: profileData?.experience_years || '',
       role: profileData?.role || '',
       company: profileData?.company || '',
       country: profileData?.country || '',
@@ -108,7 +108,7 @@ export default function Profile() {
       name: user?.name || '',
       email: user?.email || '',
       phone: '',
-      experience: profileData?.experience || '',
+      experience_years: profileData?.experience_years || '',
       role: profileData?.role || '',
       company: profileData?.company || '',
       country: profileData?.country || '',
@@ -313,8 +313,8 @@ export default function Profile() {
                 </label>
                 <input
                   type="text"
-                  name="experience"
-                  value={formData.experience}
+                  name="experience_years"
+                  value={formData.experience_years}
                   onChange={handleChange}
                   readOnly={!isEditing}
                   style={inputStyle(isEditing)}

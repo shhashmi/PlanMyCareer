@@ -9,13 +9,15 @@ import type { ProfileFormData, Role } from '../types/api.types';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setProfileData, setSkills, setApiProfile } = useApp();
+  const { setProfileData, setSkills, setApiProfile, user } = useApp();
+
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
 
   const [formData, setFormData] = useState<ProfileFormData>({
-    experience: '',
+    experience_years: '',
     role: '',
     title: '',
     company: '',
@@ -45,6 +47,46 @@ export default function Home() {
     fetchRoles();
   }, []);
 
+  // Check for profile and incomplete session on mount (if user is logged in)
+  useEffect(() => {
+    async function checkUserStatus() {
+      if (!user) {
+        // Not logged in, show normal home page
+        setIsCheckingStatus(false);
+        return;
+      }
+
+      try {
+        // Check if user has a profile
+        const profileResponse = await fluencyService.getProfile();
+        
+        if (!profileResponse.success || !profileResponse.data) {
+          // No profile, redirect to /profile
+          navigate('/profile');
+          return;
+        }
+
+        // User has profile, check for incomplete assessment
+        const incompleteResponse = await fluencyService.getIncompleteSession();
+        
+        if (incompleteResponse.success && incompleteResponse.data?.has_incomplete) {
+          // Has incomplete session, redirect to assessment page
+          const sessionId = incompleteResponse.data.session.session_id;
+          navigate(`/basic-assessment?session_id=${sessionId}&resume=true`);
+          return;
+        }
+
+        // User has profile and no incomplete session, show normal home
+        setIsCheckingStatus(false);
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        setIsCheckingStatus(false);
+      }
+    }
+
+    checkUserStatus();
+  }, [user, navigate]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -58,7 +100,7 @@ export default function Home() {
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProfileFormData, string>> = {};
-    if (!formData.experience) newErrors.experience = 'Experience is required';
+    if (!formData.experience_years) newErrors.experience_years = 'Experience is required';
     if (!formData.role) newErrors.role = 'Role is required';
     if (!formData.company) newErrors.company = 'Company is required';
     if (!formData.country) newErrors.country = 'Country is required';
@@ -89,7 +131,7 @@ export default function Home() {
 
         // Store form data in context
         setProfileData({
-          experience: formData.experience,
+          experience_years: formData.experience_years,
           role: formData.role,
           title: formData.title,
           company: formData.company,
@@ -141,6 +183,31 @@ export default function Home() {
     fontWeight: '500',
     color: 'var(--text-secondary)'
   };
+
+  // Show loading while checking user status
+  if (isCheckingStatus) {
+    return (
+      <div style={{ 
+        minHeight: 'calc(100vh - 80px)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            border: '4px solid rgba(20, 184, 166, 0.2)', 
+            borderTop: '4px solid var(--primary)', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <p style={{ color: 'var(--text-secondary)' }}>Checking your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
@@ -238,20 +305,20 @@ export default function Home() {
                   <Clock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type="number"
-                    name="experience"
+                    name="experience_years"
                     placeholder="e.g., 5"
-                    value={formData.experience}
+                    value={formData.experience_years}
                     onChange={handleChange}
                     style={{
                       ...inputStyle,
-                      borderColor: errors.experience ? 'var(--error)' : 'var(--border)'
+                      borderColor: errors.experience_years ? 'var(--error)' : 'var(--border)'
                     }}
                     min="0"
                     max="50"
                     disabled={isLoading}
                   />
                 </div>
-                {errors.experience && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.experience}</span>}
+                {errors.experience_years && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.experience_years}</span>}
               </div>
 
               <div>

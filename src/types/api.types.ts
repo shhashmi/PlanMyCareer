@@ -30,7 +30,7 @@ export interface FluencyProfileResponse {
 
 // Profile Request Data
 export interface ProfileRequestData {
-  experience: number;
+  experience_years: number;
   role: string;
   title: string;
   company: string;
@@ -42,7 +42,7 @@ export interface ProfileRequestData {
 
 // Form Data
 export interface ProfileFormData {
-  experience: string;
+  experience_years: string;
   role: string;
   title: string;
   company: string;
