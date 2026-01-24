@@ -40,7 +40,7 @@ class AssessmentService {
    */
   async getDimensions(): Promise<ApiResponse<Dimension[]>> {
     try {
-      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/v1/questions/dimensions');
+      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/questions/dimensions');
       this.dimensionsCache = response.data.data.dimensions;
       return {
         success: true,
@@ -63,7 +63,7 @@ class AssessmentService {
    */
   async getRoles(): Promise<ApiResponse<Role[]>> {
     try {
-      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/v1/questions/roles');
+      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/questions/roles');
       this.rolesCache = response.data.data.roles;
       return {
         success: true,
@@ -86,7 +86,7 @@ class AssessmentService {
    */
   async startAssessment(request: AssessmentStartRequest): Promise<ApiResponse<AssessmentStartResponse>> {
     try {
-      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/start', request);
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/assessments/start', request);
       return {
         success: true,
         data: response.data.data,
@@ -104,11 +104,33 @@ class AssessmentService {
   }
 
   /**
+   * Resume last incomplete assessment session
+   */
+  async resumeAssessment(): Promise<ApiResponse<AssessmentStartResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/assessments/resume');
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to resume assessment',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
    * Save an answer for a question
    */
   async saveAnswer(request: SaveAnswerRequest): Promise<ApiResponse<SaveAnswerResponse>> {
     try {
-      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/v1/assessments/save-answer', request);
+      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/assessments/save-answer', request);
       return {
         success: true,
         data: response.data.data,
@@ -130,7 +152,7 @@ class AssessmentService {
    */
   async submitAssessment(request: SubmitAssessmentRequest): Promise<ApiResponse<SubmitAssessmentResponse>> {
     try {
-      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/v1/assessments/submit', request);
+      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/assessments/submit', request);
       return {
         success: true,
         data: response.data.data,
@@ -152,7 +174,7 @@ class AssessmentService {
    */
   async getAssessmentSummary(sessionId: number): Promise<ApiResponse<AssessmentSummary>> {
     try {
-      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/v1/assessments/${sessionId}/summary`);
+      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/assessments/${sessionId}/summary`);
       return {
         success: true,
         data: response.data.data,
@@ -175,7 +197,7 @@ class AssessmentService {
    */
   mapProfileToDimensions(apiProfile: FluencyProfileResponse, dimensions: Dimension[]): EvaluatedDimension[] {
     console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions });
-    
+
     const nameToCode: Record<string, DimensionCode> = {};
     dimensions.forEach(dim => {
       nameToCode[dim.name.toLowerCase().trim()] = dim.dimension_code;
@@ -187,12 +209,12 @@ class AssessmentService {
         const dimensionCode = nameToCode[normalizedName];
         const difficultyLevel = PROFICIENCY_TO_DIFFICULTY[skill.proficiency];
 
-        console.log('🔍 Mapping skill:', { 
-          skillName: skill.name, 
+        console.log('🔍 Mapping skill:', {
+          skillName: skill.name,
           normalizedName,
           proficiency: skill.proficiency,
-          dimensionCode, 
-          difficultyLevel 
+          dimensionCode,
+          difficultyLevel
         });
 
         if (!dimensionCode || !difficultyLevel) {
@@ -271,7 +293,7 @@ class AssessmentService {
    */
   async getBasicAssessmentReport(): Promise<ApiResponse<BasicAssessmentReport>> {
     try {
-      const response = await api.get<{ status: string; data: BasicAssessmentReport }>('/v1/reports/basic-assessment');
+      const response = await api.get<{ status: string; data: BasicAssessmentReport }>('/reports/basic-assessment');
       return {
         success: true,
         data: response.data.data,

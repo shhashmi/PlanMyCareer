@@ -11,8 +11,8 @@ export default function BasicResults() {
   const location = useLocation()
   const { apiProfile } = useApp()
 
-  // Get session_id from route state
-  const sessionId = location.state?.sessionId as number | undefined
+  // Get session_id from route state or URL params
+  const [sessionId, setSessionId] = useState<number | undefined>(location.state?.sessionId)
 
   const [summary, setSummary] = useState<AssessmentSummary | null>(null)
   const [dimensions, setDimensions] = useState<Dimension[]>([])
@@ -24,13 +24,21 @@ export default function BasicResults() {
   const [loadingAggregate, setLoadingAggregate] = useState(false)
   const [aggregateError, setAggregateError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
-  
+
   const isProduction = import.meta.env.PROD
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
-    if (!sessionId) {
-      navigate('/assessment-choice')
+    const params = new URLSearchParams(location.search)
+    const urlSessionId = params.get('session_id')
+
+    if (!sessionId && urlSessionId) {
+      setSessionId(parseInt(urlSessionId))
+      return
+    }
+
+    if (!sessionId && !urlSessionId) {
+      navigate('/assessment')
       return
     }
 
@@ -176,7 +184,7 @@ export default function BasicResults() {
           <AlertCircle size={48} style={{ color: 'var(--error)', marginBottom: '16px' }} />
           <h2 style={{ marginBottom: '12px' }}>Unable to Load Results</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>{error || 'Something went wrong'}</p>
-          <button onClick={() => navigate('/assessment-choice')} className="btn-primary">
+          <button onClick={() => navigate('/assessment')} className="btn-primary">
             Try Again
           </button>
         </div>

@@ -19,7 +19,7 @@ class FluencyService {
    */
   async resolveProfile(profileData: ProfileRequestData): Promise<ApiResponse<FluencyProfileResponse>> {
     try {
-      const response = await api.post<FluencyProfileResponse>('/v1/fluency/resolve', profileData);
+      const response = await api.post<FluencyProfileResponse>('/fluency/resolve', profileData);
       return {
         success: true,
         data: response.data,

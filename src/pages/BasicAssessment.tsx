@@ -13,13 +13,16 @@ export default function BasicAssessment() {
   const location = useLocation()
 
   // Get assessment data from route state
-  const assessmentData = location.state?.assessmentData as AssessmentStartResponse | undefined
+  const locationState = location.state as { assessmentData?: AssessmentStartResponse } | null
+
+  const [assessmentData, setAssessmentData] = useState<AssessmentStartResponse | undefined>(locationState?.assessmentData)
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<number, SelectedOption>>({})
   const [savingAnswer, setSavingAnswer] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dimensions, setDimensions] = useState<Dimension[]>([])
+  const [loading, setLoading] = useState(!assessmentData)
 
   // Fetch dimensions for display names
   useEffect(() => {
@@ -30,12 +33,59 @@ export default function BasicAssessment() {
     fetchDimensions()
   }, [])
 
-  // Redirect if no assessment data
+  // Handle resume from URL if state is missing
   useEffect(() => {
-    if (!assessmentData) {
-      navigate('/assessment-choice')
+    const handleResume = async () => {
+      if (assessmentData) return
+
+      const params = new URLSearchParams(location.search)
+      const sessionId = params.get('session_id')
+      const isResume = params.get('resume') === 'true'
+
+      if (isResume && sessionId) {
+        setLoading(true)
+        try {
+          const response = await assessmentService.resumeAssessment()
+          // Note: resumeAssessment in service usually returns the last incomplete session
+          // We need to verify if we should use the sessionId from URL
+          if (response.success && response.data) {
+            const data = response.data
+            setAssessmentData(data)
+
+            // Populate existing answers
+            const existingAnswers: Record<number, SelectedOption> = {}
+            let firstUnansweredIndex = -1
+
+            data.questions.forEach((q, index) => {
+              if (q.is_answered && q.selected_option) {
+                existingAnswers[q.question_id] = q.selected_option
+              } else if (firstUnansweredIndex === -1) {
+                firstUnansweredIndex = index
+              }
+            })
+
+            setAnswers(existingAnswers)
+
+            // Start from first unanswered question, or the first one if all answered (shouldn't happen for incomplete)
+            if (firstUnansweredIndex !== -1) {
+              setCurrentQuestionIndex(firstUnansweredIndex)
+            }
+          } else {
+            setError(response.error?.message || 'Failed to resume assessment')
+          }
+        } catch (err) {
+          setError('An unexpected error occurred while resuming')
+        } finally {
+          setLoading(false)
+        }
+      } else {
+        // No session data and not a resume attempt
+        navigate('/assessment')
+      }
     }
-  }, [assessmentData, navigate])
+
+    handleResume()
+  }, [assessmentData, location.search, navigate])
 
   // Get full dimension name from code
   const getDimensionName = (code: DimensionCode): string => {
@@ -43,8 +93,24 @@ export default function BasicAssessment() {
     return dim?.name || code
   }
 
-  if (!assessmentData) {
-    return null
+  if (loading) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={48} className="animate-spin" color="var(--primary)" />
+      </div>
+    );
+  }
+
+  if (!assessmentData || !assessmentData.questions || assessmentData.questions.length === 0) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ marginBottom: '16px' }}>No Questions Found</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>We couldn't find any questions for your profile. Please try again or update your profile.</p>
+          <button onClick={() => navigate('/assessment')} className="btn-primary">Back to Selection</button>
+        </div>
+      </div>
+    );
   }
 
   const questions = assessmentData.questions

@@ -101,6 +101,8 @@ export interface AssessmentQuestion {
   option_b: string;
   option_c: string;
   option_d: string;
+  is_answered?: boolean;
+  selected_option?: SelectedOption | null;
 }
 
 export interface AssessmentStartResponse {
@@ -108,6 +110,8 @@ export interface AssessmentStartResponse {
   assessment_type: 'basic' | 'advanced';
   started_at: string;
   questions: AssessmentQuestion[];
+  answered_count?: number;
+  total_questions?: number;
 }
 
 // Dimension from API

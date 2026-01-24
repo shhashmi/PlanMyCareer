@@ -72,7 +72,7 @@ export function AppProvider({ children }: AppProviderProps) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await api.get('/v1/auth/me');
+        const response = await api.get('/auth/me');
         if (response.data.status === 'success') {
           setUser(response.data.data.user);
           setIsLoggedIn(true);
@@ -93,7 +93,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const logout = async () => {
     try {
-      await api.post('/v1/auth/logout');
+      await api.post('/auth/logout');
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
