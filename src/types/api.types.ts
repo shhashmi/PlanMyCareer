@@ -30,14 +30,15 @@ export interface FluencyProfileResponse {
 
 // Profile Request Data
 export interface ProfileRequestData {
-  experience: number;
+  experience_years: number;
   role: string;
-  title: string;
+  title?: string;
   company: string;
   country: string;
-  company_type: string;
-  geography: string;
+  company_type?: string;
+  geography?: string;
   goal?: string;
+  min_fluency_level?: DifficultyLevel;
 }
 
 // Form Data
@@ -190,9 +191,16 @@ export interface SubmitAssessmentRequest {
 // DimensionScores is a map of dimension code to score percentage (0-100)
 export type DimensionScores = Record<DimensionCode, number>;
 
-export interface SubmitAssessmentResponse {
+// AssessmentSession returned by submit endpoint
+export interface AssessmentSession {
   session_id: number;
-  total_questions: number;
-  dimension_scores: DimensionScores;
-  completed_at: string;
+  user_id: number;
+  assessment_type: 'basic' | 'advanced';
+  started_at: string;
+  completed_at: string | null;
+  is_complete: boolean;
+  metadata: AssessmentMetadata;
 }
+
+// SubmitAssessmentResponse is now an AssessmentSession
+export type SubmitAssessmentResponse = AssessmentSession;

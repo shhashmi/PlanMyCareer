@@ -42,7 +42,7 @@ class FluencyService {
    */
   mapFormDataToRequest(formData: ProfileFormData): ProfileRequestData {
     return {
-      experience: parseInt(formData.experience) || 0,
+      experience_years: parseInt(formData.experience) || 0,
       role: formData.role || '',
       title: formData.title || '',
       company: formData.company || '',
@@ -57,8 +57,8 @@ class FluencyService {
    * Validate profile data before sending
    */
   validateProfileData(profileData: Partial<ProfileRequestData>): ValidationResult {
-    const required: (keyof ProfileRequestData)[] = ['experience', 'role', 'title', 'company', 'country'];
-    const missing = required.filter(field => !profileData[field]);
+    const required: (keyof ProfileRequestData)[] = ['experience_years', 'role', 'company', 'country'];
+    const missing = required.filter(field => profileData[field] === undefined || profileData[field] === '');
 
     if (missing.length > 0) {
       return {
@@ -68,7 +68,7 @@ class FluencyService {
       };
     }
 
-    if (profileData.experience !== undefined && (profileData.experience < 0 || profileData.experience > 100)) {
+    if (profileData.experience_years !== undefined && (profileData.experience_years < 0 || profileData.experience_years > 100)) {
       return {
         valid: false,
         message: 'Experience must be between 0 and 100 years',

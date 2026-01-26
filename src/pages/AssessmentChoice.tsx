@@ -319,10 +319,13 @@ export default function AssessmentChoice() {
               </div>
 
               <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-                Thank You for Your Interest!
+                Something Awesome is Brewing!
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6' }}>
-                Advanced Assessment will be available soon. We're working hard to bring you an AI-powered deep analysis experience.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
+                Our Advanced Assessment is getting its final polish and will be ready to supercharge your AI journey very soon!
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
+                In the meantime, take the Basic Assessment to get a head start on discovering your AI superpowers.
               </p>
 
               <button
@@ -330,7 +333,7 @@ export default function AssessmentChoice() {
                 className="btn-primary"
                 style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
               >
-                Got it
+                Sounds Great!
               </button>
             </motion.div>
           </motion.div>
