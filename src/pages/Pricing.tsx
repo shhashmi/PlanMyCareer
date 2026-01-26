@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, Zap, Crown } from 'lucide-react';
+import { useAdvancedAssessment } from '../hooks/useAdvancedAssessment';
+import ComingSoonModal from '../components/ComingSoonModal';
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { showComingSoon, handleGetAdvancedAssessment, closeComingSoon } = useAdvancedAssessment();
 
   const plans = [
     {
@@ -41,7 +44,7 @@ export default function Pricing() {
       ],
       cta: 'Get Advanced Assessment',
       primary: true,
-      onClick: () => navigate('/payment')
+      onClick: handleGetAdvancedAssessment
     }
   ];
 
@@ -186,6 +189,8 @@ export default function Pricing() {
           })}
         </div>
       </div>
+
+      <ComingSoonModal isOpen={showComingSoon} onClose={closeComingSoon} />
     </div>
   );
 }

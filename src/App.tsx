@@ -20,6 +20,10 @@ import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 import Pricing from './pages/Pricing';
 import WeeklyPlan from './pages/WeeklyPlan';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
+import Sitemap from './pages/Sitemap';
+import RefundPolicy from './pages/RefundPolicy';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -121,6 +125,10 @@ function AppRoutes() {
       <Route path="/faq" element={<FAQ />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/weekly-plan" element={<ProtectedRoute><WeeklyPlan /></ProtectedRoute>} />
+      <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route path="/sitemap" element={<Sitemap />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
     </Routes>
   );
 }
