@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, Phone, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
+import { profileService, type CreateProfileRequest, type UserProfile } from '../services/profileService';
 import type { Role } from '../types/api.types';
 
 interface ProfileFormData {
@@ -15,15 +16,21 @@ interface ProfileFormData {
   company: string;
   country: string;
   goal: string;
+  title: string;
+  company_type: string;
+  geography: string;
 }
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, profileData } = useApp();
+  const { user, isLoggedIn, setProfileData } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchingProfile, setFetchingProfile] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [serverProfile, setServerProfile] = useState<UserProfile | null>(null);
   
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '',
@@ -33,7 +40,10 @@ export default function Profile() {
     role: '',
     company: '',
     country: '',
-    goal: ''
+    goal: '',
+    title: '',
+    company_type: '',
+    geography: ''
   });
 
   useEffect(() => {
@@ -43,33 +53,51 @@ export default function Profile() {
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
-    const fetchRoles = async () => {
+    const fetchData = async () => {
       try {
-        const response = await assessmentService.getRoles();
-        if (response.success && response.data) {
-          setRoles(response.data);
+        const [rolesResponse, profileResponse] = await Promise.all([
+          assessmentService.getRoles(),
+          profileService.getProfile()
+        ]);
+
+        if (rolesResponse.success && rolesResponse.data) {
+          setRoles(rolesResponse.data);
+        }
+
+        if (profileResponse.success && profileResponse.data) {
+          setServerProfile(profileResponse.data);
+          setFormData({
+            name: profileResponse.data.name || user?.name || '',
+            email: user?.email || '',
+            phone: '',
+            experience: String(profileResponse.data.experience_years || ''),
+            role: profileResponse.data.role || '',
+            company: profileResponse.data.company || '',
+            country: profileResponse.data.country || '',
+            goal: profileResponse.data.goal || '',
+            title: profileResponse.data.title || '',
+            company_type: profileResponse.data.company_type || '',
+            geography: profileResponse.data.geography || ''
+          });
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            name: user?.name || '',
+            email: user?.email || ''
+          }));
         }
       } catch (error) {
-        console.error('Failed to fetch roles:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
+        setFetchingProfile(false);
         setRolesLoading(false);
       }
     };
-    fetchRoles();
-  }, []);
-
-  useEffect(() => {
-    setFormData({
-      name: user?.name || '',
-      email: user?.email || '',
-      phone: '',
-      experience: profileData?.experience || '',
-      role: profileData?.role || '',
-      company: profileData?.company || '',
-      country: profileData?.country || '',
-      goal: profileData?.goal || ''
-    });
-  }, [user, profileData]);
+    
+    if (isLoggedIn) {
+      fetchData();
+    }
+  }, [isLoggedIn, user]);
 
   if (!isLoggedIn) {
     return (
@@ -87,34 +115,82 @@ export default function Profile() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setSaveMessage(null);
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setSaveMessage(null);
   };
 
   const handleSave = async () => {
+    if (!formData.role || !formData.company || !formData.country || !formData.experience) {
+      setSaveMessage({ type: 'error', text: 'Please fill in required fields: Role, Company, Country, and Experience' });
+      return;
+    }
+
     setLoading(true);
+    setSaveMessage(null);
+
     try {
-      setIsEditing(false);
+      const profileData: CreateProfileRequest = {
+        role: formData.role,
+        experience_years: parseInt(formData.experience) || 0,
+        company: formData.company,
+        country: formData.country,
+        name: formData.name || undefined,
+        title: formData.title || undefined,
+        company_type: formData.company_type || undefined,
+        geography: formData.geography || undefined,
+        goal: formData.goal || undefined
+      };
+
+      const response = await profileService.createProfile(profileData);
+
+      if (response.success && response.data) {
+        setServerProfile(response.data);
+        setProfileData({
+          experience: formData.experience,
+          role: formData.role,
+          title: formData.title,
+          company: formData.company,
+          country: formData.country,
+          company_type: formData.company_type,
+          geography: formData.geography,
+          goal: formData.goal
+        });
+        setSaveMessage({ type: 'success', text: 'Profile saved successfully!' });
+        setIsEditing(false);
+      } else {
+        setSaveMessage({ type: 'error', text: response.error?.message || 'Failed to save profile' });
+      }
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      setSaveMessage({ type: 'error', text: 'An error occurred while saving' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setFormData({
-      name: user?.name || '',
-      email: user?.email || '',
-      phone: '',
-      experience: profileData?.experience || '',
-      role: profileData?.role || '',
-      company: profileData?.company || '',
-      country: profileData?.country || '',
-      goal: profileData?.goal || ''
-    });
+    if (serverProfile) {
+      setFormData({
+        name: serverProfile.name || user?.name || '',
+        email: user?.email || '',
+        phone: '',
+        experience: String(serverProfile.experience_years || ''),
+        role: serverProfile.role || '',
+        company: serverProfile.company || '',
+        country: serverProfile.country || '',
+        goal: serverProfile.goal || '',
+        title: serverProfile.title || '',
+        company_type: serverProfile.company_type || '',
+        geography: serverProfile.geography || ''
+      });
+    }
     setIsEditing(false);
+    setSaveMessage(null);
   };
 
   const inputStyle = (editable: boolean) => ({
@@ -135,6 +211,19 @@ export default function Profile() {
     marginBottom: '6px',
     display: 'block'
   };
+
+  if (fetchingProfile) {
+    return (
+      <div style={{ 
+        minHeight: 'calc(100vh - 80px)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <p style={{ color: 'var(--text-secondary)' }}>Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
@@ -226,6 +315,24 @@ export default function Profile() {
             )}
           </div>
 
+          {saveMessage && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              background: saveMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              border: `1px solid ${saveMessage.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+              borderRadius: '12px',
+              color: saveMessage.type === 'success' ? '#10b981' : '#ef4444',
+              fontSize: '14px',
+              marginBottom: '24px'
+            }}>
+              {saveMessage.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+              {saveMessage.text}
+            </div>
+          )}
+
           <div
             style={{
               background: 'var(--surface)',
@@ -283,9 +390,8 @@ export default function Profile() {
                   type="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  style={inputStyle(isEditing)}
+                  readOnly
+                  style={inputStyle(false)}
                   placeholder="your@email.com"
                 />
               </div>
@@ -309,7 +415,7 @@ export default function Profile() {
               <div>
                 <label style={labelStyle}>
                   <Clock size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Years of Experience
+                  Years of Experience *
                 </label>
                 <input
                   type="text"
@@ -325,7 +431,7 @@ export default function Profile() {
               <div>
                 <label style={labelStyle}>
                   <Briefcase size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Role / Function
+                  Role / Function *
                 </label>
                 <select
                   name="role"
@@ -348,7 +454,7 @@ export default function Profile() {
               <div>
                 <label style={labelStyle}>
                   <Building size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Company
+                  Company *
                 </label>
                 <input
                   type="text"
@@ -364,7 +470,7 @@ export default function Profile() {
               <div>
                 <label style={labelStyle}>
                   <MapPin size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Country
+                  Country *
                 </label>
                 <input
                   type="text"
@@ -374,6 +480,22 @@ export default function Profile() {
                   readOnly={!isEditing}
                   style={inputStyle(isEditing)}
                   placeholder="Country"
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>
+                  <Briefcase size={12} style={{ display: 'inline', marginRight: '6px' }} />
+                  Job Title
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  readOnly={!isEditing}
+                  style={inputStyle(isEditing)}
+                  placeholder="e.g., Senior Developer"
                 />
               </div>
 

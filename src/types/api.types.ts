@@ -204,3 +204,21 @@ export interface AssessmentSession {
 
 // SubmitAssessmentResponse is now an AssessmentSession
 export type SubmitAssessmentResponse = AssessmentSession;
+
+// Question with answer state for resume
+export interface QuestionWithState extends AssessmentQuestion {
+  is_answered: boolean;
+  selected_option: SelectedOption | null;
+}
+
+// Incomplete Assessment Response
+export interface IncompleteAssessmentResponse {
+  session_id: number;
+  assessment_type: 'basic' | 'advanced';
+  started_at: string;
+  questions: QuestionWithState[];
+  answered_count: number;
+  total_questions: number;
+  metadata?: AssessmentMetadata;
+  evaluated_dimensions?: EvaluatedDimension[];
+}

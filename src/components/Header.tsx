@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, LogIn, ChevronDown } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useSmartNavigation } from "../hooks/useSmartNavigation";
 import logoImage from "@assets/logo-1_1767800057394.png";
 
 export default function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useApp();
+  const { smartNavigate, isNavigating } = useSmartNavigation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,11 +48,18 @@ export default function Header() {
         }}
       >
         <div
-          onClick={() => navigate("/")}
+          onClick={() => {
+            if (isLoggedIn) {
+              smartNavigate();
+            } else {
+              navigate("/");
+            }
+          }}
           style={{
             display: "flex",
             alignItems: "center",
-            cursor: "pointer",
+            cursor: isNavigating ? "wait" : "pointer",
+            opacity: isNavigating ? 0.7 : 1,
           }}
         >
           <img

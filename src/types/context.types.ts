@@ -3,7 +3,7 @@
  * Types for application state management
  */
 
-import { FluencyProfileResponse } from './api.types';
+import { FluencyProfileResponse, IncompleteAssessmentResponse } from './api.types';
 
 export interface User {
   email: string;
@@ -53,4 +53,6 @@ export interface AppContextType {
   setUpskillPlan: (plan: any) => void;
   apiProfile: FluencyProfileResponse | null;
   setApiProfile: (profile: FluencyProfileResponse | null) => void;
+  incompleteAssessment: IncompleteAssessmentResponse | null;
+  setIncompleteAssessment: (assessment: IncompleteAssessmentResponse | null) => void;
 }

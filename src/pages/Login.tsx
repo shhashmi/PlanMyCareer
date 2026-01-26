@@ -3,18 +3,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Chrome, Github, Linkedin, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
 
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isLoggedIn } = useApp();
+  const { smartNavigate } = useSmartNavigation();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate('/');
+      smartNavigate();
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, smartNavigate]);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');

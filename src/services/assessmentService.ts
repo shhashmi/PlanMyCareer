@@ -21,6 +21,7 @@ import type {
   BasicAssessmentReport,
   SubmitAssessmentRequest,
   SubmitAssessmentResponse,
+  IncompleteAssessmentResponse,
 } from '../types/api.types';
 
 // Mapping from proficiency levels to difficulty levels
@@ -263,6 +264,57 @@ class AssessmentService {
     }
     const response = await this.getRoles();
     return response.data || [];
+  }
+
+  /**
+   * Check for incomplete assessment
+   * Returns the incomplete assessment if exists, null otherwise
+   */
+  async checkIncompleteAssessment(): Promise<ApiResponse<IncompleteAssessmentResponse | null>> {
+    try {
+      const response = await api.get<{ status: string; data: IncompleteAssessmentResponse }>('/v1/assessments/incomplete');
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return {
+          success: true,
+          data: null,
+        };
+      }
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.message || error.message || 'Failed to check incomplete assessment',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Resume an incomplete assessment
+   */
+  async resumeAssessment(): Promise<ApiResponse<IncompleteAssessmentResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: IncompleteAssessmentResponse }>('/v1/assessments/resume');
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.message || error.message || 'Failed to resume assessment',
+          details: error.response?.data,
+        },
+      };
+    }
   }
 
   /**

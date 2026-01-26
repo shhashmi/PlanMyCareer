@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
 import Profile from './pages/Profile';
 import ResumeAssessment from './pages/ResumeAssessment';
+import AssessmentProgress from './pages/AssessmentProgress';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
+      <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
     </Routes>
   );
 }
