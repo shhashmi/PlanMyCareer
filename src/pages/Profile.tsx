@@ -1,47 +1,38 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { assessmentService } from '../services/assessmentService';
 import { profileService, type CreateProfileRequest, type UserProfile } from '../services/profileService';
-import type { Role } from '../types/api.types';
+import { fluencyService } from '../services/fluencyService';
 
 interface ProfileFormData {
   name: string;
-  email: string;
-  phone: string;
   experience: string;
   role: string;
   company: string;
   country: string;
   goal: string;
-  title: string;
   company_type: string;
   geography: string;
 }
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, setProfileData } = useApp();
+  const { user, isLoggedIn, setProfileData, setSkills, roles, rolesLoading } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(true);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [serverProfile, setServerProfile] = useState<UserProfile | null>(null);
   
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '',
-    email: '',
-    phone: '',
     experience: '',
     role: '',
     company: '',
     country: '',
     goal: '',
-    title: '',
     company_type: '',
     geography: ''
   });
@@ -53,49 +44,37 @@ export default function Profile() {
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProfile = async () => {
       try {
-        const [rolesResponse, profileResponse] = await Promise.all([
-          assessmentService.getRoles(),
-          profileService.getProfile()
-        ]);
-
-        if (rolesResponse.success && rolesResponse.data) {
-          setRoles(rolesResponse.data);
-        }
+        const profileResponse = await profileService.getProfile();
 
         if (profileResponse.success && profileResponse.data) {
           setServerProfile(profileResponse.data);
           setFormData({
             name: profileResponse.data.name || user?.name || '',
-            email: user?.email || '',
-            phone: '',
             experience: String(profileResponse.data.experience_years || ''),
             role: profileResponse.data.role || '',
             company: profileResponse.data.company || '',
             country: profileResponse.data.country || '',
             goal: profileResponse.data.goal || '',
-            title: profileResponse.data.title || '',
             company_type: profileResponse.data.company_type || '',
             geography: profileResponse.data.geography || ''
           });
         } else {
           setFormData(prev => ({
             ...prev,
-            name: user?.name || '',
-            email: user?.email || ''
+            name: user?.name || ''
           }));
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('Failed to fetch profile:', error);
       } finally {
         setFetchingProfile(false);
-        setRolesLoading(false);
       }
     };
-    
+
     if (isLoggedIn) {
-      fetchData();
+      fetchProfile();
     }
   }, [isLoggedIn, user]);
 
@@ -140,7 +119,6 @@ export default function Profile() {
         company: formData.company,
         country: formData.country,
         name: formData.name || undefined,
-        title: formData.title || undefined,
         company_type: formData.company_type || undefined,
         geography: formData.geography || undefined,
         goal: formData.goal || undefined
@@ -150,16 +128,37 @@ export default function Profile() {
 
       if (response.success && response.data) {
         setServerProfile(response.data);
-        setProfileData({
+        const updatedProfileData = {
           experience: formData.experience,
           role: formData.role,
-          title: formData.title,
           company: formData.company,
           country: formData.country,
           company_type: formData.company_type,
           geography: formData.geography,
           goal: formData.goal
+        };
+        setProfileData(updatedProfileData);
+
+        // Regenerate skills based on updated profile
+        const fluencyResult = await fluencyService.resolveProfile({
+          experience_years: parseInt(formData.experience) || 0,
+          role: formData.role,
+          company: formData.company,
+          country: formData.country,
+          company_type: formData.company_type,
+          geography: formData.geography || formData.country,
+          goal: formData.goal
         });
+
+        if (fluencyResult.success && fluencyResult.data) {
+          const updatedSkills = fluencyResult.data.profile.map(skillDimension => ({
+            name: skillDimension.name,
+            level: skillDimension.proficiency.toLowerCase(),
+            description: skillDimension.description
+          }));
+          setSkills(updatedSkills);
+        }
+
         setSaveMessage({ type: 'success', text: 'Profile saved successfully!' });
         setIsEditing(false);
       } else {
@@ -177,14 +176,11 @@ export default function Profile() {
     if (serverProfile) {
       setFormData({
         name: serverProfile.name || user?.name || '',
-        email: user?.email || '',
-        phone: '',
         experience: String(serverProfile.experience_years || ''),
         role: serverProfile.role || '',
         company: serverProfile.company || '',
         country: serverProfile.country || '',
         goal: serverProfile.goal || '',
-        title: serverProfile.title || '',
         company_type: serverProfile.company_type || '',
         geography: serverProfile.geography || ''
       });
@@ -383,37 +379,6 @@ export default function Profile() {
 
               <div>
                 <label style={labelStyle}>
-                  <Mail size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  readOnly
-                  style={inputStyle(false)}
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  <Phone size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  style={inputStyle(isEditing)}
-                  placeholder="+1 234 567 890"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>
                   <Clock size={12} style={{ display: 'inline', marginRight: '6px' }} />
                   Years of Experience *
                 </label>
@@ -480,22 +445,6 @@ export default function Profile() {
                   readOnly={!isEditing}
                   style={inputStyle(isEditing)}
                   placeholder="Country"
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  <Briefcase size={12} style={{ display: 'inline', marginRight: '6px' }} />
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  readOnly={!isEditing}
-                  style={inputStyle(isEditing)}
-                  placeholder="e.g., Senior Developer"
                 />
               </div>
 

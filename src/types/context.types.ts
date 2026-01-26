@@ -3,7 +3,7 @@
  * Types for application state management
  */
 
-import { FluencyProfileResponse, IncompleteAssessmentCheckResponse } from './api.types';
+import { FluencyProfileResponse, IncompleteAssessmentCheckResponse, Role } from './api.types';
 
 // Session summary from incomplete assessment check (without questions)
 export type IncompleteAssessmentSession = NonNullable<IncompleteAssessmentCheckResponse['session']>;
@@ -17,7 +17,6 @@ export interface User {
 export interface ProfileData {
   experience: string;
   role: string;
-  title: string;
   company: string;
   country: string;
   company_type?: string;
@@ -58,4 +57,6 @@ export interface AppContextType {
   setApiProfile: (profile: FluencyProfileResponse | null) => void;
   incompleteAssessment: IncompleteAssessmentSession | null;
   setIncompleteAssessment: (assessment: IncompleteAssessmentSession | null) => void;
+  roles: Role[];
+  rolesLoading: boolean;
 }

@@ -1,18 +1,15 @@
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Briefcase, MapPin, Target, Clock, Building } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { fluencyService } from '../services/fluencyService';
-import { assessmentService } from '../services/assessmentService';
-import type { ProfileFormData, Role } from '../types/api.types';
+import { profileService, type CreateProfileRequest } from '../services/profileService';
+import type { ProfileFormData } from '../types/api.types';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setProfileData, setSkills, setApiProfile } = useApp();
-
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(true);
+  const { isLoggedIn, setProfileData, setSkills, setApiProfile, roles, rolesLoading } = useApp();
 
   const [formData, setFormData] = useState<ProfileFormData>({
     experience: '',
@@ -32,18 +29,6 @@ export default function Home() {
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string>('');
-
-  // Fetch roles from API on mount
-  useEffect(() => {
-    const fetchRoles = async () => {
-      const response = await assessmentService.getRoles();
-      if (response.success && response.data) {
-        setRoles(response.data);
-      }
-      setRolesLoading(false);
-    };
-    fetchRoles();
-  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -87,11 +72,24 @@ export default function Home() {
         // Store the API profile response in context
         setApiProfile(response.data);
 
+        // Create profile on backend if user is logged in
+        if (isLoggedIn) {
+          const profileData: CreateProfileRequest = {
+            role: formData.role,
+            experience_years: parseInt(formData.experience) || 0,
+            company: formData.company,
+            country: formData.country,
+            company_type: formData.company_type || undefined,
+            geography: formData.geography || formData.country,
+            goal: formData.goal || undefined
+          };
+          await profileService.createProfile(profileData);
+        }
+
         // Store form data in context
         setProfileData({
           experience: formData.experience,
           role: formData.role,
-          title: formData.title,
           company: formData.company,
           country: formData.country,
           company_type: formData.company_type,

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { AppContextType, User, ProfileData, Skill, AssessmentResult, IncompleteAssessmentSession } from '../types/context.types';
-import type { FluencyProfileResponse } from '../types/api.types';
+import type { FluencyProfileResponse, Role } from '../types/api.types';
 import api from '../services/api';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,6 +41,11 @@ export function AppProvider({ children }: AppProviderProps) {
     const saved = localStorage.getItem('incompleteAssessment');
     return saved ? JSON.parse(saved) : null;
   });
+  const [roles, setRoles] = useState<Role[]>(() => {
+    const saved = localStorage.getItem('roles');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   // Persistence Effects
   useEffect(() => {
@@ -79,12 +84,33 @@ export function AppProvider({ children }: AppProviderProps) {
   }, [incompleteAssessment]);
 
   useEffect(() => {
+    if (roles.length > 0) localStorage.setItem('roles', JSON.stringify(roles));
+    else localStorage.removeItem('roles');
+  }, [roles]);
+
+  useEffect(() => {
     const checkSession = async () => {
       try {
         const response = await api.get('/v1/auth/me');
         if (response.data.status === 'success') {
           setUser(response.data.data.user);
           setIsLoggedIn(true);
+
+          // Fetch roles if not in cache
+          const cachedRoles = localStorage.getItem('roles');
+          if (!cachedRoles || JSON.parse(cachedRoles).length === 0) {
+            setRolesLoading(true);
+            try {
+              const rolesResponse = await api.get('/v1/questions/roles');
+              if (rolesResponse.data.status === 'success') {
+                setRoles(rolesResponse.data.data.roles);
+              }
+            } catch (error) {
+              console.error('Failed to fetch roles:', error);
+            } finally {
+              setRolesLoading(false);
+            }
+          }
         }
       } catch (error) {
         console.log('No active session found.');
@@ -132,7 +158,9 @@ export function AppProvider({ children }: AppProviderProps) {
       apiProfile,
       setApiProfile,
       incompleteAssessment,
-      setIncompleteAssessment
+      setIncompleteAssessment,
+      roles,
+      rolesLoading
     }}>
       {children}
     </AppContext.Provider>
