@@ -19,7 +19,7 @@ class FluencyService {
    */
   async resolveProfile(profileData: ProfileRequestData): Promise<ApiResponse<FluencyProfileResponse>> {
     try {
-      const response = await api.post<FluencyProfileResponse>('/fluency/resolve', profileData);
+      const response = await api.post<FluencyProfileResponse>('/v1/fluency/resolve', profileData);
       return {
         success: true,
         data: response.data,
@@ -83,7 +83,7 @@ class FluencyService {
    */
   async getProfile(): Promise<ApiResponse<any>> {
     try {
-      const response = await api.get<any>('/profile');
+      const response = await api.get<any>('/v1/profile');
       return {
         success: true,
         data: response.data.data.profile,
@@ -111,7 +111,7 @@ class FluencyService {
    */
   async createProfile(profileData: any): Promise<ApiResponse<any>> {
     try {
-      const response = await api.post<any>('/profile', profileData);
+      const response = await api.post<any>('/v1/profile', profileData);
       return {
         success: true,
         data: response.data.data.profile,
@@ -133,7 +133,7 @@ class FluencyService {
    */
   async checkProfile(): Promise<ApiResponse<{ hasProfile: boolean }>> {
     try {
-      const response = await api.get<any>('/profile/check');
+      const response = await api.get<any>('/v1/profile/check');
       return {
         success: true,
         data: response.data.data,
@@ -155,7 +155,7 @@ class FluencyService {
    */
   async getIncompleteSession(): Promise<ApiResponse<any>> {
     try {
-      const response = await api.get<any>('/assessments/incomplete');
+      const response = await api.get<any>('/v1/assessments/incomplete');
       return {
         success: true,
         data: response.data.data,
@@ -177,7 +177,7 @@ class FluencyService {
    */
   async resetSession(sessionId: number): Promise<ApiResponse<any>> {
     try {
-      const response = await api.post<any>(`/assessments/${sessionId}/reset`);
+      const response = await api.post<any>(`/v1/assessments/${sessionId}/reset`);
       return {
         success: true,
         data: response.data,

@@ -53,4 +53,6 @@ export interface AppContextType {
   setUpskillPlan: (plan: any) => void;
   apiProfile: FluencyProfileResponse | null;
   setApiProfile: (profile: FluencyProfileResponse | null) => void;
+  navigationTrigger: number;
+  triggerNavigation: () => void;
 }

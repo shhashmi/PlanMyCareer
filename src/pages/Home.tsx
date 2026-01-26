@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -9,50 +9,13 @@ import type { ProfileFormData } from '../types/api.types';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setProfileData, setSkills, setApiProfile, user } = useApp();
+  const { isLoggedIn, setProfileData, setSkills, setApiProfile } = useApp();
 
-  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string>('');
 
-  // Check for profile and incomplete session on mount (if user is logged in)
-  useEffect(() => {
-    async function checkUserStatus() {
-      if (!user) {
-        // Not logged in, show normal home page
-        setIsCheckingStatus(false);
-        return;
-      }
-
-      try {
-        // Check if user has a profile
-        const profileResponse = await fluencyService.getProfile();
-
-        if (!profileResponse.success || !profileResponse.data) {
-          // No profile, redirect to /profile
-          navigate('/profile');
-          return;
-        }
-
-        // User has profile, check for incomplete assessment
-        const incompleteResponse = await fluencyService.getIncompleteSession();
-
-        if (incompleteResponse.success && incompleteResponse.data?.has_incomplete) {
-          // Has incomplete session, redirect to assessment choice
-          navigate('/assessment');
-          return;
-        }
-
-        // User has profile and no incomplete session, show skills
-        navigate('/skills');
-      } catch (error) {
-        console.error('Error checking user status:', error);
-        setIsCheckingStatus(false);
-      }
-    }
-
-    checkUserStatus();
-  }, [user, navigate]);
+  // Logged-in users without a profile are redirected here by App.tsx
+  // After creating profile, logged-in users go to /assessment, others go to /skills
 
   const handleSubmit = async (formData: ProfileFormData) => {
     setIsLoading(true);
@@ -69,8 +32,7 @@ export default function Home() {
         // Store the API profile response in context
         setApiProfile(response.data);
 
-        // Store form data in context
-        setProfileData({
+        const profileDataToSave = {
           experience_years: formData.experience_years,
           role: formData.role,
           title: formData.title,
@@ -79,7 +41,19 @@ export default function Home() {
           company_type: formData.company_type,
           geography: formData.geography || formData.country,
           goal: formData.goal
-        });
+        };
+
+        // If user is logged in, persist profile to backend
+        if (isLoggedIn) {
+          const createResponse = await fluencyService.createProfile(profileDataToSave);
+          if (!createResponse.success) {
+            console.error('Failed to save profile:', createResponse.error?.message);
+            // Continue anyway - profile is in context
+          }
+        }
+
+        // Store form data in context
+        setProfileData(profileDataToSave);
 
         // Map API profile data to skills format
         const apiSkills = response.data.profile.map(skillDimension => ({
@@ -90,8 +64,8 @@ export default function Home() {
 
         setSkills(apiSkills);
 
-        // Navigate to skills page
-        navigate('/skills');
+        // Navigate to skills page for non-logged-in users, assessment for logged-in users
+        navigate(isLoggedIn ? '/assessment' : '/skills');
       } else {
         setApiError(response.error?.message || 'Failed to analyze your profile. Please try again.');
       }
@@ -102,31 +76,6 @@ export default function Home() {
       setIsLoading(false);
     }
   };
-
-  // Show loading while checking user status
-  if (isCheckingStatus) {
-    return (
-      <div style={{
-        minHeight: 'calc(100vh - 80px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid rgba(20, 184, 166, 0.2)',
-            borderTop: '4px solid var(--primary)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: 'var(--text-secondary)' }}>Checking your profile...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>

@@ -6,7 +6,7 @@ import logoImage from "@assets/logo-1_1767800057394.png";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { isLoggedIn, user, logout } = useApp();
+  const { isLoggedIn, user, logout, triggerNavigation } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +46,10 @@ export default function Header() {
         }}
       >
         <div
-          onClick={() => navigate("/")}
+          onClick={() => {
+            triggerNavigation();
+            navigate("/");
+          }}
           style={{
             display: "flex",
             alignItems: "center",

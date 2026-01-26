@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -26,48 +26,47 @@ function AppRoutes() {
   useAnalytics();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isLoggedIn, loading, setSkills, setProfileData, setApiProfile } = useApp();
+  const { isLoggedIn, loading, setSkills, setProfileData, setApiProfile, navigationTrigger } = useApp();
+  const hasNavigated = useRef(false);
+
+  // Reset navigation flag when triggerNavigation is called
+  useEffect(() => {
+    if (navigationTrigger > 0) {
+      hasNavigated.current = false;
+    }
+  }, [navigationTrigger]);
 
   useEffect(() => {
-    // Only run this logic if logged in and not on a specific sub-page that handles its own logic
-    // and if we are at the root or just logged in
+    // Reset navigation flag when user logs out
+    if (!isLoggedIn) {
+      hasNavigated.current = false;
+      return;
+    }
+
+    // Only run this logic once after login
     const publicPaths = ['/login', '/privacy-policy', '/terms-of-use'];
-    if (!isLoggedIn || loading || publicPaths.includes(location.pathname)) {
+    if (loading || publicPaths.includes(location.pathname) || hasNavigated.current) {
       return;
     }
 
     const handleNavigation = async () => {
       try {
-        // 1. Check if user has a profile
+        // Check if user has a profile
         const profileResponse = await fluencyService.getProfile();
 
-        if (!profileResponse.success || !profileResponse.data) {
-          // Requirement 3: No profile -> /profile
-          if (location.pathname !== '/profile') {
-            navigate('/profile');
-          }
-          return;
-        }
-
-        // Store profile data in context
+        // Validate that profile has required fields (not just an empty object)
         const profileData = profileResponse.data;
-        setProfileData(profileData);
+        const hasValidProfile = profileResponse.success &&
+          profileData &&
+          typeof profileData === 'object' &&
+          profileData.role &&
+          profileData.title;
 
-        // 2. Check for incomplete assessment session
-        const sessionResponse = await fluencyService.getIncompleteSession();
+        if (hasValidProfile) {
+          // User has profile - set context data
+          setProfileData(profileData);
 
-        if (sessionResponse.success && sessionResponse.data?.has_incomplete) {
-          // Requirement 5: Incomplete session -> /assessment
-          if (location.pathname === '/') {
-            navigate('/assessment');
-          }
-          return;
-        }
-
-        // Requirement 4: Has profile and no incomplete session -> /skills
-        if (location.pathname === '/') {
-          // To land on /skills, we usually need the analyzed skills in context
-          // If they aren't there, we should resolve them first
+          // Resolve skills for context
           const requestData = fluencyService.mapFormDataToRequest(profileData);
           const analyzeResponse = await fluencyService.resolveProfile(requestData);
 
@@ -79,16 +78,24 @@ function AppRoutes() {
               description: skill.description
             }));
             setSkills(apiSkills);
-            navigate('/skills');
           }
+
+          hasNavigated.current = true;
+          navigate('/assessment');
+          return;
         }
+
+        // No valid profile - navigate to home page to create profile
+        console.log('No valid profile found, navigating to home page');
+        hasNavigated.current = true;
+        navigate('/');
       } catch (error) {
         console.error('Navigation error:', error);
       }
     };
 
     handleNavigation();
-  }, [isLoggedIn, loading, navigate, location.pathname, setSkills, setProfileData, setApiProfile]);
+  }, [isLoggedIn, loading, navigate, location.pathname, setSkills, setProfileData, setApiProfile, navigationTrigger]);
 
   return (
     <Routes>

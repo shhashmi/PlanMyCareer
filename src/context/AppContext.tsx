@@ -37,6 +37,9 @@ export function AppProvider({ children }: AppProviderProps) {
     const saved = localStorage.getItem('apiProfile');
     return saved ? JSON.parse(saved) : null;
   });
+  const [navigationTrigger, setNavigationTrigger] = useState(0);
+
+  const triggerNavigation = () => setNavigationTrigger(prev => prev + 1);
 
   // Persistence Effects
   useEffect(() => {
@@ -72,7 +75,7 @@ export function AppProvider({ children }: AppProviderProps) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/v1/auth/me');
         if (response.data.status === 'success') {
           setUser(response.data.data.user);
           setIsLoggedIn(true);
@@ -93,7 +96,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/v1/auth/logout');
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -121,7 +124,9 @@ export function AppProvider({ children }: AppProviderProps) {
       upskillPlan,
       setUpskillPlan,
       apiProfile,
-      setApiProfile
+      setApiProfile,
+      navigationTrigger,
+      triggerNavigation
     }}>
       {children}
     </AppContext.Provider>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2, X, RefreshCw, Play } from 'lucide-react';
@@ -21,26 +21,51 @@ export default function AssessmentChoice() {
   const [showResetModal, setShowResetModal] = useState(false);
 
   const isProduction = import.meta.env.PROD
+  const hasFetchedSession = useRef(false);
 
   useEffect(() => {
+    // Prevent duplicate fetches (handles StrictMode and remounts)
+    if (hasFetchedSession.current) {
+      setCheckingSession(false);
+      return;
+    }
+
+    let isCancelled = false;
+
     const checkIncompleteSession = async () => {
-      if (!isLoggedIn) return;
+      if (!isLoggedIn) {
+        setCheckingSession(false);
+        return;
+      }
+
+      hasFetchedSession.current = true;
 
       try {
         const response = await fluencyService.getIncompleteSession();
+        if (isCancelled) return;
+
         if (response.success && response.data?.has_incomplete) {
           setIncompleteSession(response.data.session);
         } else {
           setIncompleteSession(null);
         }
       } catch (err) {
+        if (isCancelled) return;
         console.error('Error checking incomplete session:', err);
+        // Reset flag on error so it can be retried
+        hasFetchedSession.current = false;
       } finally {
-        setCheckingSession(false);
+        if (!isCancelled) {
+          setCheckingSession(false);
+        }
       }
     };
 
     checkIncompleteSession();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [isLoggedIn]);
 
   if (loading || checkingSession) {
@@ -51,10 +76,8 @@ export default function AssessmentChoice() {
     );
   }
 
-  if (!isLoggedIn || skills.length === 0) {
-    navigate('/')
-    return null
-  }
+  // ProtectedRoute already handles authentication check
+  // No need to check skills.length here as it causes race conditions
 
   const handleStartBasicAssessment = async () => {
     if (!apiProfile) {

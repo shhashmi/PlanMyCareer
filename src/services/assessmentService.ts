@@ -40,7 +40,7 @@ class AssessmentService {
    */
   async getDimensions(): Promise<ApiResponse<Dimension[]>> {
     try {
-      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/questions/dimensions');
+      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/v1/questions/dimensions');
       this.dimensionsCache = response.data.data.dimensions;
       return {
         success: true,
@@ -63,7 +63,7 @@ class AssessmentService {
    */
   async getRoles(): Promise<ApiResponse<Role[]>> {
     try {
-      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/questions/roles');
+      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/v1/questions/roles');
       this.rolesCache = response.data.data.roles;
       return {
         success: true,
@@ -86,7 +86,7 @@ class AssessmentService {
    */
   async startAssessment(request: AssessmentStartRequest): Promise<ApiResponse<AssessmentStartResponse>> {
     try {
-      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/assessments/start', request);
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/start', request);
       return {
         success: true,
         data: response.data.data,
@@ -108,7 +108,7 @@ class AssessmentService {
    */
   async resumeAssessment(): Promise<ApiResponse<AssessmentStartResponse>> {
     try {
-      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/assessments/resume');
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/resume');
       return {
         success: true,
         data: response.data.data,
@@ -130,7 +130,7 @@ class AssessmentService {
    */
   async saveAnswer(request: SaveAnswerRequest): Promise<ApiResponse<SaveAnswerResponse>> {
     try {
-      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/assessments/save-answer', request);
+      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/v1/assessments/save-answer', request);
       return {
         success: true,
         data: response.data.data,
@@ -152,7 +152,7 @@ class AssessmentService {
    */
   async submitAssessment(request: SubmitAssessmentRequest): Promise<ApiResponse<SubmitAssessmentResponse>> {
     try {
-      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/assessments/submit', request);
+      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/v1/assessments/submit', request);
       return {
         success: true,
         data: response.data.data,
@@ -174,7 +174,7 @@ class AssessmentService {
    */
   async getAssessmentSummary(sessionId: number): Promise<ApiResponse<AssessmentSummary>> {
     try {
-      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/assessments/${sessionId}/summary`);
+      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/v1/assessments/${sessionId}/summary`);
       return {
         success: true,
         data: response.data.data,
@@ -293,7 +293,7 @@ class AssessmentService {
    */
   async getBasicAssessmentReport(): Promise<ApiResponse<BasicAssessmentReport>> {
     try {
-      const response = await api.get<{ status: string; data: BasicAssessmentReport }>('/reports/basic-assessment');
+      const response = await api.get<{ status: string; data: BasicAssessmentReport }>('/v1/reports/basic-assessment');
       return {
         success: true,
         data: response.data.data,
