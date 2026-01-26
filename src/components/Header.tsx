@@ -72,14 +72,15 @@ export default function Header() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-          {isLoggedIn && (
-            <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {[
-                { label: "How it works", path: "/how-it-works" },
-                { label: "FAQ", path: "/faq" },
-                { label: "Pricing", path: "/pricing" },
-                { label: "Your Weekly Plan", path: "/weekly-plan" },
-              ].map((item) => (
+          <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {[
+              { label: "How it works", path: "/how-it-works", requiresAuth: false },
+              { label: "FAQ", path: "/faq", requiresAuth: false },
+              { label: "Pricing", path: "/pricing", requiresAuth: false },
+              { label: "Your Weekly Plan", path: "/weekly-plan", requiresAuth: true },
+            ]
+              .filter((item) => !item.requiresAuth || isLoggedIn)
+              .map((item) => (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
@@ -106,8 +107,7 @@ export default function Header() {
                   {item.label}
                 </button>
               ))}
-            </nav>
-          )}
+          </nav>
           {isLoggedIn ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button

@@ -117,9 +117,9 @@ function AppRoutes() {
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
-      <Route path="/how-it-works" element={<ProtectedRoute><HowItWorks /></ProtectedRoute>} />
-      <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
-      <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/weekly-plan" element={<ProtectedRoute><WeeklyPlan /></ProtectedRoute>} />
     </Routes>
   );
