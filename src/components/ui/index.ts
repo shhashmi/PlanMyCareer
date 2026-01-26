@@ -32,3 +32,6 @@ export type { CardProps } from './Card';
 
 export { LoadingSpinner, InlineLoader, ProcessingSpinner } from './LoadingSpinner';
 export type { LoadingSpinnerProps } from './LoadingSpinner';
+
+export { ComingSoonModal } from './ComingSoonModal';
+export type { ComingSoonModalProps } from './ComingSoonModal';

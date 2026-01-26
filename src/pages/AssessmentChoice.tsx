@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
+import { ComingSoonModal } from '../components/ui';
+import { BASIC_ASSESSMENT_FEATURES, ADVANCED_ASSESSMENT_FEATURES } from '../data/assessmentData';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
@@ -133,12 +135,7 @@ export default function AssessmentChoice() {
             </div>
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              {[
-                'Short personalized assessment',
-                'Instant skill gap visualization',
-                'Actionable recommendations',
-                'Results delivered immediately'
-              ].map((item, i) => (
+              {BASIC_ASSESSMENT_FEATURES.map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
                   {item}
@@ -230,13 +227,7 @@ export default function AssessmentChoice() {
             </div>
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              {[
-                'Detailed personalized assessment',
-                'Instant skill gap visualization',
-                'Weekly learning plan tailored to your schedule',
-                'Hands-on assignments for practical experience',
-                'Extended support to complete assignments'
-              ].map((item, i) => (
+              {ADVANCED_ASSESSMENT_FEATURES.map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
                   {item}
@@ -252,93 +243,10 @@ export default function AssessmentChoice() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showComingSoon && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowComingSoon(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: '24px'
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: 'var(--surface)',
-                borderRadius: '24px',
-                padding: '40px',
-                maxWidth: '480px',
-                width: '100%',
-                textAlign: 'center',
-                border: '1px solid var(--border)',
-                position: 'relative'
-              }}
-            >
-              <button
-                onClick={() => setShowComingSoon(false)}
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  padding: '8px'
-                }}
-              >
-                <X size={24} />
-              </button>
-
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'var(--gradient-1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px'
-              }}>
-                <Sparkles size={32} color="white" />
-              </div>
-
-              <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-                Something Awesome is Brewing!
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
-                Our Advanced Assessment is getting its final polish and will be ready to supercharge your AI journey very soon!
-              </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
-                In the meantime, take the Basic Assessment to get a head start on discovering your AI superpowers.
-              </p>
-
-              <button
-                onClick={() => setShowComingSoon(false)}
-                className="btn-primary"
-                style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
-              >
-                Sounds Great!
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ComingSoonModal
+        isOpen={showComingSoon}
+        onClose={() => setShowComingSoon(false)}
+      />
     </div>
   )
 }
