@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { AppContextType, User, ProfileData, Skill, AssessmentResult } from '../types/context.types';
-import type { FluencyProfileResponse, IncompleteAssessmentResponse } from '../types/api.types';
+import type { AppContextType, User, ProfileData, Skill, AssessmentResult, IncompleteAssessmentSession } from '../types/context.types';
+import type { FluencyProfileResponse } from '../types/api.types';
 import api from '../services/api';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -37,7 +37,7 @@ export function AppProvider({ children }: AppProviderProps) {
     const saved = localStorage.getItem('apiProfile');
     return saved ? JSON.parse(saved) : null;
   });
-  const [incompleteAssessment, setIncompleteAssessment] = useState<IncompleteAssessmentResponse | null>(() => {
+  const [incompleteAssessment, setIncompleteAssessment] = useState<IncompleteAssessmentSession | null>(() => {
     const saved = localStorage.getItem('incompleteAssessment');
     return saved ? JSON.parse(saved) : null;
   });

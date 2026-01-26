@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PlayCircle, RotateCcw, CheckCircle, Clock, Target, AlertCircle } from 'lucide-react';
+import { PlayCircle, RotateCcw, Clock, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
-import type { Dimension } from '../types/api.types';
 
 export default function AssessmentProgress() {
   const navigate = useNavigate();
-  const { isLoggedIn, incompleteAssessment, setIncompleteAssessment, apiProfile } = useApp();
-  const [dimensions, setDimensions] = useState<Dimension[]>([]);
+  const { isLoggedIn, incompleteAssessment, setIncompleteAssessment } = useApp();
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,32 +22,11 @@ export default function AssessmentProgress() {
       navigate('/skills');
       return;
     }
-
-    const fetchDimensions = async () => {
-      const response = await assessmentService.getDimensions();
-      if (response.success && response.data) {
-        setDimensions(response.data);
-      }
-    };
-    fetchDimensions();
   }, [isLoggedIn, incompleteAssessment, navigate]);
 
   if (!incompleteAssessment) {
     return null;
   }
-
-  const getDimensionName = (code: string) => {
-    const dim = dimensions.find(d => d.dimension_code === code);
-    return dim?.name || code;
-  };
-
-  const getUniqueDimensions = () => {
-    const dimensionCodes = new Set<string>();
-    incompleteAssessment.questions.forEach(q => {
-      dimensionCodes.add(q.dimension);
-    });
-    return Array.from(dimensionCodes);
-  };
 
   const handleResume = async () => {
     setLoading(true);
@@ -71,22 +48,16 @@ export default function AssessmentProgress() {
   };
 
   const handleReset = async () => {
-    if (!apiProfile) {
-      setError('Profile data not found. Please go back and try again.');
-      return;
-    }
-
     setResetLoading(true);
     setError(null);
     try {
-      const startRequest = await assessmentService.buildStartRequest(apiProfile, 'basic', 15);
-      const response = await assessmentService.startAssessment(startRequest);
-      
-      if (response.success && response.data) {
+      const response = await assessmentService.resetSession(incompleteAssessment.session_id);
+
+      if (response.success) {
         setIncompleteAssessment(null);
-        navigate('/basic-assessment', { state: { sessionData: response.data } });
+        navigate('/skills');
       } else {
-        setError(response.error?.message || 'Failed to start new assessment. Please try again.');
+        setError(response.error?.message || 'Failed to reset assessment. Please try again.');
       }
     } catch (err) {
       console.error('Failed to reset assessment:', err);
@@ -97,7 +68,6 @@ export default function AssessmentProgress() {
   };
 
   const progress = Math.round((incompleteAssessment.answered_count / incompleteAssessment.total_questions) * 100);
-  const uniqueDimensions = getUniqueDimensions();
 
   return (
     <div style={{ 
@@ -172,41 +142,6 @@ export default function AssessmentProgress() {
           <p style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'right' }}>
             {progress}% complete
           </p>
-        </div>
-
-        <div style={{
-          background: 'var(--surface)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid var(--border)',
-          marginBottom: '32px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <Target size={18} color="var(--primary)" />
-            <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Skills Being Assessed</h3>
-          </div>
-          
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {uniqueDimensions.map(code => (
-              <div
-                key={code}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  background: 'rgba(20, 184, 166, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(20, 184, 166, 0.2)'
-                }}
-              >
-                <CheckCircle size={14} color="var(--primary)" />
-                <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
-                  {getDimensionName(code)}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {error && (

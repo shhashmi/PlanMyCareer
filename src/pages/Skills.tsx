@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
@@ -15,9 +15,14 @@ export default function Skills() {
     role => profileData.title.toLowerCase().includes(role.toLowerCase())
   )
 
+  useEffect(() => {
+    if (!profileData) {
+      navigate('/');
+    }
+  }, [profileData, navigate]);
+
   if (!profileData) {
-    navigate('/')
-    return null
+    return null;
   }
 
   if (skills.length === 0) {

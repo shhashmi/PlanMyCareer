@@ -17,6 +17,7 @@ import TermsOfUse from './pages/TermsOfUse';
 import Profile from './pages/Profile';
 import ResumeAssessment from './pages/ResumeAssessment';
 import AssessmentProgress from './pages/AssessmentProgress';
+import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -29,6 +30,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/skills" element={<Skills />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/auth-callback" element={<AuthCallback />} />
       <Route path="/assessment" element={<ProtectedRoute><AssessmentChoice /></ProtectedRoute>} />
       <Route path="/basic-assessment" element={<ProtectedRoute><BasicAssessment /></ProtectedRoute>} />
       <Route path="/basic-results" element={<ProtectedRoute><BasicResults /></ProtectedRoute>} />

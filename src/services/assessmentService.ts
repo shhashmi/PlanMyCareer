@@ -22,6 +22,7 @@ import type {
   SubmitAssessmentRequest,
   SubmitAssessmentResponse,
   IncompleteAssessmentResponse,
+  IncompleteAssessmentCheckResponse,
 } from '../types/api.types';
 
 // Mapping from proficiency levels to difficulty levels
@@ -268,14 +269,15 @@ class AssessmentService {
 
   /**
    * Check for incomplete assessment
-   * Returns the incomplete assessment if exists, null otherwise
+   * Returns the session summary if exists, null otherwise
    */
-  async checkIncompleteAssessment(): Promise<ApiResponse<IncompleteAssessmentResponse | null>> {
+  async checkIncompleteAssessment(): Promise<ApiResponse<IncompleteAssessmentCheckResponse['session'] | null>> {
     try {
-      const response = await api.get<{ status: string; data: IncompleteAssessmentResponse }>('/v1/assessments/incomplete');
+      const response = await api.get<{ status: string; data: IncompleteAssessmentCheckResponse }>('/v1/assessments/incomplete');
+      const { has_incomplete, session } = response.data.data;
       return {
         success: true,
-        data: response.data.data,
+        data: has_incomplete ? session : null,
       };
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -334,6 +336,28 @@ class AssessmentService {
         error: {
           status: error.response?.status || 0,
           message: error.response?.data?.message || error.message || 'Failed to get assessment report',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
+   * Reset/delete an incomplete assessment session
+   */
+  async resetSession(sessionId: number): Promise<ApiResponse<void>> {
+    try {
+      await api.post(`/v1/assessments/${sessionId}/reset`);
+      return {
+        success: true,
+        data: undefined,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.message || error.message || 'Failed to reset assessment',
           details: error.response?.data,
         },
       };

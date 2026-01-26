@@ -211,7 +211,19 @@ export interface QuestionWithState extends AssessmentQuestion {
   selected_option: SelectedOption | null;
 }
 
-// Incomplete Assessment Response
+// Incomplete Assessment Check Response (from /v1/assessments/incomplete)
+export interface IncompleteAssessmentCheckResponse {
+  has_incomplete: boolean;
+  session: {
+    session_id: number;
+    assessment_type: 'basic' | 'advanced';
+    started_at: string;
+    answered_count: number;
+    total_questions: number;
+  } | null;
+}
+
+// Incomplete Assessment Response (from /v1/assessments/resume - has full question data)
 export interface IncompleteAssessmentResponse {
   session_id: number;
   assessment_type: 'basic' | 'advanced';
