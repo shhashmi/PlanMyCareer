@@ -4,15 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, Loader2, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
+import { useAdvancedAssessment } from '../hooks/useAdvancedAssessment';
+import ComingSoonModal from '../components/ComingSoonModal';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown, DifficultyLevel } from '../types/api.types';
 
 export default function BasicResults() {
   const navigate = useNavigate()
   const location = useLocation()
   const { apiProfile } = useApp()
+  const { showComingSoon, handleGetAdvancedAssessment, closeComingSoon } = useAdvancedAssessment();
 
-  // Get session_id from route state
-  const sessionId = location.state?.sessionId as number | undefined
+  const [sessionId, setSessionId] = useState<number | undefined>(location.state?.sessionId)
 
   const [summary, setSummary] = useState<AssessmentSummary | null>(null)
   const [dimensions, setDimensions] = useState<Dimension[]>([])
@@ -23,14 +25,19 @@ export default function BasicResults() {
   const [showAggregateModal, setShowAggregateModal] = useState(false)
   const [loadingAggregate, setLoadingAggregate] = useState(false)
   const [aggregateError, setAggregateError] = useState<string | null>(null)
-  const [showComingSoon, setShowComingSoon] = useState(false)
-  
-  const isProduction = import.meta.env.PROD
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
-    if (!sessionId) {
-      navigate('/assessment-choice')
+    const params = new URLSearchParams(location.search)
+    const urlSessionId = params.get('session_id')
+
+    if (!sessionId && urlSessionId) {
+      setSessionId(parseInt(urlSessionId))
+      return
+    }
+
+    if (!sessionId && !urlSessionId) {
+      navigate('/assessment')
       return
     }
 
@@ -176,7 +183,7 @@ export default function BasicResults() {
           <AlertCircle size={48} style={{ color: 'var(--error)', marginBottom: '16px' }} />
           <h2 style={{ marginBottom: '12px' }}>Unable to Load Results</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>{error || 'Something went wrong'}</p>
-          <button onClick={() => navigate('/assessment-choice')} className="btn-primary">
+          <button onClick={() => navigate('/assessment')} className="btn-primary">
             Try Again
           </button>
         </div>
@@ -448,7 +455,7 @@ export default function BasicResults() {
             curated resources, and weekly action plans
           </p>
           <button
-            onClick={() => isProduction ? setShowComingSoon(true) : navigate('/payment')}
+            onClick={handleGetAdvancedAssessment}
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
@@ -669,91 +676,7 @@ export default function BasicResults() {
         )}
       </AnimatePresence>
 
-      {/* Coming Soon Modal */}
-      <AnimatePresence>
-        {showComingSoon && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowComingSoon(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: '24px'
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: 'var(--surface)',
-                borderRadius: '24px',
-                padding: '40px',
-                maxWidth: '480px',
-                width: '100%',
-                textAlign: 'center',
-                border: '1px solid var(--border)',
-                position: 'relative'
-              }}
-            >
-              <button
-                onClick={() => setShowComingSoon(false)}
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  padding: '8px'
-                }}
-              >
-                <X size={24} />
-              </button>
-
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'var(--gradient-1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px'
-              }}>
-                <Sparkles size={32} color="white" />
-              </div>
-
-              <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-                Thank You for Your Interest!
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6' }}>
-                Advanced Assessment will be available soon. We're working hard to bring you an AI-powered deep analysis experience.
-              </p>
-
-              <button
-                onClick={() => setShowComingSoon(false)}
-                className="btn-primary"
-                style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
-              >
-                Got it
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ComingSoonModal isOpen={showComingSoon} onClose={closeComingSoon} />
     </div>
   )
 }

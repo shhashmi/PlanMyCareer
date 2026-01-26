@@ -12,7 +12,7 @@ export interface User {
 }
 
 export interface ProfileData {
-  experience: string;
+  experience_years: string;
   role: string;
   title: string;
   company: string;
@@ -53,4 +53,6 @@ export interface AppContextType {
   setUpskillPlan: (plan: any) => void;
   apiProfile: FluencyProfileResponse | null;
   setApiProfile: (profile: FluencyProfileResponse | null) => void;
+  navigationTrigger: number;
+  triggerNavigation: () => void;
 }

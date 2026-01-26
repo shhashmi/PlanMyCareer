@@ -37,6 +37,9 @@ export function AppProvider({ children }: AppProviderProps) {
     const saved = localStorage.getItem('apiProfile');
     return saved ? JSON.parse(saved) : null;
   });
+  const [navigationTrigger, setNavigationTrigger] = useState(0);
+
+  const triggerNavigation = () => setNavigationTrigger(prev => prev + 1);
 
   // Persistence Effects
   useEffect(() => {
@@ -121,7 +124,9 @@ export function AppProvider({ children }: AppProviderProps) {
       upskillPlan,
       setUpskillPlan,
       apiProfile,
-      setApiProfile
+      setApiProfile,
+      navigationTrigger,
+      triggerNavigation
     }}>
       {children}
     </AppContext.Provider>

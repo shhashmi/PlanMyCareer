@@ -104,6 +104,28 @@ class AssessmentService {
   }
 
   /**
+   * Resume last incomplete assessment session
+   */
+  async resumeAssessment(): Promise<ApiResponse<AssessmentStartResponse>> {
+    try {
+      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/resume');
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          status: error.response?.status || 0,
+          message: error.response?.data?.error || error.message || 'Failed to resume assessment',
+          details: error.response?.data,
+        },
+      };
+    }
+  }
+
+  /**
    * Save an answer for a question
    */
   async saveAnswer(request: SaveAnswerRequest): Promise<ApiResponse<SaveAnswerResponse>> {
@@ -175,7 +197,7 @@ class AssessmentService {
    */
   mapProfileToDimensions(apiProfile: FluencyProfileResponse, dimensions: Dimension[]): EvaluatedDimension[] {
     console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions });
-    
+
     const nameToCode: Record<string, DimensionCode> = {};
     dimensions.forEach(dim => {
       nameToCode[dim.name.toLowerCase().trim()] = dim.dimension_code;
@@ -187,12 +209,12 @@ class AssessmentService {
         const dimensionCode = nameToCode[normalizedName];
         const difficultyLevel = PROFICIENCY_TO_DIFFICULTY[skill.proficiency];
 
-        console.log('🔍 Mapping skill:', { 
-          skillName: skill.name, 
+        console.log('🔍 Mapping skill:', {
+          skillName: skill.name,
           normalizedName,
           proficiency: skill.proficiency,
-          dimensionCode, 
-          difficultyLevel 
+          dimensionCode,
+          difficultyLevel
         });
 
         if (!dimensionCode || !difficultyLevel) {

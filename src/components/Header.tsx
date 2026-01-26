@@ -6,7 +6,7 @@ import logoImage from "@assets/logo-1_1767800057394.png";
 
 export default function Header() {
   const navigate = useNavigate();
-  const { isLoggedIn, user, logout } = useApp();
+  const { isLoggedIn, user, logout, triggerNavigation } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +46,10 @@ export default function Header() {
         }}
       >
         <div
-          onClick={() => navigate("/")}
+          onClick={() => {
+            triggerNavigation();
+            navigate("/");
+          }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -68,7 +71,43 @@ export default function Header() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {[
+              { label: "How it works", path: "/how-it-works", requiresAuth: false },
+              { label: "FAQ", path: "/faq", requiresAuth: false },
+              { label: "Pricing", path: "/pricing", requiresAuth: false },
+              { label: "Your Weekly Plan", path: "/weekly-plan", requiresAuth: true },
+            ]
+              .filter((item) => !item.requiresAuth || isLoggedIn)
+              .map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: "8px 12px",
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--primary-light)";
+                    e.currentTarget.style.background = "rgba(20, 184, 166, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+          </nav>
           {isLoggedIn ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button

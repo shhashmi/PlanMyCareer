@@ -7,12 +7,20 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const { skills } = useApp();
+    const { isLoggedIn, loading } = useApp();
 
-    if (skills.length === 0) {
+    // Wait for auth check to complete
+    if (loading) {
+        return null;
+    }
+
+    // Must be logged in to access protected routes
+    if (!isLoggedIn) {
         return <Navigate to="/" replace />;
     }
 
+    // User is logged in - allow access
+    // Skills will be loaded by App.tsx navigation logic
     return children;
 };
 

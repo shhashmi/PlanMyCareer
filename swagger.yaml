@@ -27,6 +27,8 @@ tags:
     description: Question and metadata endpoints
   - name: Assessments
     description: Assessment session management
+  - name: Reports
+    description: Reporting and aggregate summaries
   - name: Fluency
     description: Fluency profile resolution
 
@@ -418,7 +420,7 @@ paths:
       tags:
         - Assessments
       summary: Submit assessment
-      description: Submits the assessment and returns final results with dimension scores
+      description: Marks the assessment as complete and returns the updated session
       security:
         - cookieAuth: []
       requestBody:
@@ -441,7 +443,7 @@ paths:
                     type: string
                     example: "success"
                   data:
-                    $ref: '#/components/schemas/AssessmentResults'
+                    $ref: '#/components/schemas/AssessmentSession'
         '400':
           description: Missing session_id or assessment already completed
           content:
@@ -466,8 +468,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-  # NOTE: /api/v1/assessments/analytics is deprecated and will be moved to user resource
 
   /api/v1/assessments/{session_id}/summary:
     get:
@@ -520,6 +520,42 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/reports/basic-assessment:
+    get:
+      tags:
+        - Reports
+      summary: Get basic assessment report
+      description: |
+        Returns an aggregate report across all completed basic assessments for the authenticated user.
+        Includes overall score and per-dimension breakdown.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Report retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/BasicAssessmentReport'
+        '401':
+          description: User not authenticated
           content:
             application/json:
               schema:
@@ -806,17 +842,62 @@ components:
           type: string
           format: date-time
 
-    UserAnalytics:
+    BasicAssessmentReport:
       type: object
       properties:
         user_id:
           type: integer
           example: 123
-        last_completed_session:
-          $ref: '#/components/schemas/AssessmentSession'
-        total_completed_assessments:
+        total_assessments:
           type: integer
+          description: Total number of completed basic assessments
           example: 5
+        total_questions:
+          type: integer
+          description: Total questions answered across all basic assessments
+          example: 75
+        total_correct:
+          type: integer
+          description: Total correct answers across all basic assessments
+          example: 60
+        overall_score_percentage:
+          type: integer
+          description: Overall accuracy percentage
+          minimum: 0
+          maximum: 100
+          example: 80
+        dimension_scores:
+          type: array
+          description: Per-dimension breakdown
+          items:
+            $ref: '#/components/schemas/DimensionScoreBreakdown'
+
+    DimensionScoreBreakdown:
+      type: object
+      properties:
+        dimension:
+          type: string
+          description: Dimension code
+          example: "FND"
+        total_questions:
+          type: integer
+          description: Total questions for this dimension
+          example: 15
+        correct_answers:
+          type: integer
+          description: Correct answers for this dimension
+          example: 12
+        score_percentage:
+          type: integer
+          description: Accuracy percentage for this dimension
+          minimum: 0
+          maximum: 100
+          example: 80
+        difficulty_level:
+          type: string
+          description: Difficulty level from the most recent assessment
+          enum: [Basic, Intermediate, Advanced, Expert]
+          example: "Intermediate"
 
     AssessmentSession:
       type: object
@@ -837,6 +918,12 @@ components:
           type: string
           format: date-time
           nullable: true
+        is_complete:
+          type: boolean
+          description: Whether the assessment has been completed
+          example: true
+        metadata:
+          $ref: '#/components/schemas/AssessmentMetadata'
 
     FluencyInput:
       type: object
