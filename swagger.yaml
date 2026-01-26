@@ -23,6 +23,8 @@ tags:
     description: Health check endpoints
   - name: Auth
     description: Authentication endpoints
+  - name: Profile
+    description: User profile management
   - name: Questions
     description: Question and metadata endpoints
   - name: Assessments
@@ -196,6 +198,181 @@ paths:
                     type: string
                     example: "success"
 
+  /api/v1/profile:
+    post:
+      tags:
+        - Profile
+      summary: Create new profile
+      description: |
+        Creates a new profile for the authenticated user.
+        Creates a new record each time (append-only behavior).
+        Deactivates any existing active profile.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileRequest'
+            example:
+              role: "Software Engineer"
+              experience_years: 5
+              company: "Tech Corp"
+              country: "United States"
+              name: "John Doe"
+              title: "Senior Developer"
+              company_type: "Startup"
+              geography: "North America"
+              goal: "Career growth"
+      responses:
+        '201':
+          description: Profile created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      profile:
+                        $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Missing required fields or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Profile
+      summary: Get current profile
+      description: Returns the current (active) profile for the authenticated user
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current profile data (null if no profile exists)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      profile:
+                        oneOf:
+                          - $ref: '#/components/schemas/UserProfile'
+                          - type: 'null'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/profile/history:
+    get:
+      tags:
+        - Profile
+      summary: Get profile history
+      description: Returns all profiles (history) for the authenticated user, ordered by most recent first
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      profiles:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserProfile'
+                      count:
+                        type: integer
+                        description: Total number of profiles
+                        example: 3
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/profile/check:
+    get:
+      tags:
+        - Profile
+      summary: Check if user has profile
+      description: Returns whether the authenticated user has an active profile
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      hasProfile:
+                        type: boolean
+                        example: true
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/questions/dimensions:
     get:
       tags:
@@ -263,7 +440,9 @@ paths:
       tags:
         - Assessments
       summary: Start a new assessment
-      description: Creates a new assessment session and returns questions
+      description: |
+        Creates a new assessment session and returns questions.
+        User profile data (experience_years, company, country) is retrieved from the user's active profile.
       security:
         - cookieAuth: []
       requestBody:
@@ -283,9 +462,6 @@ paths:
                 - dimension: "ASE"
                   difficulty_level: "Basic"
               question_count: 15
-              experience_years: 5
-              company: "Tech Corp"
-              country: "United States"
       responses:
         '201':
           description: Assessment started successfully
@@ -531,6 +707,97 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/assessments/incomplete:
+    get:
+      tags:
+        - Assessments
+      summary: Check for incomplete assessment
+      description: Checks if the authenticated user has an incomplete assessment session
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Incomplete assessment check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    $ref: '#/components/schemas/IncompleteAssessmentResponse'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/assessments/{session_id}/reset:
+    post:
+      tags:
+        - Assessments
+      summary: Reset assessment session
+      description: |
+        Resets/deletes an incomplete assessment session.
+        Only works for incomplete assessments owned by the authenticated user.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID to reset
+          example: 1
+      responses:
+        '200':
+          description: Assessment session reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Assessment session reset successfully"
+        '400':
+          description: Invalid session_id parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Assessment not found or unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/reports/basic-assessment:
     get:
       tags:
@@ -602,6 +869,141 @@ components:
           type: string
           enum: [google, github, linkedin]
           example: "google"
+
+    CreateProfileRequest:
+      type: object
+      required:
+        - role
+        - experience_years
+        - company
+        - country
+      properties:
+        role:
+          type: string
+          description: Job role
+          example: "Software Engineer"
+        experience_years:
+          type: integer
+          description: Years of experience
+          example: 5
+        company:
+          type: string
+          description: Company name
+          example: "Tech Corp"
+        country:
+          type: string
+          description: Country
+          example: "United States"
+        name:
+          type: string
+          description: User's display name (optional)
+          example: "John Doe"
+        title:
+          type: string
+          description: Job title (optional)
+          example: "Senior Developer"
+        company_type:
+          type: string
+          description: Type of company (optional)
+          example: "Startup"
+        geography:
+          type: string
+          description: Geographic region (optional)
+          example: "North America"
+        goal:
+          type: string
+          description: Career goal (optional)
+          example: "Career growth"
+        metadata:
+          type: object
+          description: Additional metadata (optional)
+          additionalProperties: true
+
+    UserProfile:
+      type: object
+      properties:
+        profile_id:
+          type: integer
+          description: Unique profile identifier
+          example: 1
+        user_id:
+          type: integer
+          description: User ID this profile belongs to
+          example: 123
+        name:
+          type: string
+          nullable: true
+          example: "John Doe"
+        role:
+          type: string
+          example: "Software Engineer"
+        title:
+          type: string
+          nullable: true
+          example: "Senior Developer"
+        experience_years:
+          type: integer
+          example: 5
+        company:
+          type: string
+          example: "Tech Corp"
+        country:
+          type: string
+          example: "United States"
+        company_type:
+          type: string
+          nullable: true
+          example: "Startup"
+        geography:
+          type: string
+          nullable: true
+          example: "North America"
+        goal:
+          type: string
+          nullable: true
+          example: "Career growth"
+        is_active:
+          type: boolean
+          description: Whether this is the current active profile
+          example: true
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    IncompleteAssessmentResponse:
+      type: object
+      properties:
+        has_incomplete:
+          type: boolean
+          description: Whether user has an incomplete assessment
+          example: true
+        session:
+          type: object
+          nullable: true
+          description: Session details if incomplete assessment exists
+          properties:
+            session_id:
+              type: integer
+              example: 1
+            assessment_type:
+              type: string
+              enum: [basic, advanced]
+              example: "basic"
+            started_at:
+              type: string
+              format: date-time
+            answered_count:
+              type: integer
+              description: Number of questions already answered
+              example: 5
+            total_questions:
+              type: integer
+              description: Total questions in the assessment
+              example: 15
 
     Dimension:
       type: object
@@ -718,9 +1120,6 @@ components:
         - role
         - evaluated_dimensions
         - question_count
-        - experience_years
-        - company
-        - country
       properties:
         assessment_type:
           type: string
@@ -737,15 +1136,6 @@ components:
         question_count:
           type: integer
           example: 15
-        experience_years:
-          type: integer
-          example: 5
-        company:
-          type: string
-          example: "Tech Corp"
-        country:
-          type: string
-          example: "United States"
 
     AssessmentStartResponse:
       type: object
