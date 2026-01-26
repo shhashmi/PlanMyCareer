@@ -71,7 +71,43 @@ export default function Header() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          {isLoggedIn && (
+            <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {[
+                { label: "How it works", path: "/how-it-works" },
+                { label: "FAQ", path: "/faq" },
+                { label: "Pricing", path: "/pricing" },
+                { label: "Your Weekly Plan", path: "/weekly-plan" },
+              ].map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: "8px 12px",
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--primary-light)";
+                    e.currentTarget.style.background = "rgba(20, 184, 166, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          )}
           {isLoggedIn ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button

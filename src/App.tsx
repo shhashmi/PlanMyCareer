@@ -16,6 +16,10 @@ import UpskillPlan from './pages/UpskillPlan';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
 import ResumeAssessment from './pages/ResumeAssessment';
+import HowItWorks from './pages/HowItWorks';
+import FAQ from './pages/FAQ';
+import Pricing from './pages/Pricing';
+import WeeklyPlan from './pages/WeeklyPlan';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -113,6 +117,10 @@ function AppRoutes() {
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
+      <Route path="/how-it-works" element={<ProtectedRoute><HowItWorks /></ProtectedRoute>} />
+      <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
+      <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+      <Route path="/weekly-plan" element={<ProtectedRoute><WeeklyPlan /></ProtectedRoute>} />
     </Routes>
   );
 }
