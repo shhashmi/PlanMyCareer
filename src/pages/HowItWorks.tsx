@@ -1,27 +1,31 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, Brain, Target, TrendingUp, Sparkles } from 'lucide-react';
+import { User, Search, ClipboardCheck, Map, Sparkles } from 'lucide-react';
 
 export default function HowItWorks() {
   const steps = [
     {
-      icon: CheckCircle,
-      title: 'Complete Your Profile',
-      description: 'Tell us about your role, experience, and career goals. This helps us tailor the assessment to your specific needs.'
+      icon: User,
+      title: 'Tell Us About You',
+      description: 'Share your role, experience, and career goals in under 2 minutes. No signup required.',
+      highlight: 'We tailor everything to your specific job and ambitions.'
     },
     {
-      icon: Brain,
-      title: 'Take the Assessment',
-      description: 'Answer questions designed to evaluate your AI fluency across key dimensions like fundamentals, prompting, and ethics.'
+      icon: Search,
+      title: 'Discover Your AI Skills Gap',
+      description: 'Get a curated list of AI competencies that matter for your role—not generic advice.',
+      highlight: 'Know exactly what skills will make you indispensable.'
     },
     {
-      icon: Target,
-      title: 'Get Your Results',
-      description: 'Receive a detailed breakdown of your strengths and areas for improvement with actionable insights.'
+      icon: ClipboardCheck,
+      title: 'Assess Your Current Level',
+      description: 'Take a quick self-assessment to see where you stand across key AI dimensions.',
+      highlight: 'Honest benchmarking reveals your real starting point.'
     },
     {
-      icon: TrendingUp,
-      title: 'Follow Your Upskill Plan',
-      description: 'Access personalized learning resources and weekly action plans to systematically improve your AI skills.'
+      icon: Map,
+      title: 'Get Your Personalized Roadmap',
+      description: 'Receive a 12-week learning plan with resources, practice exercises, and projects—fitted to your schedule.',
+      highlight: 'Stop guessing what to learn next. Start progressing.'
     }
   ];
 
@@ -110,8 +114,11 @@ export default function HowItWorks() {
                     </span>
                     <h3 style={{ fontSize: '20px', fontWeight: '600' }}>{step.title}</h3>
                   </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', marginBottom: '12px' }}>
                     {step.description}
+                  </p>
+                  <p style={{ color: 'var(--primary-light)', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>→</span> {step.highlight}
                   </p>
                 </div>
               </motion.div>
