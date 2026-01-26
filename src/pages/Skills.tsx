@@ -15,9 +15,28 @@ export default function Skills() {
     role => profileData.title.toLowerCase().includes(role.toLowerCase())
   )
 
-  if (!profileData || skills.length === 0) {
+  if (!profileData) {
     navigate('/')
     return null
+  }
+
+  if (skills.length === 0) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Loading skills for your role...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+        </div>
+      </div>
+    )
   }
 
   // Map proficiency levels (case-insensitive)

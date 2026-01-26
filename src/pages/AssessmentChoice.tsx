@@ -18,8 +18,8 @@ export default function AssessmentChoice() {
     return null // Wait for session check to complete
   }
 
-  if (!isLoggedIn || skills.length === 0) {
-    navigate('/')
+  if (!isLoggedIn) {
+    navigate('/login')
     return null
   }
 

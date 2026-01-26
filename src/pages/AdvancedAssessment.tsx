@@ -25,11 +25,6 @@ export default function AdvancedAssessment() {
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
-    if (skills.length === 0) {
-      navigate('/')
-      return
-    }
-    
     setTimeout(() => {
       setMessages([{
         type: 'bot',
