@@ -5,6 +5,7 @@
  */
 
 import api from './api';
+import { wrapApiCall, wrapVoidApiCall } from '../utils/apiWrapper';
 import type {
   AssessmentStartRequest,
   AssessmentStartResponse,
@@ -41,134 +42,74 @@ class AssessmentService {
    * Get all available dimensions
    */
   async getDimensions(): Promise<ApiResponse<Dimension[]>> {
-    try {
-      const response = await api.get<{ status: string; data: { dimensions: Dimension[] } }>('/v1/questions/dimensions');
-      this.dimensionsCache = response.data.data.dimensions;
-      return {
-        success: true,
-        data: response.data.data.dimensions,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to fetch dimensions',
-          details: error.response?.data,
-        },
-      };
+    const response = await wrapApiCall<Dimension[], { dimensions: Dimension[] }>(
+      () => api.get<{ status: string; data: { dimensions: Dimension[] } }>('/v1/questions/dimensions'),
+      'Failed to fetch dimensions',
+      (data) => data.dimensions
+    );
+
+    if (response.success && response.data) {
+      this.dimensionsCache = response.data;
     }
+
+    return response;
   }
 
   /**
    * Get all available roles
    */
   async getRoles(): Promise<ApiResponse<Role[]>> {
-    try {
-      const response = await api.get<{ status: string; data: { roles: Role[] } }>('/v1/questions/roles');
-      this.rolesCache = response.data.data.roles;
-      return {
-        success: true,
-        data: response.data.data.roles,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to fetch roles',
-          details: error.response?.data,
-        },
-      };
+    const response = await wrapApiCall<Role[], { roles: Role[] }>(
+      () => api.get<{ status: string; data: { roles: Role[] } }>('/v1/questions/roles'),
+      'Failed to fetch roles',
+      (data) => data.roles
+    );
+
+    if (response.success && response.data) {
+      this.rolesCache = response.data;
     }
+
+    return response;
   }
 
   /**
    * Start a new assessment session
    */
   async startAssessment(request: AssessmentStartRequest): Promise<ApiResponse<AssessmentStartResponse>> {
-    try {
-      const response = await api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/start', request);
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to start assessment',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.post<{ status: string; data: AssessmentStartResponse }>('/v1/assessments/start', request),
+      'Failed to start assessment'
+    );
   }
 
   /**
    * Save an answer for a question
    */
   async saveAnswer(request: SaveAnswerRequest): Promise<ApiResponse<SaveAnswerResponse>> {
-    try {
-      const response = await api.post<{ status: string; data: SaveAnswerResponse }>('/v1/assessments/save-answer', request);
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to save answer',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.post<{ status: string; data: SaveAnswerResponse }>('/v1/assessments/save-answer', request),
+      'Failed to save answer'
+    );
   }
 
   /**
    * Submit assessment to mark it as complete
    */
   async submitAssessment(request: SubmitAssessmentRequest): Promise<ApiResponse<SubmitAssessmentResponse>> {
-    try {
-      const response = await api.post<{ status: string; data: SubmitAssessmentResponse }>('/v1/assessments/submit', request);
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to submit assessment',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.post<{ status: string; data: SubmitAssessmentResponse }>('/v1/assessments/submit', request),
+      'Failed to submit assessment'
+    );
   }
 
   /**
    * Get assessment summary
    */
   async getAssessmentSummary(sessionId: number): Promise<ApiResponse<AssessmentSummary>> {
-    try {
-      const response = await api.get<{ status: string; data: AssessmentSummary }>(`/v1/assessments/${sessionId}/summary`);
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to get assessment summary',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.get<{ status: string; data: AssessmentSummary }>(`/v1/assessments/${sessionId}/summary`),
+      'Failed to get assessment summary'
+    );
   }
 
   /**
@@ -177,7 +118,7 @@ class AssessmentService {
    */
   mapProfileToDimensions(apiProfile: FluencyProfileResponse, dimensions: Dimension[]): EvaluatedDimension[] {
     console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions });
-    
+
     const nameToCode: Record<string, DimensionCode> = {};
     dimensions.forEach(dim => {
       nameToCode[dim.name.toLowerCase().trim()] = dim.dimension_code;
@@ -189,12 +130,12 @@ class AssessmentService {
         const dimensionCode = nameToCode[normalizedName];
         const difficultyLevel = PROFICIENCY_TO_DIFFICULTY[skill.proficiency];
 
-        console.log('🔍 Mapping skill:', { 
-          skillName: skill.name, 
+        console.log('🔍 Mapping skill:', {
+          skillName: skill.name,
           normalizedName,
           proficiency: skill.proficiency,
-          dimensionCode, 
-          difficultyLevel 
+          dimensionCode,
+          difficultyLevel
         });
 
         if (!dimensionCode || !difficultyLevel) {
@@ -301,22 +242,10 @@ class AssessmentService {
    * Resume an incomplete assessment
    */
   async resumeAssessment(): Promise<ApiResponse<IncompleteAssessmentResponse>> {
-    try {
-      const response = await api.post<{ status: string; data: IncompleteAssessmentResponse }>('/v1/assessments/resume');
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to resume assessment',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.post<{ status: string; data: IncompleteAssessmentResponse }>('/v1/assessments/resume'),
+      'Failed to resume assessment'
+    );
   }
 
   /**
@@ -324,44 +253,20 @@ class AssessmentService {
    * Returns aggregated scores across all completed basic assessments
    */
   async getBasicAssessmentReport(): Promise<ApiResponse<BasicAssessmentReport>> {
-    try {
-      const response = await api.get<{ status: string; data: BasicAssessmentReport }>('/v1/reports/basic-assessment');
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to get assessment report',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.get<{ status: string; data: BasicAssessmentReport }>('/v1/reports/basic-assessment'),
+      'Failed to get assessment report'
+    );
   }
 
   /**
    * Reset/delete an incomplete assessment session
    */
   async resetSession(sessionId: number): Promise<ApiResponse<void>> {
-    try {
-      await api.post(`/v1/assessments/${sessionId}/reset`);
-      return {
-        success: true,
-        data: undefined,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to reset assessment',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapVoidApiCall(
+      () => api.post(`/v1/assessments/${sessionId}/reset`),
+      'Failed to reset assessment'
+    );
   }
 }
 

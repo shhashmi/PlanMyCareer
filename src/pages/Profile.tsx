@@ -5,6 +5,7 @@ import { User, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Sav
 import { useApp } from '../context/AppContext';
 import { profileService, type CreateProfileRequest, type UserProfile } from '../services/profileService';
 import { fluencyService } from '../services/fluencyService';
+import { Modal, ErrorAlert, LoadingSpinner } from '../components/ui';
 
 interface ProfileFormData {
   name: string;
@@ -81,11 +82,11 @@ export default function Profile() {
 
   if (!isLoggedIn) {
     return (
-      <div style={{ 
-        minHeight: 'calc(100vh - 80px)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
+      <div style={{
+        minHeight: 'calc(100vh - 80px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
         <p style={{ color: 'var(--text-secondary)' }}>Redirecting to login...</p>
       </div>
@@ -214,16 +215,7 @@ export default function Profile() {
   };
 
   if (fetchingProfile) {
-    return (
-      <div style={{ 
-        minHeight: 'calc(100vh - 80px)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Loading profile...</p>
-      </div>
-    );
+    return <LoadingSpinner fullPage message="Loading profile..." />;
   }
 
   return (
@@ -477,116 +469,89 @@ export default function Profile() {
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.6)',
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        maxWidth="480px"
+        showCloseButton={false}
+      >
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '16px'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: 'rgba(251, 191, 36, 0.15)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setShowConfirmModal(false)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              background: 'var(--surface)',
-              borderRadius: '16px',
-              padding: '28px',
-              maxWidth: '480px',
-              width: '100%',
-              border: '1px solid var(--border)',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '16px'
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'rgba(251, 191, 36, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <AlertCircle size={22} color="#d97706" />
-              </div>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: 'var(--text-primary)'
-              }}>
-                Confirm Profile Update
-              </h3>
-            </div>
-
-            <div style={{
-              background: 'rgba(251, 191, 36, 0.1)',
-              border: '1px solid rgba(251, 191, 36, 0.25)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '24px'
-            }}>
-              <p style={{
-                color: 'var(--text-secondary)',
-                fontSize: '14px',
-                lineHeight: '1.6',
-                margin: 0
-              }}>
-                Your assessment history is linked to your current profile. Updating your profile will
-                <strong style={{ color: '#d97706' }}> reset your assessment progress</strong>.
-                However, your <strong style={{ color: 'var(--text-primary)' }}>learning plan will remain intact</strong>.
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                style={{
-                  padding: '10px 20px',
-                  background: 'transparent',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  color: 'var(--text-muted)',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                style={{
-                  padding: '10px 20px',
-                  background: 'var(--gradient-1)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                Yes, Update Profile
-              </button>
-            </div>
-          </motion.div>
+            justifyContent: 'center'
+          }}>
+            <AlertCircle size={22} color="#d97706" />
+          </div>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: 'var(--text-primary)'
+          }}>
+            Confirm Profile Update
+          </h3>
         </div>
-      )}
+
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.1)',
+          border: '1px solid rgba(251, 191, 36, 0.25)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '24px'
+        }}>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            lineHeight: '1.6',
+            margin: 0
+          }}>
+            Your assessment history is linked to your current profile. Updating your profile will
+            <strong style={{ color: '#d97706' }}> reset your assessment progress</strong>.
+            However, your <strong style={{ color: 'var(--text-primary)' }}>learning plan will remain intact</strong>.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setShowConfirmModal(false)}
+            style={{
+              padding: '10px 20px',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              color: 'var(--text-muted)',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            style={{
+              padding: '10px 20px',
+              background: 'var(--gradient-1)',
+              border: 'none',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            Yes, Update Profile
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

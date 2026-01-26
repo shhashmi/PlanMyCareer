@@ -28,7 +28,7 @@ export default function AdvancedAssessment() {
     setTimeout(() => {
       setMessages([{
         type: 'bot',
-        content: `Hello! I'm your AI assessment assistant. I'll be evaluating your skills in ${skills.length} key areas for your role as ${profileData?.title || 'your position'}. Let's begin with an interactive conversation.`,
+        content: `Hello! I'm your AI assessment assistant. I'll be evaluating your skills in ${skills.length} key areas for your role as ${profileData?.role || 'your position'}. Let's begin with an interactive conversation.`,
         timestamp: new Date()
       }])
       

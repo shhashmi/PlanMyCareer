@@ -1,122 +1,127 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
+import { ErrorAlert, ProgressBar, InlineLoader } from '../components/ui';
 import type { AssessmentStartResponse, AssessmentQuestion, SelectedOption, Dimension, DimensionCode } from '../types/api.types';
 
 // Map option index to option letter
 const OPTION_LETTERS: SelectedOption[] = ['A', 'B', 'C', 'D'];
 
 export default function BasicAssessment() {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setIncompleteAssessment } = useApp();
 
   // Get assessment data from route state
-  const assessmentData = location.state?.assessmentData as AssessmentStartResponse | undefined
+  const assessmentData = location.state?.assessmentData as AssessmentStartResponse | undefined;
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, SelectedOption>>({})
-  const [savingAnswer, setSavingAnswer] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [dimensions, setDimensions] = useState<Dimension[]>([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, SelectedOption>>({});
+  const [savingAnswer, setSavingAnswer] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState<Dimension[]>([]);
 
   // Fetch dimensions for display names
   useEffect(() => {
     const fetchDimensions = async () => {
-      const dims = await assessmentService.getCachedDimensions()
-      setDimensions(dims)
-    }
-    fetchDimensions()
-  }, [])
+      const dims = await assessmentService.getCachedDimensions();
+      setDimensions(dims);
+    };
+    fetchDimensions();
+  }, []);
 
   // Redirect if no assessment data
   useEffect(() => {
     if (!assessmentData) {
-      navigate('/assessment-choice')
+      navigate('/assessment-choice');
     }
-  }, [assessmentData, navigate])
+  }, [assessmentData, navigate]);
 
   // Get full dimension name from code
   const getDimensionName = (code: DimensionCode): string => {
-    const dim = dimensions.find(d => d.dimension_code === code)
-    return dim?.name || code
-  }
+    const dim = dimensions.find(d => d.dimension_code === code);
+    return dim?.name || code;
+  };
 
   if (!assessmentData) {
-    return null
+    return null;
   }
 
-  const questions = assessmentData.questions
-  const totalQuestions = questions.length
-  const currentQuestion = questions[currentQuestionIndex]
-  const currentProgress = currentQuestionIndex + 1
+  const questions = assessmentData.questions;
+  const totalQuestions = questions.length;
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentProgress = currentQuestionIndex + 1;
 
   // Get options as array for the current question
   const getOptions = (question: AssessmentQuestion): string[] => {
-    return [question.option_a, question.option_b, question.option_c, question.option_d]
-  }
+    return [question.option_a, question.option_b, question.option_c, question.option_d];
+  };
 
   const handleAnswer = (optionIndex: number) => {
-    const selectedOption = OPTION_LETTERS[optionIndex]
-    const questionId = currentQuestion.question_id
-    setAnswers(prev => ({ ...prev, [questionId]: selectedOption }))
-    setError(null)
-  }
+    const selectedOption = OPTION_LETTERS[optionIndex];
+    const questionId = currentQuestion.question_id;
+    setAnswers(prev => ({ ...prev, [questionId]: selectedOption }));
+    setError(null);
+  };
 
   const handleNext = async () => {
-    const questionId = currentQuestion.question_id
-    const selectedOption = answers[questionId]
+    const questionId = currentQuestion.question_id;
+    const selectedOption = answers[questionId];
 
-    if (!selectedOption) return
+    if (!selectedOption) return;
 
-    setSavingAnswer(true)
-    setError(null)
+    setSavingAnswer(true);
+    setError(null);
 
     try {
       const response = await assessmentService.saveAnswer({
         session_id: assessmentData.session_id,
         question_id: questionId,
         selected_option: selectedOption,
-      })
+      });
 
       if (!response.success) {
-        setError(response.error?.message || 'Failed to save answer')
-        return
+        setError(response.error?.message || 'Failed to save answer');
+        return;
       }
 
       // Move to next question or results
       if (currentQuestionIndex < totalQuestions - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1)
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         // Assessment complete - submit assessment before navigating to results
         const submitResponse = await assessmentService.submitAssessment({
           session_id: assessmentData.session_id,
-        })
+        });
 
         if (!submitResponse.success) {
-          setError(submitResponse.error?.message || 'Failed to submit assessment')
-          return
+          setError(submitResponse.error?.message || 'Failed to submit assessment');
+          return;
         }
 
-        navigate('/basic-results', { state: { sessionId: assessmentData.session_id } })
+        // Clear incomplete assessment state since we've completed it
+        setIncompleteAssessment(null);
+        navigate('/basic-results', { state: { sessionId: assessmentData.session_id } });
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError('An unexpected error occurred');
     } finally {
-      setSavingAnswer(false)
+      setSavingAnswer(false);
     }
-  }
+  };
 
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
-      setError(null)
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setError(null);
     }
-  }
+  };
 
-  const hasAnswer = answers[currentQuestion.question_id] !== undefined
-  const options = getOptions(currentQuestion)
+  const hasAnswer = answers[currentQuestion.question_id] !== undefined;
+  const options = getOptions(currentQuestion);
 
   return (
     <div style={{
@@ -133,39 +138,21 @@ export default function BasicAssessment() {
               Question {currentProgress} of {totalQuestions}
             </span>
             <span style={{ color: 'var(--primary-light)', fontSize: '14px', fontWeight: '500' }}>
-              {getDimensionName(currentQuestion.dimension)} • {currentQuestion.difficulty_level}
+              {getDimensionName(currentQuestion.dimension)} &bull; {currentQuestion.difficulty_level}
             </span>
           </div>
-          <div style={{
-            height: '6px',
-            background: 'var(--surface-light)',
-            borderRadius: '3px',
-            overflow: 'hidden'
-          }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(currentProgress / totalQuestions) * 100}%` }}
-              style={{
-                height: '100%',
-                background: 'var(--gradient-1)',
-                borderRadius: '3px'
-              }}
-            />
-          </div>
+          <ProgressBar
+            progress={(currentProgress / totalQuestions) * 100}
+            height={6}
+            fillColor="var(--gradient-1)"
+          />
         </div>
 
         {error && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            marginBottom: '16px',
-            color: '#ef4444',
-            fontSize: '14px'
-          }}>
-            {error}
-          </div>
+          <ErrorAlert
+            message={error}
+            onDismiss={() => setError(null)}
+          />
         )}
 
         <AnimatePresence mode="wait">
@@ -187,8 +174,8 @@ export default function BasicAssessment() {
 
             <div style={{ display: 'grid', gap: '12px' }}>
               {options.map((option, index) => {
-                const optionLetter = OPTION_LETTERS[index]
-                const isSelected = answers[currentQuestion.question_id] === optionLetter
+                const optionLetter = OPTION_LETTERS[index];
+                const isSelected = answers[currentQuestion.question_id] === optionLetter;
 
                 return (
                   <motion.button
@@ -234,21 +221,13 @@ export default function BasicAssessment() {
                     </span>
                     {option}
                   </motion.button>
-                )
+                );
               })}
             </div>
 
             {savingAnswer && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginTop: '16px',
-                color: 'var(--text-muted)',
-                fontSize: '14px'
-              }}>
-                <Loader2 size={16} className="animate-spin" />
-                Saving answer...
+              <div style={{ marginTop: '16px' }}>
+                <InlineLoader message="Saving answer..." />
               </div>
             )}
           </motion.div>
@@ -296,5 +275,5 @@ export default function BasicAssessment() {
         </div>
       </div>
     </div>
-  )
+  );
 }

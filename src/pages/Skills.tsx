@@ -11,8 +11,8 @@ export default function Skills() {
   const { profileData, skills, isLoggedIn } = useApp()
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
 
-  const isEngineeringRole = profileData?.title && engineeringRoles.some(
-    role => profileData.title.toLowerCase().includes(role.toLowerCase())
+  const isEngineeringRole = profileData?.role && engineeringRoles.some(
+    r => profileData.role.toLowerCase().includes(r.toLowerCase())
   )
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function Skills() {
             AI Skills for Your Success
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-            As a <strong>{profileData.title}</strong> at <strong>{profileData.company}</strong>,
+            As a <strong>{profileData.role}</strong> at <strong>{profileData.company}</strong>,
             here are the AI skills you need to thrive and grow
           </p>
         </motion.div>
@@ -131,7 +131,7 @@ export default function Skills() {
                 }}>
                   {skill.level} Required
                 </span>
-                {isEngineeringRole && getSkillDescription(skill.name, profileData.title) && (
+                {isEngineeringRole && getSkillDescription(skill.name, profileData.role) && (
                   <div
                     style={{
                       position: 'relative',
@@ -183,7 +183,7 @@ export default function Skills() {
                           }}>
                             {skill.name}
                           </div>
-                          {getSkillDescription(skill.name, profileData.title)}
+                          {getSkillDescription(skill.name, profileData.role)}
                         </motion.div>
                       )}
                     </AnimatePresence>

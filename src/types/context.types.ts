@@ -37,6 +37,9 @@ export interface AssessmentResult {
   [key: string]: any;
 }
 
+// LocalStorage setter type - accepts value, updater function, or null to clear
+type LocalStorageSetter<T> = (value: T | ((prev: T) => T) | null) => void;
+
 export interface AppContextType {
   user: User | null;
   isLoggedIn: boolean;
@@ -44,19 +47,19 @@ export interface AppContextType {
   login: (userData: User) => void;
   logout: () => void;
   profileData: ProfileData | null;
-  setProfileData: (data: ProfileData | null) => void;
+  setProfileData: LocalStorageSetter<ProfileData | null>;
   skills: Skill[];
-  setSkills: (skills: Skill[]) => void;
+  setSkills: LocalStorageSetter<Skill[]>;
   assessmentResults: AssessmentResult[] | null;
-  setAssessmentResults: (results: AssessmentResult[] | null) => void;
+  setAssessmentResults: LocalStorageSetter<AssessmentResult[] | null>;
   advancedResults: any;
-  setAdvancedResults: (results: any) => void;
+  setAdvancedResults: LocalStorageSetter<any>;
   upskillPlan: any;
-  setUpskillPlan: (plan: any) => void;
+  setUpskillPlan: LocalStorageSetter<any>;
   apiProfile: FluencyProfileResponse | null;
-  setApiProfile: (profile: FluencyProfileResponse | null) => void;
+  setApiProfile: LocalStorageSetter<FluencyProfileResponse | null>;
   incompleteAssessment: IncompleteAssessmentSession | null;
-  setIncompleteAssessment: (assessment: IncompleteAssessmentSession | null) => void;
+  setIncompleteAssessment: LocalStorageSetter<IncompleteAssessmentSession | null>;
   roles: Role[];
   rolesLoading: boolean;
 }

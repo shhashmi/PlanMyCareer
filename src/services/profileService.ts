@@ -1,4 +1,6 @@
 import api from './api';
+import { wrapApiCall } from '../utils/apiWrapper';
+import type { ApiResponse } from '../types/api.types';
 
 export interface UserProfile {
   profile_id: number;
@@ -33,86 +35,35 @@ export interface ProfileCheckResponse {
   hasProfile: boolean;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    status: number;
-    message: string;
-  };
-}
-
 class ProfileService {
   async checkProfile(): Promise<ApiResponse<ProfileCheckResponse>> {
-    try {
-      const response = await api.get<{ status: string; data: ProfileCheckResponse }>('/v1/profile/check');
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to check profile',
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.get<{ status: string; data: ProfileCheckResponse }>('/v1/profile/check'),
+      'Failed to check profile'
+    );
   }
 
   async getProfile(): Promise<ApiResponse<UserProfile | null>> {
-    try {
-      const response = await api.get<{ status: string; data: { profile: UserProfile | null } }>('/v1/profile');
-      return {
-        success: true,
-        data: response.data.data.profile,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to get profile',
-        },
-      };
-    }
+    return wrapApiCall<UserProfile | null, { profile: UserProfile | null }>(
+      () => api.get<{ status: string; data: { profile: UserProfile | null } }>('/v1/profile'),
+      'Failed to get profile',
+      (data) => data.profile
+    );
   }
 
   async createProfile(profileData: CreateProfileRequest): Promise<ApiResponse<UserProfile>> {
-    try {
-      const response = await api.post<{ status: string; data: { profile: UserProfile } }>('/v1/profile', profileData);
-      return {
-        success: true,
-        data: response.data.data.profile,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to create profile',
-        },
-      };
-    }
+    return wrapApiCall<UserProfile, { profile: UserProfile }>(
+      () => api.post<{ status: string; data: { profile: UserProfile } }>('/v1/profile', profileData),
+      'Failed to create profile',
+      (data) => data.profile
+    );
   }
 
   async getProfileHistory(): Promise<ApiResponse<{ profiles: UserProfile[]; count: number }>> {
-    try {
-      const response = await api.get<{ status: string; data: { profiles: UserProfile[]; count: number } }>('/v1/profile/history');
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to get profile history',
-        },
-      };
-    }
+    return wrapApiCall(
+      () => api.get<{ status: string; data: { profiles: UserProfile[]; count: number } }>('/v1/profile/history'),
+      'Failed to get profile history'
+    );
   }
 }
 

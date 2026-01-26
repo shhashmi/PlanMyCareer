@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import type { AppContextType, User, ProfileData, Skill, AssessmentResult, IncompleteAssessmentSession } from '../types/context.types';
 import type { FluencyProfileResponse, Role } from '../types/api.types';
 import api from '../services/api';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -13,80 +14,18 @@ export function AppProvider({ children }: AppProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<ProfileData | null>(() => {
-    const saved = localStorage.getItem('profileData');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [skills, setSkills] = useState<Skill[]>(() => {
-    const saved = localStorage.getItem('skills');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[] | null>(() => {
-    const saved = localStorage.getItem('assessmentResults');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [advancedResults, setAdvancedResults] = useState<any>(() => {
-    const saved = localStorage.getItem('advancedResults');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [upskillPlan, setUpskillPlan] = useState<any>(() => {
-    const saved = localStorage.getItem('upskillPlan');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [apiProfile, setApiProfile] = useState<FluencyProfileResponse | null>(() => {
-    const saved = localStorage.getItem('apiProfile');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [incompleteAssessment, setIncompleteAssessment] = useState<IncompleteAssessmentSession | null>(() => {
-    const saved = localStorage.getItem('incompleteAssessment');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [roles, setRoles] = useState<Role[]>(() => {
-    const saved = localStorage.getItem('roles');
-    return saved ? JSON.parse(saved) : [];
-  });
+
+  // Use the useLocalStorage hook for all persisted state
+  const [profileData, setProfileData] = useLocalStorage<ProfileData | null>('profileData', null);
+  const [skills, setSkills] = useLocalStorage<Skill[]>('skills', []);
+  const [assessmentResults, setAssessmentResults] = useLocalStorage<AssessmentResult[] | null>('assessmentResults', null);
+  const [advancedResults, setAdvancedResults] = useLocalStorage<any>('advancedResults', null);
+  const [upskillPlan, setUpskillPlan] = useLocalStorage<any>('upskillPlan', null);
+  const [apiProfile, setApiProfile] = useLocalStorage<FluencyProfileResponse | null>('apiProfile', null);
+  const [incompleteAssessment, setIncompleteAssessment] = useLocalStorage<IncompleteAssessmentSession | null>('incompleteAssessment', null);
+  const [roles, setRoles] = useLocalStorage<Role[]>('roles', []);
+
   const [rolesLoading, setRolesLoading] = useState(false);
-
-  // Persistence Effects
-  useEffect(() => {
-    if (profileData) localStorage.setItem('profileData', JSON.stringify(profileData));
-    else localStorage.removeItem('profileData');
-  }, [profileData]);
-
-  useEffect(() => {
-    if (skills.length > 0) localStorage.setItem('skills', JSON.stringify(skills));
-    else localStorage.removeItem('skills');
-  }, [skills]);
-
-  useEffect(() => {
-    if (assessmentResults) localStorage.setItem('assessmentResults', JSON.stringify(assessmentResults));
-    else localStorage.removeItem('assessmentResults');
-  }, [assessmentResults]);
-
-  useEffect(() => {
-    if (advancedResults) localStorage.setItem('advancedResults', JSON.stringify(advancedResults));
-    else localStorage.removeItem('advancedResults');
-  }, [advancedResults]);
-
-  useEffect(() => {
-    if (upskillPlan) localStorage.setItem('upskillPlan', JSON.stringify(upskillPlan));
-    else localStorage.removeItem('upskillPlan');
-  }, [upskillPlan]);
-
-  useEffect(() => {
-    if (apiProfile) localStorage.setItem('apiProfile', JSON.stringify(apiProfile));
-    else localStorage.removeItem('apiProfile');
-  }, [apiProfile]);
-
-  useEffect(() => {
-    if (incompleteAssessment) localStorage.setItem('incompleteAssessment', JSON.stringify(incompleteAssessment));
-    else localStorage.removeItem('incompleteAssessment');
-  }, [incompleteAssessment]);
-
-  useEffect(() => {
-    if (roles.length > 0) localStorage.setItem('roles', JSON.stringify(roles));
-    else localStorage.removeItem('roles');
-  }, [roles]);
 
   useEffect(() => {
     const checkSession = async () => {

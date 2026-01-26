@@ -34,8 +34,8 @@ export default function AssessmentProgress() {
     try {
       const response = await assessmentService.resumeAssessment();
       if (response.success && response.data) {
-        setIncompleteAssessment(response.data);
-        navigate('/basic-assessment', { state: { resumeData: response.data } });
+        // Don't clear incompleteAssessment here - it will be cleared when assessment completes
+        navigate('/basic-assessment', { state: { assessmentData: response.data } });
       } else {
         setError(response.error?.message || 'Failed to resume assessment. Please try again.');
       }
