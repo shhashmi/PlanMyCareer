@@ -34,22 +34,6 @@ export function AppProvider({ children }: AppProviderProps) {
         if (response.data.status === 'success') {
           setUser(response.data.data.user);
           setIsLoggedIn(true);
-
-          // Fetch roles if not in cache
-          const cachedRoles = localStorage.getItem('roles');
-          if (!cachedRoles || JSON.parse(cachedRoles).length === 0) {
-            setRolesLoading(true);
-            try {
-              const rolesResponse = await api.get('/v1/questions/roles');
-              if (rolesResponse.data.status === 'success') {
-                setRoles(rolesResponse.data.data.roles);
-              }
-            } catch (error) {
-              console.error('Failed to fetch roles:', error);
-            } finally {
-              setRolesLoading(false);
-            }
-          }
         }
       } catch (error) {
         console.log('No active session found.');
@@ -57,7 +41,25 @@ export function AppProvider({ children }: AppProviderProps) {
         setLoading(false);
       }
     };
+
+    const fetchRoles = async (cachedRoles: Role[]) => {
+      if (cachedRoles.length === 0) {
+        setRolesLoading(true);
+        try {
+          const rolesResponse = await api.get('/v1/questions/roles');
+          if (rolesResponse.data.status === 'success') {
+            setRoles(rolesResponse.data.data.roles);
+          }
+        } catch (error) {
+          console.error('Failed to fetch roles:', error);
+        } finally {
+          setRolesLoading(false);
+        }
+      }
+    };
+
     checkSession();
+    fetchRoles(roles);
   }, []);
 
   const login = (userData: User) => {

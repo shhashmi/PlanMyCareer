@@ -36,9 +36,11 @@ export default function Header() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    // Navigate first to avoid race condition where ProtectedRoute
+    // redirects to /login before navigation to home completes
     navigate("/");
+    logout();
   };
 
   const isActivePath = (path: string) => location.pathname === path;
