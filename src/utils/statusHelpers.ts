@@ -92,14 +92,14 @@ export function getSkillLevel(proficiency: number): string {
     if (proficiency >= 3.5) return 'Expert';
     if (proficiency >= 2.5) return 'Advanced';
     if (proficiency >= 1.5) return 'Intermediate';
-    return 'Beginner';
+    return 'Basic';
   }
 
   // Handle percentage scale (0-100)
   if (proficiency >= 80) return 'Expert';
   if (proficiency >= 60) return 'Advanced';
   if (proficiency >= 40) return 'Intermediate';
-  return 'Beginner';
+  return 'Basic';
 }
 
 /**

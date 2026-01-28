@@ -3,14 +3,15 @@
  * Central type definitions for all API integrations
  */
 
-// Proficiency levels
-export type ProficiencyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+// Proficiency levels (matches API v2 enum)
+export type ProficiencyLevel = 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
 
-// Skill dimension from API
+// Skill dimension from API (v2 includes priority)
 export interface SkillDimension {
   name: string;
   description: string;
   proficiency: ProficiencyLevel;
+  priority: number; // 1-10, lower = higher importance for the role
 }
 
 // API Profile Response

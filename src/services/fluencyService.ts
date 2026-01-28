@@ -20,7 +20,7 @@ class FluencyService {
    */
   async resolveProfile(profileData: ProfileRequestData): Promise<ApiResponse<FluencyProfileResponse>> {
     return wrapDirectApiCall(
-      () => api.post<FluencyProfileResponse>('/v1/fluency/resolve', profileData),
+      () => api.post<FluencyProfileResponse>('/v2/fluency/resolve', profileData),
       'Failed to resolve profile'
     );
   }

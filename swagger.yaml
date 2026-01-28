@@ -75,8 +75,10 @@ paths:
     post:
       tags:
         - Fluency
-      summary: Resolve fluency profile
-      description: Resolves a user's fluency profile based on their experience and role
+      summary: Resolve fluency profile (v1)
+      description: |
+        Resolves a user's fluency profile based on their experience and role.
+        **Deprecated:** Use v2 endpoint for priority information.
       requestBody:
         required: true
         content:
@@ -89,7 +91,36 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FluencyProfile'
+                $ref: '#/components/schemas/FluencyProfileV1'
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v2/fluency/resolve:
+    post:
+      tags:
+        - Fluency
+      summary: Resolve fluency profile (v2)
+      description: |
+        Resolves a user's fluency profile based on their experience and role.
+        Includes priority ranking (1-10) for each dimension based on role and experience level.
+        Lower priority number = higher importance for the role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FluencyInput'
+      responses:
+        '200':
+          description: Fluency profile resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FluencyProfileV2'
         '400':
           description: Missing required parameters
           content:
@@ -459,10 +490,13 @@ paths:
               evaluated_dimensions:
                 - dimension: "FND"
                   difficulty_level: "Basic"
+                  priority: 8
                 - dimension: "PRM"
                   difficulty_level: "Intermediate"
+                  priority: 6
                 - dimension: "ASE"
                   difficulty_level: "Basic"
+                  priority: 5
               question_count: 15
       responses:
         '201':
@@ -1162,6 +1196,7 @@ components:
       required:
         - dimension
         - difficulty_level
+        - priority
       properties:
         dimension:
           type: string
@@ -1178,6 +1213,12 @@ components:
           type: string
           enum: [Basic, Intermediate, Advanced, Expert]
           example: "Basic"
+        priority:
+          type: integer
+          description: Priority level for this dimension (1-10, where 10 = highest priority)
+          minimum: 1
+          maximum: 10
+          example: 8
 
     AssessmentStartRequest:
       type: object
@@ -1425,27 +1466,97 @@ components:
             - Expert: return only Expert level dimensions
           example: "Intermediate"
 
-    FluencyProfile:
+    FluencyProfileV1:
       type: object
       properties:
-        overall_level:
-          type: string
-          example: "Intermediate"
-        dimension_levels:
-          type: object
-          additionalProperties:
-            type: string
-          example:
-            FND: "Intermediate"
-            PRM: "Basic"
-            ASE: "Advanced"
-        recommendations:
+        profile:
           type: array
           items:
-            type: string
-          example:
-            - "Focus on improving prompting skills"
-            - "Explore advanced AI-assisted tools"
+            $ref: '#/components/schemas/DimensionProfileV1'
+        metadata:
+          $ref: '#/components/schemas/FluencyMetadata'
+
+    FluencyProfileV2:
+      type: object
+      properties:
+        profile:
+          type: array
+          items:
+            $ref: '#/components/schemas/DimensionProfileV2'
+        metadata:
+          $ref: '#/components/schemas/FluencyMetadata'
+
+    DimensionProfileV1:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full name of the dimension
+          example: "AI Foundations & Mental Models"
+        description:
+          type: string
+          description: Description of the dimension
+          example: "Understanding of AI capabilities and limitations"
+        proficiency:
+          type: string
+          enum: [Basic, Intermediate, Advanced, Expert]
+          example: "Intermediate"
+
+    DimensionProfileV2:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full name of the dimension
+          example: "Prompting & Human-AI Interaction"
+        description:
+          type: string
+          description: Description of the dimension
+          example: "Effective communication with AI systems"
+        proficiency:
+          type: string
+          enum: [Basic, Intermediate, Advanced, Expert]
+          example: "Intermediate"
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Priority ranking for this dimension (1 = highest priority, 10 = lowest)
+          example: 1
+
+    FluencyMetadata:
+      type: object
+      properties:
+        experience_range:
+          type: string
+          description: Experience range bucket
+          example: "2-4"
+        role:
+          type: string
+          example: "software engineer"
+        title:
+          type: string
+          example: "Software Engineer"
+        company:
+          type: string
+          example: "Tech Corp"
+        country:
+          type: string
+          example: "US"
+        company_type:
+          type: string
+          example: "Startup"
+        geography:
+          type: string
+          example: "US"
+        goal:
+          type: string
+          nullable: true
+          example: null
+        max_allowed_level:
+          type: string
+          description: Maximum proficiency level allowed based on experience
+          example: "Intermediate"
 
     CompetencyBreakdown:
       type: object

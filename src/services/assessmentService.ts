@@ -28,7 +28,7 @@ import type {
 
 // Mapping from proficiency levels to difficulty levels
 const PROFICIENCY_TO_DIFFICULTY: Record<string, DifficultyLevel> = {
-  'Beginner': 'Basic',
+  'Basic': 'Basic',
   'Intermediate': 'Intermediate',
   'Advanced': 'Advanced',
   'Expert': 'Expert',
