@@ -1,26 +1,95 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelColor } from '../data/skillsData';
 import { engineeringRoles, getSkillDescription } from '../data/skillDescriptions';
+import { useCachedData } from '../hooks/useCachedData';
+import { profileService, UserProfile } from '../services/profileService';
+import { fluencyService } from '../services/fluencyService';
+import type { ProfileData } from '../types/context.types';
 
 export default function Skills() {
   const navigate = useNavigate()
-  const { profileData, skills, isLoggedIn } = useApp()
+  const { profileData, setProfileData, skills, setSkills, setApiProfile, isLoggedIn } = useApp()
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
 
   const isEngineeringRole = profileData?.role && engineeringRoles.some(
     r => profileData.role.toLowerCase().includes(r.toLowerCase())
   )
 
-  useEffect(() => {
-    if (!profileData) {
-      navigate('/');
+  // Transform UserProfile to ProfileData and fetch skills
+  const transformProfile = useCallback(async (profile: UserProfile | null): Promise<ProfileData | null> => {
+    if (!profile) {
+      return null;
     }
-  }, [profileData, navigate]);
 
+    // Fetch skills from fluency API
+    const fluencyResult = await fluencyService.resolveProfile({
+      experience_years: profile.experience_years,
+      role: profile.role,
+      title: profile.title || undefined,
+      company: profile.company,
+      country: profile.country,
+      company_type: profile.company_type || undefined,
+      geography: profile.geography || undefined,
+      goal: profile.goal || undefined,
+    });
+
+    if (fluencyResult.success && fluencyResult.data) {
+      setApiProfile(fluencyResult.data);
+      setSkills(fluencyResult.data.profile.map(s => ({
+        name: s.name,
+        level: s.proficiency.toLowerCase(),
+        description: s.description,
+        priority: s.priority
+      })));
+    }
+
+    // Map UserProfile to ProfileData format
+    return {
+      experience: profile.experience_years.toString(),
+      role: profile.role,
+      company: profile.company,
+      country: profile.country,
+      company_type: profile.company_type || undefined,
+      geography: profile.geography || undefined,
+      goal: profile.goal || undefined,
+    };
+  }, [setApiProfile, setSkills]);
+
+  const { loading } = useCachedData<UserProfile | null, ProfileData | null>(
+    profileData,
+    setProfileData,
+    () => profileService.getProfile(),
+    {
+      transform: transformProfile,
+      onError: () => navigate('/'),  // Redirect home only on API failure
+    }
+  );
+
+  // Show loading spinner while fetching profile
+  if (loading) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Loading your profile...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+        </div>
+      </div>
+    );
+  }
+
+  // After loading completes, if still no profileData, don't render
   if (!profileData) {
     return null;
   }
