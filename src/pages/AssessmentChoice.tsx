@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2 } from 'lucide-react';
@@ -13,8 +13,21 @@ export default function AssessmentChoice() {
   const [startingAssessment, setStartingAssessment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
-  
+  const [includeAllSkills, setIncludeAllSkills] = useState(false)
+
   const isProduction = import.meta.env.PROD
+
+  // Sort skills by priority and split into priority (top 4) and remaining
+  const sortedSkills = useMemo(() => {
+    if (!apiProfile?.profile) return { priority: [], remaining: [] };
+    const sorted = [...apiProfile.profile].sort((a, b) => a.priority - b.priority);
+    return { priority: sorted.slice(0, 4), remaining: sorted.slice(4) };
+  }, [apiProfile]);
+
+  const hasExtraSkills = sortedSkills.remaining.length > 0;
+  const selectedSkills = includeAllSkills
+    ? apiProfile?.profile.map(s => s.name) || []
+    : sortedSkills.priority.map(s => s.name);
 
   if (loading) {
     return null // Wait for session check to complete
@@ -35,7 +48,7 @@ export default function AssessmentChoice() {
     setError(null)
 
     try {
-      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15)
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkills)
       const response = await assessmentService.startAssessment(request)
 
       if (response.success && response.data) {
@@ -85,6 +98,73 @@ export default function AssessmentChoice() {
           }}>
             {error}
           </div>
+        )}
+
+        {/* Skill Selection Banner */}
+        {sortedSkills.priority.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            style={{
+              background: 'rgba(20, 184, 166, 0.06)',
+              border: '1px solid rgba(20, 184, 166, 0.15)',
+              borderRadius: '16px',
+              padding: '20px 24px',
+              marginBottom: '32px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <Sparkles size={18} color="var(--primary-light)" />
+              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                Assessing skills most relevant to your daily work
+              </span>
+            </div>
+
+            {/* Skill chips row */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: hasExtraSkills ? '16px' : 0 }}>
+              {(includeAllSkills ? apiProfile?.profile || [] : sortedSkills.priority).map(skill => (
+                <div key={skill.name} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  background: 'rgba(20, 184, 166, 0.1)',
+                  border: '1px solid rgba(20, 184, 166, 0.3)',
+                  borderRadius: '20px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: 'var(--text-primary)'
+                }}>
+                  <Check size={14} color="var(--primary-light)" />
+                  {skill.name}
+                </div>
+              ))}
+            </div>
+
+            {/* Include all checkbox */}
+            {hasExtraSkills && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={includeAllSkills}
+                  onChange={(e) => setIncludeAllSkills(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: 'var(--primary)',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  {includeAllSkills
+                    ? `Assess on top priority skills`
+                    : `Include all ${apiProfile?.profile.length} skills`
+                  }
+                </span>
+              </label>
+            )}
+          </motion.div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>

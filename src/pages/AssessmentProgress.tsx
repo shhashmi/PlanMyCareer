@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -31,8 +31,45 @@ export default function AssessmentProgress() {
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [assessedSkillNames, setAssessedSkillNames] = useState<string[] | null>(null);
+  const [skillsLoading, setSkillsLoading] = useState(true);
 
   const isProduction = import.meta.env.PROD;
+
+  // Fetch assessed skill names from API
+  const fetchAssessedSkills = useCallback(async () => {
+    try {
+      const [resumeResponse, dimensionsResponse] = await Promise.all([
+        assessmentService.resumeAssessment(),
+        assessmentService.getCachedDimensions()
+      ]);
+
+      if (resumeResponse.success && resumeResponse.data?.questions && dimensionsResponse.length > 0) {
+        // Extract unique dimension codes from questions
+        const uniqueDimensionCodes = [...new Set(
+          resumeResponse.data.questions.map(q => q.dimension)
+        )];
+
+        // Map dimension codes to skill names
+        const codeToName: Record<string, string> = {};
+        dimensionsResponse.forEach(dim => {
+          codeToName[dim.dimension_code] = dim.name;
+        });
+
+        const skillNames = uniqueDimensionCodes
+          .map(code => codeToName[code])
+          .filter((name): name is string => !!name);
+
+        if (skillNames.length > 0) {
+          setAssessedSkillNames(skillNames);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch assessed skills:', err);
+    } finally {
+      setSkillsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -44,7 +81,10 @@ export default function AssessmentProgress() {
       navigate('/skills');
       return;
     }
-  }, [isLoggedIn, incompleteAssessment, navigate]);
+
+    // Fetch assessed skills when component mounts
+    fetchAssessedSkills();
+  }, [isLoggedIn, incompleteAssessment, navigate, fetchAssessedSkills]);
 
   if (!incompleteAssessment) {
     return null;
@@ -90,6 +130,15 @@ export default function AssessmentProgress() {
 
   const progress = Math.round((incompleteAssessment.answered_count / incompleteAssessment.total_questions) * 100);
 
+  // Filter skills to only show assessed ones (use state from API/localStorage)
+  const displayedSkills = useMemo(() => {
+    if (skillsLoading) return [];
+    if (assessedSkillNames && assessedSkillNames.length > 0) {
+      return skills.filter(s => assessedSkillNames.includes(s.name));
+    }
+    return skills;
+  }, [skills, assessedSkillNames, skillsLoading]);
+
   // Get role and company from profileData or apiProfile
   const role = profileData?.role || apiProfile?.metadata?.role || 'Professional';
   const company = profileData?.company || apiProfile?.metadata?.company || 'your organization';
@@ -133,13 +182,12 @@ export default function AssessmentProgress() {
           </motion.div>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto' }}>
-            As a <strong>{role}</strong> at <strong>{company}</strong>, you're being assessed on these
-            competencies to identify skill gaps and growth areas
+            As a <strong>{role}</strong> at <strong>{company}</strong>, you're being assessed on {skillsLoading ? '...' : displayedSkills.length} competencies to identify skill gaps and growth areas
           </p>
         </motion.div>
 
         {/* SECTION 2: Competencies Grid */}
-        {skills.length > 0 && (
+        {displayedSkills.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -152,7 +200,7 @@ export default function AssessmentProgress() {
               gap: '8px',
               justifyContent: 'center'
             }}>
-              {skills.map((skill, index) => (
+              {displayedSkills.map((skill, index) => (
                 <span
                   key={index}
                   style={{

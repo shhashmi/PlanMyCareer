@@ -115,16 +115,28 @@ class AssessmentService {
   /**
    * Map API profile to evaluated dimensions for assessment
    * Uses fetched dimensions to map skill names to dimension codes
+   * @param apiProfile - The API profile response
+   * @param dimensions - Available dimensions from the API
+   * @param selectedSkillNames - Optional list of skill names to include (filters to these if provided)
    */
-  mapProfileToDimensions(apiProfile: FluencyProfileResponse, dimensions: Dimension[]): EvaluatedDimension[] {
-    console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions });
+  mapProfileToDimensions(
+    apiProfile: FluencyProfileResponse,
+    dimensions: Dimension[],
+    selectedSkillNames?: string[]
+  ): EvaluatedDimension[] {
+    console.log('📊 Mapping profile to dimensions:', { profile: apiProfile.profile, dimensions, selectedSkillNames });
 
     const nameToCode: Record<string, DimensionCode> = {};
     dimensions.forEach(dim => {
       nameToCode[dim.name.toLowerCase().trim()] = dim.dimension_code;
     });
 
-    const result = apiProfile.profile
+    // Filter skills if selectedSkillNames is provided
+    const skillsToMap = selectedSkillNames
+      ? apiProfile.profile.filter(skill => selectedSkillNames.includes(skill.name))
+      : apiProfile.profile;
+
+    const result = skillsToMap
       .map(skill => {
         const normalizedName = skill.name.toLowerCase().trim();
         const dimensionCode = nameToCode[normalizedName];
@@ -134,6 +146,7 @@ class AssessmentService {
           skillName: skill.name,
           normalizedName,
           proficiency: skill.proficiency,
+          priority: skill.priority,
           dimensionCode,
           difficultyLevel
         });
@@ -146,6 +159,7 @@ class AssessmentService {
         return {
           dimension: dimensionCode,
           difficulty_level: difficultyLevel,
+          priority: 11 - skill.priority, // Invert: API uses 1=highest, we want 10=highest
         };
       })
       .filter((dim): dim is EvaluatedDimension => dim !== null);
@@ -156,11 +170,16 @@ class AssessmentService {
 
   /**
    * Build assessment start request from profile data
+   * @param apiProfile - The API profile response
+   * @param assessmentType - Type of assessment (basic or advanced)
+   * @param questionCount - Number of questions
+   * @param selectedSkillNames - Optional list of skill names to include (filters to these if provided)
    */
   async buildStartRequest(
     apiProfile: FluencyProfileResponse,
     assessmentType: 'basic' | 'advanced' = 'basic',
-    questionCount: number = 15
+    questionCount: number = 15,
+    selectedSkillNames?: string[]
   ): Promise<AssessmentStartRequest> {
     // Fetch dimensions if not cached
     let dimensions = this.dimensionsCache;
@@ -173,7 +192,7 @@ class AssessmentService {
       }
     }
 
-    const evaluatedDimensions = this.mapProfileToDimensions(apiProfile, dimensions);
+    const evaluatedDimensions = this.mapProfileToDimensions(apiProfile, dimensions, selectedSkillNames);
 
     return {
       assessment_type: assessmentType,

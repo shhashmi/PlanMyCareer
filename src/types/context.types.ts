@@ -28,6 +28,7 @@ export interface Skill {
   name: string;
   level: string;
   description: string;
+  priority?: number; // 1-10, lower = higher importance for the role
 }
 
 export interface AssessmentResult {

@@ -82,6 +82,7 @@ export type DifficultyLevel = 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
 export interface EvaluatedDimension {
   dimension: DimensionCode;
   difficulty_level: DifficultyLevel;
+  priority: number; // 1-10, 10 = highest priority (inverted from API's 1=highest)
 }
 
 export interface AssessmentStartRequest {

@@ -148,8 +148,8 @@ export function useSmartNavigation() {
         setIncompleteAssessment(result.incompleteAssessment);
       }
 
-      // Load profile data before navigating to protected pages
-      if (result.hasProfile && (result.destination === '/skills' || result.destination === '/assessment-progress')) {
+      // Load profile data before navigating to skills page (not needed for assessment-progress)
+      if (result.hasProfile && result.destination === '/skills') {
         const loaded = await loadProfileData();
         if (!loaded) {
           console.error('Failed to load profile data, redirecting to home');
