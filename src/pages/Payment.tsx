@@ -15,8 +15,8 @@ export default function Payment() {
     name: ''
   })
 
-  if (!isLoggedIn || skills.length === 0) {
-    navigate('/')
+  if (!isLoggedIn) {
+    navigate('/login')
     return null
   }
 

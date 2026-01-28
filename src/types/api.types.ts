@@ -3,14 +3,15 @@
  * Central type definitions for all API integrations
  */
 
-// Proficiency levels
-export type ProficiencyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+// Proficiency levels (matches API v2 enum)
+export type ProficiencyLevel = 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
 
-// Skill dimension from API
+// Skill dimension from API (v2 includes priority)
 export interface SkillDimension {
   name: string;
   description: string;
   proficiency: ProficiencyLevel;
+  priority: number; // 1-10, lower = higher importance for the role
 }
 
 // API Profile Response
@@ -81,6 +82,7 @@ export type DifficultyLevel = 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
 export interface EvaluatedDimension {
   dimension: DimensionCode;
   difficulty_level: DifficultyLevel;
+  priority: number; // 1-10, 10 = highest priority (inverted from API's 1=highest)
 }
 
 export interface AssessmentStartRequest {
@@ -204,3 +206,33 @@ export interface AssessmentSession {
 
 // SubmitAssessmentResponse is now an AssessmentSession
 export type SubmitAssessmentResponse = AssessmentSession;
+
+// Question with answer state for resume
+export interface QuestionWithState extends AssessmentQuestion {
+  is_answered: boolean;
+  selected_option: SelectedOption | null;
+}
+
+// Incomplete Assessment Check Response (from /v1/assessments/incomplete)
+export interface IncompleteAssessmentCheckResponse {
+  has_incomplete: boolean;
+  session: {
+    session_id: number;
+    assessment_type: 'basic' | 'advanced';
+    started_at: string;
+    answered_count: number;
+    total_questions: number;
+  } | null;
+}
+
+// Incomplete Assessment Response (from /v1/assessments/resume - has full question data)
+export interface IncompleteAssessmentResponse {
+  session_id: number;
+  assessment_type: 'basic' | 'advanced';
+  started_at: string;
+  questions: QuestionWithState[];
+  answered_count: number;
+  total_questions: number;
+  metadata?: AssessmentMetadata;
+  evaluated_dimensions?: EvaluatedDimension[];
+}

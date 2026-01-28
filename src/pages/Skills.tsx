@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
@@ -11,13 +11,37 @@ export default function Skills() {
   const { profileData, skills, isLoggedIn } = useApp()
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
 
-  const isEngineeringRole = profileData?.title && engineeringRoles.some(
-    role => profileData.title.toLowerCase().includes(role.toLowerCase())
+  const isEngineeringRole = profileData?.role && engineeringRoles.some(
+    r => profileData.role.toLowerCase().includes(r.toLowerCase())
   )
 
-  if (!profileData || skills.length === 0) {
-    navigate('/')
-    return null
+  useEffect(() => {
+    if (!profileData) {
+      navigate('/');
+    }
+  }, [profileData, navigate]);
+
+  if (!profileData) {
+    return null;
+  }
+
+  if (skills.length === 0) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Loading skills for your role...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+        </div>
+      </div>
+    )
   }
 
   // Map proficiency levels (case-insensitive)
@@ -49,7 +73,7 @@ export default function Skills() {
             AI Skills for Your Success
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>
-            As a <strong>{profileData.title}</strong> at <strong>{profileData.company}</strong>,
+            As a <strong>{profileData.role}</strong> at <strong>{profileData.company}</strong>,
             here are the AI skills you need to thrive and grow
           </p>
         </motion.div>
@@ -107,7 +131,7 @@ export default function Skills() {
                 }}>
                   {skill.level} Required
                 </span>
-                {isEngineeringRole && getSkillDescription(skill.name, profileData.title) && (
+                {isEngineeringRole && getSkillDescription(skill.name, profileData.role) && (
                   <div
                     style={{
                       position: 'relative',
@@ -159,7 +183,7 @@ export default function Skills() {
                           }}>
                             {skill.name}
                           </div>
-                          {getSkillDescription(skill.name, profileData.title)}
+                          {getSkillDescription(skill.name, profileData.role)}
                         </motion.div>
                       )}
                     </AnimatePresence>

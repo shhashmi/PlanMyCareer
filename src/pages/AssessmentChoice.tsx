@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ClipboardList, Sparkles, ArrowRight, Check, Crown, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
+import { ComingSoonModal } from '../components/ui';
+import { BASIC_ASSESSMENT_FEATURES, ADVANCED_ASSESSMENT_FEATURES } from '../data/assessmentData';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
@@ -11,15 +13,28 @@ export default function AssessmentChoice() {
   const [startingAssessment, setStartingAssessment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
-  
+  const [includeAllSkills, setIncludeAllSkills] = useState(false)
+
   const isProduction = import.meta.env.PROD
+
+  // Sort skills by priority and split into priority (top 4) and remaining
+  const sortedSkills = useMemo(() => {
+    if (!apiProfile?.profile) return { priority: [], remaining: [] };
+    const sorted = [...apiProfile.profile].sort((a, b) => a.priority - b.priority);
+    return { priority: sorted.slice(0, 4), remaining: sorted.slice(4) };
+  }, [apiProfile]);
+
+  const hasExtraSkills = sortedSkills.remaining.length > 0;
+  const selectedSkills = includeAllSkills
+    ? apiProfile?.profile.map(s => s.name) || []
+    : sortedSkills.priority.map(s => s.name);
 
   if (loading) {
     return null // Wait for session check to complete
   }
 
-  if (!isLoggedIn || skills.length === 0) {
-    navigate('/')
+  if (!isLoggedIn) {
+    navigate('/login')
     return null
   }
 
@@ -33,7 +48,7 @@ export default function AssessmentChoice() {
     setError(null)
 
     try {
-      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15)
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkills)
       const response = await assessmentService.startAssessment(request)
 
       if (response.success && response.data) {
@@ -85,6 +100,73 @@ export default function AssessmentChoice() {
           </div>
         )}
 
+        {/* Skill Selection Banner */}
+        {sortedSkills.priority.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            style={{
+              background: 'rgba(20, 184, 166, 0.06)',
+              border: '1px solid rgba(20, 184, 166, 0.15)',
+              borderRadius: '16px',
+              padding: '20px 24px',
+              marginBottom: '32px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <Sparkles size={18} color="var(--primary-light)" />
+              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                Assessing skills most relevant to your daily work
+              </span>
+            </div>
+
+            {/* Skill chips row */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: hasExtraSkills ? '16px' : 0 }}>
+              {(includeAllSkills ? apiProfile?.profile || [] : sortedSkills.priority).map(skill => (
+                <div key={skill.name} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  background: 'rgba(20, 184, 166, 0.1)',
+                  border: '1px solid rgba(20, 184, 166, 0.3)',
+                  borderRadius: '20px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: 'var(--text-primary)'
+                }}>
+                  <Check size={14} color="var(--primary-light)" />
+                  {skill.name}
+                </div>
+              ))}
+            </div>
+
+            {/* Include all checkbox */}
+            {hasExtraSkills && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={includeAllSkills}
+                  onChange={(e) => setIncludeAllSkills(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: 'var(--primary)',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  {includeAllSkills
+                    ? `Assess on top priority skills`
+                    : `Include all ${apiProfile?.profile.length} skills`
+                  }
+                </span>
+              </label>
+            )}
+          </motion.div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -133,12 +215,7 @@ export default function AssessmentChoice() {
             </div>
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              {[
-                'Short personalized assessment',
-                'Instant skill gap visualization',
-                'Actionable recommendations',
-                'Results delivered immediately'
-              ].map((item, i) => (
+              {BASIC_ASSESSMENT_FEATURES.map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
                   {item}
@@ -230,13 +307,7 @@ export default function AssessmentChoice() {
             </div>
 
             <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              {[
-                'Detailed personalized assessment',
-                'Instant skill gap visualization',
-                'Weekly learning plan tailored to your schedule',
-                'Hands-on assignments for practical experience',
-                'Extended support to complete assignments'
-              ].map((item, i) => (
+              {ADVANCED_ASSESSMENT_FEATURES.map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
                   <Check size={18} color="var(--secondary)" />
                   {item}
@@ -252,93 +323,10 @@ export default function AssessmentChoice() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showComingSoon && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowComingSoon(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: '24px'
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: 'var(--surface)',
-                borderRadius: '24px',
-                padding: '40px',
-                maxWidth: '480px',
-                width: '100%',
-                textAlign: 'center',
-                border: '1px solid var(--border)',
-                position: 'relative'
-              }}
-            >
-              <button
-                onClick={() => setShowComingSoon(false)}
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  padding: '8px'
-                }}
-              >
-                <X size={24} />
-              </button>
-
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'var(--gradient-1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px'
-              }}>
-                <Sparkles size={32} color="white" />
-              </div>
-
-              <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-                Something Awesome is Brewing!
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
-                Our Advanced Assessment is getting its final polish and will be ready to supercharge your AI journey very soon!
-              </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
-                In the meantime, take the Basic Assessment to get a head start on discovering your AI superpowers.
-              </p>
-
-              <button
-                onClick={() => setShowComingSoon(false)}
-                className="btn-primary"
-                style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
-              >
-                Sounds Great!
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ComingSoonModal
+        isOpen={showComingSoon}
+        onClose={() => setShowComingSoon(false)}
+      />
     </div>
   )
 }

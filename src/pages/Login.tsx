@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Chrome, Github, Linkedin, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Chrome, Github, Linkedin, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import { ErrorAlert, Button } from '../components/ui';
 
 export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isLoggedIn } = useApp();
+  const { smartNavigate } = useSmartNavigation();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoggedIn) {
-      navigate('/');
+      smartNavigate();
     }
-  }, [isLoggedIn, navigate]);
+  }, [isLoggedIn, smartNavigate]);
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -31,6 +34,22 @@ export default function Login() {
 
   const handleSocialLogin = (provider: string) => {
     window.location.href = getAuthLoginUrl(provider);
+  };
+
+  const socialButtonStyle = {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px',
+    background: 'var(--surface-light)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer'
   };
 
   return (
@@ -64,110 +83,41 @@ export default function Login() {
         </div>
 
         {error && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '12px 16px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '12px',
-            color: '#ef4444',
-            fontSize: '14px',
-            marginBottom: '24px'
-          }}>
-            <AlertCircle size={18} />
-            {error}
-          </div>
+          <ErrorAlert
+            message={error}
+            onDismiss={() => setError(null)}
+          />
         )}
 
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-          <button
-            onClick={() => handleSocialLogin('google')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              background: 'var(--surface-light)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => handleSocialLogin('google')} style={socialButtonStyle}>
             <Chrome size={18} />
             Google
           </button>
-          <button
-            onClick={() => handleSocialLogin('github')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              background: 'var(--surface-light)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => handleSocialLogin('github')} style={socialButtonStyle}>
             <Github size={18} />
             GitHub
           </button>
-          <button
-            onClick={() => handleSocialLogin('linkedin')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '12px',
-              background: 'var(--surface-light)',
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => handleSocialLogin('linkedin')} style={socialButtonStyle}>
             <Linkedin size={18} />
             LinkedIn
           </button>
         </div>
 
-        <button
+        <Button
+          variant="ghost"
+          icon={ArrowLeft}
+          iconPosition="left"
+          fullWidth
           onClick={() => navigate(-1)}
           style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '12px',
-            background: 'transparent',
             border: '1px solid var(--border)',
-            borderRadius: '12px',
-            color: 'var(--text-muted)',
-            fontSize: '14px',
-            cursor: 'pointer'
+            color: 'var(--text-muted)'
           }}
         >
-          <ArrowLeft size={16} />
           Cancel
-        </button>
+        </Button>
       </motion.div>
     </div>
-  )
+  );
 }

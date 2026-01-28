@@ -1,13 +1,24 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { User, LogOut, LogIn, ChevronDown } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { User, LogOut, LogIn, ChevronDown, Menu, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { useSmartNavigation } from "../hooks/useSmartNavigation";
 import logoImage from "@assets/logo-1_1767800057394.png";
+
+const navLinks = [
+  { path: '/how-it-works', label: 'How It Works' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/faq', label: 'FAQ' },
+  { path: '/about', label: 'About' }
+];
 
 export default function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, user, logout } = useApp();
+  const { smartNavigate, isNavigating } = useSmartNavigation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,10 +31,19 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const handleLogout = () => {
+    // Navigate first to avoid race condition where ProtectedRoute
+    // redirects to /login before navigation to home completes
     navigate("/");
+    logout();
   };
+
+  const isActivePath = (path: string) => location.pathname === path;
 
   return (
     <header
@@ -45,12 +65,20 @@ export default function Header() {
           padding: "4px 24px",
         }}
       >
+        {/* Logo */}
         <div
-          onClick={() => navigate("/")}
+          onClick={() => {
+            if (isLoggedIn) {
+              smartNavigate();
+            } else {
+              navigate("/");
+            }
+          }}
           style={{
             display: "flex",
             alignItems: "center",
-            cursor: "pointer",
+            cursor: isNavigating ? "wait" : "pointer",
+            opacity: isNavigating ? 0.7 : 1,
           }}
         >
           <img
@@ -68,7 +96,83 @@ export default function Header() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Desktop Navigation */}
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+          className="desktop-nav"
+        >
+          {navLinks.map(link => (
+            <button
+              key={link.path}
+              onClick={() => navigate(link.path)}
+              style={{
+                padding: "8px 16px",
+                background: "transparent",
+                border: "none",
+                borderRadius: "8px",
+                color: isActivePath(link.path) ? "var(--primary-light)" : "var(--text-secondary)",
+                fontSize: "14px",
+                fontWeight: isActivePath(link.path) ? "600" : "400",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                position: "relative",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActivePath(link.path)) {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActivePath(link.path)) {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.background = "transparent";
+                }
+              }}
+            >
+              {link.label}
+              {isActivePath(link.path) && (
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: "2px",
+                    left: "16px",
+                    right: "16px",
+                    height: "2px",
+                    background: "var(--primary-light)",
+                    borderRadius: "1px",
+                  }}
+                />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Right side: Mobile menu button + User menu/Login */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="mobile-menu-toggle"
+            style={{
+              display: "none",
+              padding: "8px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+            }}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
+          {/* User Menu / Login Button */}
           {isLoggedIn ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button
@@ -87,8 +191,8 @@ export default function Header() {
                 }}
               >
                 <User size={18} />
-                <span>{user?.name || "User"}</span>
-                <ChevronDown size={16} style={{ 
+                <span className="user-name">{user?.name || "User"}</span>
+                <ChevronDown size={16} style={{
                   transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.2s"
                 }} />
@@ -185,6 +289,65 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      <div
+        className="mobile-nav"
+        style={{
+          display: mobileMenuOpen ? "flex" : "none",
+          flexDirection: "column",
+          background: "#0a1628",
+          borderTop: "1px solid var(--border)",
+          padding: "8px 0",
+        }}
+      >
+        {navLinks.map(link => (
+          <button
+            key={link.path}
+            onClick={() => navigate(link.path)}
+            style={{
+              padding: "14px 24px",
+              background: isActivePath(link.path) ? "rgba(20, 184, 166, 0.1)" : "transparent",
+              border: "none",
+              borderLeft: isActivePath(link.path) ? "3px solid var(--primary-light)" : "3px solid transparent",
+              color: isActivePath(link.path) ? "var(--primary-light)" : "var(--text-secondary)",
+              fontSize: "15px",
+              fontWeight: isActivePath(link.path) ? "600" : "400",
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "all 0.2s",
+            }}
+          >
+            {link.label}
+          </button>
+        ))}
+      </div>
+
+      {/* CSS for responsive behavior */}
+      <style>{`
+        @media (min-width: 768px) {
+          .desktop-nav {
+            display: flex !important;
+          }
+          .mobile-menu-toggle {
+            display: none !important;
+          }
+          .mobile-nav {
+            display: none !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .desktop-nav {
+            display: none !important;
+          }
+          .mobile-menu-toggle {
+            display: flex !important;
+          }
+          .user-name {
+            display: none;
+          }
+        }
+      `}</style>
     </header>
   );
 }

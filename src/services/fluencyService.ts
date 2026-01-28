@@ -5,6 +5,7 @@
  */
 
 import api from './api';
+import { wrapDirectApiCall } from '../utils/apiWrapper';
 import type {
   ProfileRequestData,
   ProfileFormData,
@@ -18,22 +19,10 @@ class FluencyService {
    * Resolve user profile and get AI skill proficiency analysis
    */
   async resolveProfile(profileData: ProfileRequestData): Promise<ApiResponse<FluencyProfileResponse>> {
-    try {
-      const response = await api.post<FluencyProfileResponse>('/v1/fluency/resolve', profileData);
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.error || error.message || 'Failed to resolve profile',
-          details: error.response?.data,
-        },
-      };
-    }
+    return wrapDirectApiCall(
+      () => api.post<FluencyProfileResponse>('/v2/fluency/resolve', profileData),
+      'Failed to resolve profile'
+    );
   }
 
   /**

@@ -3,7 +3,10 @@
  * Types for application state management
  */
 
-import { FluencyProfileResponse } from './api.types';
+import { FluencyProfileResponse, IncompleteAssessmentCheckResponse, Role } from './api.types';
+
+// Session summary from incomplete assessment check (without questions)
+export type IncompleteAssessmentSession = NonNullable<IncompleteAssessmentCheckResponse['session']>;
 
 export interface User {
   email: string;
@@ -14,7 +17,6 @@ export interface User {
 export interface ProfileData {
   experience: string;
   role: string;
-  title: string;
   company: string;
   country: string;
   company_type?: string;
@@ -26,6 +28,7 @@ export interface Skill {
   name: string;
   level: string;
   description: string;
+  priority?: number; // 1-10, lower = higher importance for the role
 }
 
 export interface AssessmentResult {
@@ -35,6 +38,9 @@ export interface AssessmentResult {
   [key: string]: any;
 }
 
+// LocalStorage setter type - accepts value, updater function, or null to clear
+type LocalStorageSetter<T> = (value: T | ((prev: T) => T) | null) => void;
+
 export interface AppContextType {
   user: User | null;
   isLoggedIn: boolean;
@@ -42,15 +48,19 @@ export interface AppContextType {
   login: (userData: User) => void;
   logout: () => void;
   profileData: ProfileData | null;
-  setProfileData: (data: ProfileData | null) => void;
+  setProfileData: LocalStorageSetter<ProfileData | null>;
   skills: Skill[];
-  setSkills: (skills: Skill[]) => void;
+  setSkills: LocalStorageSetter<Skill[]>;
   assessmentResults: AssessmentResult[] | null;
-  setAssessmentResults: (results: AssessmentResult[] | null) => void;
+  setAssessmentResults: LocalStorageSetter<AssessmentResult[] | null>;
   advancedResults: any;
-  setAdvancedResults: (results: any) => void;
+  setAdvancedResults: LocalStorageSetter<any>;
   upskillPlan: any;
-  setUpskillPlan: (plan: any) => void;
+  setUpskillPlan: LocalStorageSetter<any>;
   apiProfile: FluencyProfileResponse | null;
-  setApiProfile: (profile: FluencyProfileResponse | null) => void;
+  setApiProfile: LocalStorageSetter<FluencyProfileResponse | null>;
+  incompleteAssessment: IncompleteAssessmentSession | null;
+  setIncompleteAssessment: LocalStorageSetter<IncompleteAssessmentSession | null>;
+  roles: Role[];
+  rolesLoading: boolean;
 }

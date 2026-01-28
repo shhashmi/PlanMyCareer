@@ -16,6 +16,13 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
 import Profile from './pages/Profile';
 import ResumeAssessment from './pages/ResumeAssessment';
+import AssessmentProgress from './pages/AssessmentProgress';
+import AuthCallback from './pages/AuthCallback';
+import HowItWorks from './pages/HowItWorks';
+import Pricing from './pages/Pricing';
+import FAQ from './pages/FAQ';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -28,6 +35,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/skills" element={<Skills />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/auth-callback" element={<AuthCallback />} />
       <Route path="/assessment" element={<ProtectedRoute><AssessmentChoice /></ProtectedRoute>} />
       <Route path="/basic-assessment" element={<ProtectedRoute><BasicAssessment /></ProtectedRoute>} />
       <Route path="/basic-results" element={<ProtectedRoute><BasicResults /></ProtectedRoute>} />
@@ -37,8 +45,14 @@ function AppRoutes() {
       <Route path="/upskill-plan" element={<ProtectedRoute><UpskillPlan /></ProtectedRoute>} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
+      <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
     </Routes>
   );
 }
