@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { GetStartedCTA } from '../components/GetStartedCTA';
 
 const faqs = [
   {
@@ -111,7 +111,6 @@ function FAQItem({ question, answer, isOpen, onClick }: {
 }
 
 export default function FAQ() {
-  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
@@ -188,12 +187,11 @@ export default function FAQ() {
         </div>
 
         {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+        <GetStartedCTA
+          buttonText="Get Started Free"
+          showArrow={false}
+          delay={0.5}
           style={{
-            textAlign: 'center',
             marginTop: '60px',
             padding: '40px',
             background: 'var(--surface)',
@@ -210,14 +208,7 @@ export default function FAQ() {
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
             Start your free assessment to experience AI Fluens firsthand, or contact us for more information.
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="btn-primary"
-            style={{ padding: '14px 32px' }}
-          >
-            Get Started Free
-          </button>
-        </motion.div>
+        </GetStartedCTA>
       </section>
     </main>
   );

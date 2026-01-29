@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Target, Lightbulb, TrendingUp, Users, Zap, Clock, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Target, Lightbulb, TrendingUp, Users, Zap, Clock } from 'lucide-react';
+import { GetStartedCTA } from '../components/GetStartedCTA';
 
 const values = [
   {
@@ -30,8 +30,6 @@ const values = [
 ];
 
 export default function About() {
-  const navigate = useNavigate();
-
   return (
     <main style={{ minHeight: 'calc(100vh - 80px)' }}>
       {/* Hero Section */}
@@ -268,29 +266,14 @@ export default function About() {
         </motion.div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.9 }}
-          style={{
-            textAlign: 'center',
-            marginTop: '60px'
-          }}
-        >
+        <GetStartedCTA buttonText="Start Your Assessment" delay={0.9} style={{ marginTop: '60px' }}>
           <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>
             Ready to break the cycle?
           </h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
             Discover your AI skill gaps and get a personalized plan in minutes.
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="btn-primary"
-            style={{ padding: '14px 32px', fontSize: '16px' }}
-          >
-            Start Your Assessment <ArrowRight size={18} />
-          </button>
-        </motion.div>
+        </GetStartedCTA>
       </section>
     </main>
   );

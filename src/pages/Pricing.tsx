@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { GetStartedCTA } from '../components/GetStartedCTA';
 
 const plans = [
   {
@@ -199,27 +200,12 @@ export default function Pricing() {
                 ))}
               </div>
 
-              {/* CTA Button */}
-              <button
-                onClick={() => navigate('/')}
-                style={{
-                  width: '100%',
-                  padding: '14px 24px',
-                  borderRadius: '12px',
-                  border: plan.highlighted ? 'none' : '2px solid var(--border)',
-                  background: plan.highlighted ? 'var(--gradient-1)' : 'transparent',
-                  color: plan.highlighted ? 'white' : 'var(--text-primary)',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {plan.cta}
-              </button>
             </motion.div>
           ))}
         </div>
+
+        {/* CTA Button */}
+        <GetStartedCTA delay={0.4} style={{ marginTop: '48px' }} />
 
         {/* FAQ Link */}
         <motion.div

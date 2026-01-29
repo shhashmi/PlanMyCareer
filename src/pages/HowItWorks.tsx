@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { UserCircle, ClipboardCheck, Route, ArrowRight, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { GetStartedCTA } from '../components/GetStartedCTA';
 
 const steps = [
   {
@@ -27,8 +27,6 @@ const steps = [
 ];
 
 export default function HowItWorks() {
-  const navigate = useNavigate();
-
   return (
     <main style={{ minHeight: 'calc(100vh - 80px)' }}>
       {/* Hero Section */}
@@ -154,29 +152,14 @@ export default function HowItWorks() {
         </div>
 
         {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          style={{
-            textAlign: 'center',
-            marginTop: '60px'
-          }}
-        >
+        <GetStartedCTA delay={0.8} style={{ marginTop: '60px' }}>
           <h3 style={{ fontSize: '24px', marginBottom: '16px' }}>
             Ready to discover your AI skill gaps?
           </h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
             Start your personalized assessment today — it's free!
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="btn-primary"
-            style={{ padding: '14px 32px', fontSize: '16px' }}
-          >
-            Get Started <ArrowRight size={18} />
-          </button>
-        </motion.div>
+        </GetStartedCTA>
       </section>
     </main>
   );
