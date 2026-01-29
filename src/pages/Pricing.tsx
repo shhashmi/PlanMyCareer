@@ -101,7 +101,7 @@ export default function Pricing() {
           maxWidth: '900px',
           margin: '0 auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
           gap: '24px'
         }}>
           {plans.map((plan, index) => (

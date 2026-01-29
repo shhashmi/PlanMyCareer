@@ -384,7 +384,7 @@ export default function Home() {
       <section
         className="container"
         style={{
-          padding: '60px 24px 80px',
+          padding: 'clamp(30px, 6vw, 60px) 24px clamp(40px, 8vw, 80px)',
           background: 'radial-gradient(ellipse at bottom, rgba(20, 184, 166, 0.1) 0%, transparent 50%)'
         }}
       >
@@ -400,7 +400,7 @@ export default function Home() {
             margin: '0 auto',
             background: 'var(--surface)',
             borderRadius: '24px',
-            padding: '40px',
+            padding: 'clamp(20px, 5vw, 40px)',
             border: '1px solid var(--border)'
           }}
         >
@@ -426,7 +426,7 @@ export default function Home() {
           )}
 
           <div style={{ display: 'grid', gap: '24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Years of Experience *</label>
                 <div style={{ position: 'relative' }}>
@@ -474,7 +474,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={labelStyle}>Company *</label>
                 <div style={{ position: 'relative' }}>

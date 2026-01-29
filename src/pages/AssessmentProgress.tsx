@@ -87,7 +87,22 @@ export default function AssessmentProgress() {
   }, [isLoggedIn, incompleteAssessment, navigate, fetchAssessedSkills]);
 
   if (!incompleteAssessment) {
-    return null;
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Loading...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+        </div>
+      </div>
+    );
   }
 
   const handleResume = async () => {
@@ -242,7 +257,7 @@ export default function AssessmentProgress() {
         {/* SECTION 3: Assessment Tiles Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: '24px'
         }}>
 

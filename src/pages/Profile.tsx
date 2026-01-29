@@ -330,7 +330,7 @@ export default function Profile() {
             style={{
               background: 'var(--surface)',
               borderRadius: '24px',
-              padding: '40px',
+              padding: 'clamp(20px, 5vw, 40px)',
               border: '1px solid var(--border)',
             }}
           >
@@ -357,7 +357,7 @@ export default function Profile() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
               <div>
                 <label style={labelStyle}>
                   <User size={12} style={{ display: 'inline', marginRight: '6px' }} />

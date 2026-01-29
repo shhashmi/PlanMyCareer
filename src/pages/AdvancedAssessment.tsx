@@ -98,9 +98,8 @@ export default function AdvancedAssessment() {
   }
 
   return (
-    <div style={{ 
-      height: 'calc(100vh - 80px)', 
-      display: 'flex', 
+    <div className="chat-container" style={{
+      display: 'flex',
       flexDirection: 'column',
       maxWidth: '800px',
       margin: '0 auto',
@@ -235,11 +234,12 @@ export default function AdvancedAssessment() {
           </button>
         </motion.div>
       ) : (
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
+        <div style={{
+          display: 'flex',
+          gap: '12px',
           marginTop: '24px',
           padding: '4px',
+          paddingBottom: 'env(safe-area-inset-bottom, 4px)',
           background: 'var(--surface)',
           borderRadius: '16px',
           border: '1px solid var(--border)'

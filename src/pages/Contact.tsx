@@ -224,7 +224,7 @@ export default function Contact() {
             style={{
               background: 'var(--surface)',
               borderRadius: '24px',
-              padding: '40px',
+              padding: 'clamp(20px, 5vw, 40px)',
               border: '1px solid var(--border)'
             }}
           >
@@ -255,7 +255,7 @@ export default function Contact() {
 
             <div style={{ display: 'grid', gap: '24px' }}>
               {/* Name & Email Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                 <div>
                   <label style={labelStyle}>Your Name *</label>
                   <div style={{ position: 'relative' }}>

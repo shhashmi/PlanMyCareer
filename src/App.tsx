@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Skills from './pages/Skills';
 import Login from './pages/Login';
@@ -66,9 +67,11 @@ function App() {
 
   return (
     <div className="app" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header />
-      <AppRoutes />
-      <Footer />
+      <ErrorBoundary>
+        <Header />
+        <AppRoutes />
+        <Footer />
+      </ErrorBoundary>
     </div>
   );
 }
