@@ -25,6 +25,7 @@ import FAQ from './pages/FAQ';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
 
@@ -32,6 +33,8 @@ function AppRoutes() {
   useAnalytics();
   
   return (
+    <>
+    <ScrollToTop />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/skills" element={<Skills />} />
@@ -55,6 +58,7 @@ function AppRoutes() {
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
       <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
     </Routes>
+    </>
   );
 }
 
