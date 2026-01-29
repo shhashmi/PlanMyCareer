@@ -149,7 +149,7 @@ export default function Skills() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
           gap: '20px',
           marginBottom: '48px'
         }}>
@@ -213,9 +213,10 @@ export default function Skills() {
                     }}
                     onMouseEnter={() => setHoveredSkill(skill.name)}
                     onMouseLeave={() => setHoveredSkill(null)}
+                    onClick={() => setHoveredSkill(hoveredSkill === skill.name ? null : skill.name)}
                   >
                     <Info size={14} />
-                    <span>Hover for details</span>
+                    <span>Details</span>
 
                     <AnimatePresence>
                       {hoveredSkill === skill.name && (
@@ -229,7 +230,7 @@ export default function Skills() {
                             bottom: '100%',
                             right: 0,
                             marginBottom: '12px',
-                            width: '380px',
+                            width: 'min(380px, calc(100vw - 48px))',
                             maxHeight: '300px',
                             overflowY: 'auto',
                             padding: '16px',

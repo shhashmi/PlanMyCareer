@@ -47,7 +47,22 @@ export default function BasicAssessment() {
   };
 
   if (!assessmentData) {
-    return null;
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Loading assessment...</p>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--border)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+        </div>
+      </div>
+    );
   }
 
   const questions = assessmentData.questions;
@@ -164,7 +179,7 @@ export default function BasicAssessment() {
             style={{
               background: 'var(--surface)',
               borderRadius: '24px',
-              padding: '40px',
+              padding: 'clamp(20px, 5vw, 40px)',
               border: '1px solid var(--border)'
             }}
           >

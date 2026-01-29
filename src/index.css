@@ -147,3 +147,44 @@ input, select, textarea {
 .animate-slide-in {
   animation: slideIn 0.5s ease forwards;
 }
+
+/* Fix: missing spin animation used by ProtectedRoute, AuthCallback, Skills spinners */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Fix: chat interface height for mobile keyboards (dvh with vh fallback) */
+.chat-container {
+  height: calc(100vh - 80px);
+  height: calc(100dvh - 80px);
+}
+
+/* Mobile-only overrides — no effect on desktop (min-width: 768px+) */
+@media (max-width: 767px) {
+  .container {
+    padding: 0 16px;
+  }
+  .card {
+    padding: 16px;
+  }
+  .btn-primary, .btn-secondary {
+    min-height: 44px;
+    padding: 12px 20px;
+  }
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Safe area for notched phones */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
