@@ -1,10 +1,12 @@
-import { useState, FormEvent, ChangeEvent, useRef } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, MapPin, Target, Clock, Building, Zap, Lightbulb, TrendingUp, Users, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { fluencyService } from '../services/fluencyService';
 import { profileService, type CreateProfileRequest } from '../services/profileService';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import type { ProfileFormData } from '../types/api.types';
 
 const values = [
@@ -36,7 +38,8 @@ const values = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isLoggedIn, setProfileData, setSkills, setApiProfile, roles, rolesLoading } = useApp();
+  const { isLoggedIn, loading, setProfileData, setSkills, setApiProfile, roles, rolesLoading } = useApp();
+  const { smartNavigate, isNavigating } = useSmartNavigation();
   const formRef = useRef<HTMLFormElement>(null);
 
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -50,13 +53,23 @@ export default function Home() {
     goal: ''
   });
 
-  formData.title = formData.role;
-  formData.company_type = 'Enterprise';
-  formData.geography = formData.country;
-
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string>('');
+
+  useEffect(() => {
+    if (!loading && isLoggedIn) {
+      smartNavigate();
+    }
+  }, [loading, isLoggedIn, smartNavigate]);
+
+  if (loading || (isLoggedIn && isNavigating)) {
+    return <LoadingSpinner fullPage message="Loading..." />;
+  }
+
+  formData.title = formData.role;
+  formData.company_type = 'Enterprise';
+  formData.geography = formData.country;
 
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });

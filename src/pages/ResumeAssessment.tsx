@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
+import { useSmartNavigation } from '../hooks/useSmartNavigation';
 
 export default function ResumeAssessment() {
-  const navigate = useNavigate()
+  const { smartNavigate } = useSmartNavigation()
 
   return (
     <div style={{ 
@@ -54,12 +54,12 @@ export default function ResumeAssessment() {
         </div>
 
         <button
-          onClick={() => navigate('/')}
+          onClick={() => smartNavigate()}
           className="btn-secondary"
           style={{ padding: '12px 24px' }}
         >
           <ArrowLeft size={18} />
-          Back to Home
+          Back to Dashboard
         </button>
       </motion.div>
     </div>

@@ -1,19 +1,21 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, ArrowRight, Sparkles, Info } from 'lucide-react';
+import { CheckCircle, ArrowRight, Sparkles, Info, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelColor } from '../data/skillsData';
 import { engineeringRoles, getSkillDescription } from '../data/skillDescriptions';
 import { useCachedData } from '../hooks/useCachedData';
 import { profileService, UserProfile } from '../services/profileService';
 import { fluencyService } from '../services/fluencyService';
+import { ErrorAlert } from '../components/ui/ErrorAlert';
 import type { ProfileData } from '../types/context.types';
 
 export default function Skills() {
   const navigate = useNavigate()
   const { profileData, setProfileData, skills, setSkills, setApiProfile, isLoggedIn } = useApp()
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
+  const [pageError, setPageError] = useState<string | null>(null)
 
   const isEngineeringRole = profileData?.role && engineeringRoles.some(
     r => profileData.role.toLowerCase().includes(r.toLowerCase())
@@ -65,7 +67,7 @@ export default function Skills() {
     () => profileService.getProfile(),
     {
       transform: transformProfile,
-      onError: () => navigate('/'),  // Redirect home only on API failure
+      onError: () => setPageError('Failed to load your profile. Please try again.'),
     }
   );
 
@@ -84,6 +86,24 @@ export default function Skills() {
             animation: 'spin 1s linear infinite',
             margin: '0 auto'
           }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (pageError) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+          <ErrorAlert message={pageError} onDismiss={() => setPageError(null)} />
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-secondary"
+            style={{ padding: '12px 24px', marginTop: '16px' }}
+          >
+            <RefreshCw size={18} />
+            Try Again
+          </button>
         </div>
       </div>
     );

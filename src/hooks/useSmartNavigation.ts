@@ -1,23 +1,26 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { profileService } from '../services/profileService';
 import { assessmentService } from '../services/assessmentService';
 import { fluencyService } from '../services/fluencyService';
+import { isAuthError } from '../utils/errorUtils';
 import type { IncompleteAssessmentSession } from '../types/context.types';
 
-export type NavigationDestination = '/' | '/skills' | '/assessment-progress';
+export type NavigationDestination = '/' | '/skills' | '/assessment-progress' | '/login' | null;
 
 export interface SmartNavigationResult {
   destination: NavigationDestination;
   hasProfile: boolean;
   incompleteAssessment: IncompleteAssessmentSession | null;
+  requiresLogout?: boolean;
 }
 
 export function useSmartNavigation() {
   const navigate = useNavigate();
   const {
     isLoggedIn,
+    logout,
     setIncompleteAssessment,
     setProfileData,
     setSkills,
@@ -26,6 +29,7 @@ export function useSmartNavigation() {
     skills
   } = useApp();
   const [isNavigating, setIsNavigating] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   const loadProfileData = useCallback(async (): Promise<boolean> => {
     // Skip if data is already loaded
@@ -99,13 +103,13 @@ export function useSmartNavigation() {
 
     try {
       const profileCheck = await profileService.checkProfile();
-      
+
       if (!profileCheck.success) {
-        if (profileCheck.error?.status === 401) {
-          return { destination: '/', hasProfile: false, incompleteAssessment: null };
+        if (isAuthError(profileCheck.error)) {
+          return { destination: '/login', hasProfile: false, incompleteAssessment: null, requiresLogout: true };
         }
         console.error('Profile check failed:', profileCheck.error);
-        return { destination: '/', hasProfile: false, incompleteAssessment: null };
+        return { destination: null, hasProfile: false, incompleteAssessment: null };
       }
 
       const hasProfile = profileCheck.data?.hasProfile === true;
@@ -115,10 +119,10 @@ export function useSmartNavigation() {
       }
 
       const incompleteCheck = await assessmentService.checkIncompleteAssessment();
-      
+
       if (!incompleteCheck.success) {
-        if (incompleteCheck.error?.status === 401) {
-          return { destination: '/', hasProfile: false, incompleteAssessment: null };
+        if (isAuthError(incompleteCheck.error)) {
+          return { destination: '/login', hasProfile: false, incompleteAssessment: null, requiresLogout: true };
         }
         console.error('Incomplete assessment check failed:', incompleteCheck.error);
         return { destination: '/skills', hasProfile: true, incompleteAssessment: null };
@@ -133,16 +137,25 @@ export function useSmartNavigation() {
       return { destination: '/skills', hasProfile: true, incompleteAssessment: null };
     } catch (error) {
       console.error('Smart navigation error:', error);
-      return { destination: '/', hasProfile: false, incompleteAssessment: null };
+      return { destination: null, hasProfile: false, incompleteAssessment: null };
     }
   }, [isLoggedIn]);
 
   const smartNavigate = useCallback(async () => {
-    if (isNavigating) return;
+    if (isNavigatingRef.current) return;
 
+    isNavigatingRef.current = true;
     setIsNavigating(true);
     try {
       const result = await determineDestination();
+
+      if (result.requiresLogout) {
+        logout();
+      }
+
+      if (result.destination === null) {
+        return;
+      }
 
       if (result.incompleteAssessment && setIncompleteAssessment) {
         setIncompleteAssessment(result.incompleteAssessment);
@@ -152,8 +165,7 @@ export function useSmartNavigation() {
       if (result.hasProfile && result.destination === '/skills') {
         const loaded = await loadProfileData();
         if (!loaded) {
-          console.error('Failed to load profile data, redirecting to home');
-          navigate('/');
+          console.error('Failed to load profile data, staying on current page');
           return;
         }
       }
@@ -161,11 +173,11 @@ export function useSmartNavigation() {
       navigate(result.destination);
     } catch (error) {
       console.error('Smart navigation error:', error);
-      navigate('/');
     } finally {
+      isNavigatingRef.current = false;
       setIsNavigating(false);
     }
-  }, [isNavigating, determineDestination, navigate, setIncompleteAssessment, loadProfileData]);
+  }, [determineDestination, navigate, setIncompleteAssessment, loadProfileData, logout]);
 
   return {
     smartNavigate,

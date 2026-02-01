@@ -37,10 +37,8 @@ export default function Header() {
   }, [location.pathname]);
 
   const handleLogout = () => {
-    // Navigate first to avoid race condition where ProtectedRoute
-    // redirects to /login before navigation to home completes
-    navigate("/");
     logout();
+    navigate("/login");
   };
 
   const isActivePath = (path: string) => location.pathname === path;
