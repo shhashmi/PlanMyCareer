@@ -35,6 +35,8 @@ tags:
     description: Fluency profile resolution
   - name: Email
     description: Email enquiry endpoints
+  - name: Agent
+    description: AI Assessment Agent (feature-flagged, SSE streaming)
 
 paths:
   /:
@@ -910,6 +912,99 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/agent/chat:
+    post:
+      tags:
+        - Agent
+      summary: AI Assessment Agent chat (SSE)
+      description: |
+        Conversational AI Fluency Assessment endpoint. Streams responses via Server-Sent Events (SSE).
+        Requires authentication (JWT cookie) and a valid feature flag query parameter.
+
+        **Feature flag**: Pass `?ff=<AGENT_FEATURE_FLAG>` — requests without a valid flag receive 404.
+
+        **Streaming**: The response is a `text/event-stream`. Each line is `data: <JSON>\n\n` with event objects.
+
+        **Event types**:
+        - `token` — incremental text chunk from the agent
+        - `status` — processing indicator (e.g., tool execution)
+        - `done` — stream complete, includes full response and assessment_id
+        - `error` — error occurred during processing
+
+        **Conversation history**: The client manages conversation history and sends it with each request.
+        The agent uses persistent server-side state (file-based) keyed by `assessment_id`.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: ff
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Feature flag value (must match AGENT_FEATURE_FLAG env var)
+          example: "aiagent_x7k9m2"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentChatRequest'
+            examples:
+              startAssessment:
+                summary: Start a new assessment
+                value:
+                  message: "Start assessment"
+              resumeAssessment:
+                summary: Resume an existing assessment
+                value:
+                  message: "Continue my assessment"
+                  assessment_id: "PM_user_20260201_143022"
+                  conversation_history:
+                    - role: "user"
+                      content: "Start assessment"
+                    - role: "assistant"
+                      content: "Welcome to your AI Fluency Assessment..."
+      responses:
+        '200':
+          description: SSE stream of agent responses
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Newline-delimited SSE events. Each event is `data: <JSON>\n\n`.
+              examples:
+                tokenEvent:
+                  summary: Token event
+                  value: "data: {\"type\":\"token\",\"content\":\"Welcome to\"}\n\n"
+                statusEvent:
+                  summary: Status event
+                  value: "data: {\"type\":\"status\",\"content\":\"processing\"}\n\n"
+                doneEvent:
+                  summary: Done event
+                  value: "data: {\"type\":\"done\",\"content\":\"Full response text...\",\"assessmentId\":\"PM_user_20260201_143022\"}\n\n"
+                errorEvent:
+                  summary: Error event
+                  value: "data: {\"type\":\"error\",\"content\":\"An error occurred\"}\n\n"
+        '400':
+          description: Missing or invalid message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invalid or missing feature flag (endpoint hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     cookieAuth:
@@ -1633,3 +1728,65 @@ components:
             - dimension: "ASE"
               total_questions: 6
               correct_answers: 5
+
+    AgentChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: The user's message to the assessment agent
+          example: "Start assessment"
+        assessment_id:
+          type: string
+          nullable: true
+          description: Assessment ID to resume an existing session. Omit to start new.
+          example: "PM_user_20260201_143022"
+        conversation_history:
+          type: array
+          description: Previous conversation messages (client-managed). Send full history each request.
+          items:
+            $ref: '#/components/schemas/AgentConversationMessage'
+
+    AgentConversationMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+          description: Who sent this message
+          example: "user"
+        content:
+          type: string
+          description: Message content
+          example: "Start assessment"
+
+    AgentSSEEvent:
+      type: object
+      required:
+        - type
+        - content
+      properties:
+        type:
+          type: string
+          enum: [token, status, done, error]
+          description: |
+            Event type:
+            - `token`: Incremental text chunk from the agent
+            - `status`: Processing indicator (e.g., tool execution in progress)
+            - `done`: Stream complete with full response
+            - `error`: Error occurred during processing
+          example: "token"
+        content:
+          type: string
+          description: Event payload (text chunk, status message, full response, or error message)
+          example: "Welcome to your AI Fluency Assessment"
+        assessmentId:
+          type: string
+          nullable: true
+          description: Assessment ID (included in `done` events)
+          example: "PM_user_20260201_143022"

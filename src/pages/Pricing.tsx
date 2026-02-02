@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GetStartedCTA } from '../components/GetStartedCTA';
+import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
 
 const plans = [
   {
@@ -26,8 +27,10 @@ const plans = [
   },
   {
     name: 'Advanced Assessment',
-    price: '$20',
-    priceSubtext: 'One-time payment',
+    price: IS_ADVANCED_ASSESSMENT_BETA ? 'Free' : '$20',
+    originalPrice: IS_ADVANCED_ASSESSMENT_BETA ? '$20' : undefined,
+    priceSubtext: IS_ADVANCED_ASSESSMENT_BETA ? 'Complimentary during Beta' : 'One-time payment',
+    isBeta: IS_ADVANCED_ASSESSMENT_BETA,
     description: 'Comprehensive analysis with personalized learning plan',
     icon: Crown,
     color: '#6366f1',
@@ -156,13 +159,32 @@ export default function Pricing() {
                 }}>
                   <plan.icon size={28} color={plan.color} />
                 </div>
-                <h2 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   {plan.name}
+                  {plan.isBeta && (
+                    <span style={{
+                      background: 'linear-gradient(135deg, #14b8a6, #8b5cf6)',
+                      color: 'white',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      padding: '3px 10px',
+                      borderRadius: '12px',
+                      letterSpacing: '0.5px',
+                      lineHeight: '1.4'
+                    }}>
+                      BETA
+                    </span>
+                  )}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
                   {plan.description}
                 </p>
                 <div style={{ marginBottom: '4px' }}>
+                  {plan.originalPrice && (
+                    <span style={{ fontSize: '32px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through', marginRight: '10px' }}>
+                      {plan.originalPrice}
+                    </span>
+                  )}
                   <span style={{ fontSize: '42px', fontWeight: '700', color: plan.color }}>
                     {plan.price}
                   </span>

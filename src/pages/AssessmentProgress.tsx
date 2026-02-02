@@ -4,18 +4,14 @@ import { motion } from 'framer-motion';
 import {
   PlayCircle,
   RotateCcw,
-  ClipboardList,
-  Sparkles,
-  Check,
-  Crown,
-  CheckCircle,
-  ArrowRight
+  CheckCircle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
 import { ErrorAlert, ComingSoonModal, ProgressBar } from '../components/ui';
 import { getLevelColor } from '../data/skillsData';
-import { BASIC_ASSESSMENT_FEATURES, ADVANCED_ASSESSMENT_FEATURES } from '../data/assessmentData';
+import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
 
 export default function AssessmentProgress() {
   const navigate = useNavigate();
@@ -262,58 +258,11 @@ export default function AssessmentProgress() {
         }}>
 
           {/* Basic Assessment Tile (with progress) */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              background: 'var(--surface)',
-              borderRadius: '24px',
-              padding: '32px',
-              border: '2px solid var(--primary)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
+          <BasicAssessmentTile
+            animationDelay={0.2}
+            animationDirection="left"
+            style={{ border: '2px solid var(--primary)' }}
           >
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'rgba(20, 184, 166, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '20px'
-            }}>
-              <ClipboardList size={28} color="var(--primary-light)" />
-            </div>
-
-            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>
-              Basic Assessment
-            </h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-              A quick, personalized evaluation with instant insights
-            </p>
-
-            <div style={{
-              background: 'rgba(20, 184, 166, 0.1)',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '24px'
-            }}>
-              <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>Free</span>
-              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>5-10 minutes</span>
-            </div>
-
-            <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-              {BASIC_ASSESSMENT_FEATURES.map((item, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
-                  <Check size={18} color="var(--secondary)" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-
             {/* Progress Section */}
             <div style={{
               background: 'var(--surface-light)',
@@ -383,91 +332,23 @@ export default function AssessmentProgress() {
                 {loading ? 'Resuming...' : 'Resume Assessment'}
               </button>
             </div>
-          </motion.div>
+          </BasicAssessmentTile>
 
           {/* Advanced Assessment Tile */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            onClick={() => isProduction ? setShowComingSoon(true) : navigate('/payment')}
-            style={{
-              background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
-              borderRadius: '24px',
-              padding: '32px',
-              border: '2px solid var(--border)',
-              cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              flexDirection: 'column'
+          <AdvancedAssessmentTile
+            onClick={() => {
+              if (IS_ADVANCED_ASSESSMENT_BETA) {
+                navigate('/advanced-assessment');
+              } else if (isProduction) {
+                setShowComingSoon(true);
+              } else {
+                navigate('/payment');
+              }
             }}
-          >
-            <div style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              background: 'var(--gradient-1)',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <Crown size={14} />
-              RECOMMENDED
-            </div>
-
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'var(--gradient-1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '20px'
-            }}>
-              <Sparkles size={28} color="white" />
-            </div>
-
-            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>
-              Advanced Assessment
-            </h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-              Comprehensive evaluation with structured learning and hands-on practice
-            </p>
-
-            <div style={{
-              background: 'rgba(20, 184, 166, 0.15)',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '24px'
-            }}>
-              <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>$20</span>
-              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>one-time</span>
-            </div>
-
-            <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px', flex: 1 }}>
-              {ADVANCED_ASSESSMENT_FEATURES.map((item, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
-                  <Check size={18} color="var(--secondary)" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center', marginTop: 'auto' }}
-            >
-              Get Advanced Assessment
-              <ArrowRight size={18} />
-            </button>
-          </motion.div>
+            animationDelay={0.3}
+            animationDirection="right"
+            style={{ border: '2px solid var(--border)' }}
+          />
         </div>
 
         {/* Coming Soon Modal */}

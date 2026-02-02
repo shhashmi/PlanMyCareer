@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
-import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner } from '../components/ui';
+import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner, ComingSoonModal } from '../components/ui';
 import { getCompetencyStatus, calculatePercentage, getDifficultyOrder } from '../utils/statusHelpers';
+import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
 
 export default function BasicResults() {
@@ -333,13 +334,32 @@ export default function BasicResults() {
             curated resources, and weekly action plans
           </p>
           <button
-            onClick={() => isProduction ? setShowComingSoon(true) : navigate('/payment')}
+            onClick={() => {
+              if (IS_ADVANCED_ASSESSMENT_BETA) {
+                navigate('/advanced-assessment');
+              } else if (isProduction) {
+                setShowComingSoon(true);
+              } else {
+                navigate('/payment');
+              }
+            }}
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            Get Advanced Assessment - $20
+            {IS_ADVANCED_ASSESSMENT_BETA ? (
+              <>
+                Get Advanced Assessment — <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>$20</span> Free
+              </>
+            ) : (
+              'Get Advanced Assessment — $20'
+            )}
             <ArrowRight size={18} />
           </button>
+          {IS_ADVANCED_ASSESSMENT_BETA && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '12px' }}>
+              Complimentary during Beta
+            </p>
+          )}
         </Card>
       </div>
 
@@ -486,41 +506,10 @@ export default function BasicResults() {
       </Modal>
 
       {/* Coming Soon Modal */}
-      <Modal
+      <ComingSoonModal
         isOpen={showComingSoon}
         onClose={() => setShowComingSoon(false)}
-        maxWidth="480px"
-      >
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: 'var(--gradient-1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px'
-          }}>
-            <Sparkles size={32} color="white" />
-          </div>
-
-          <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-            Thank You for Your Interest!
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6' }}>
-            Advanced Assessment will be available soon. We're working hard to bring you an AI-powered deep analysis experience.
-          </p>
-
-          <button
-            onClick={() => setShowComingSoon(false)}
-            className="btn-primary"
-            style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
-          >
-            Got it
-          </button>
-        </div>
-      </Modal>
+      />
     </div>
   );
 }
