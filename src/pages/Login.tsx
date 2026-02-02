@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Chrome, Github, Linkedin, ArrowLeft } from 'lucide-react';
+import { Chrome, Linkedin, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { ErrorAlert, Button } from '../components/ui';
@@ -94,11 +94,7 @@ export default function Login() {
             <Chrome size={18} />
             Google
           </button>
-          <button onClick={() => handleSocialLogin('github')} style={socialButtonStyle}>
-            <Github size={18} />
-            GitHub
-          </button>
-          <button onClick={() => handleSocialLogin('linkedin')} style={socialButtonStyle}>
+<button onClick={() => handleSocialLogin('linkedin')} style={socialButtonStyle}>
             <Linkedin size={18} />
             LinkedIn
           </button>
