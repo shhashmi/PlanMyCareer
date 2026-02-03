@@ -912,6 +912,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/agent/initialize:
+    post:
+      tags:
+        - Agent
+      summary: Initialize AI assessment session
+      description: |
+        Pre-initializes an AI Fluency Assessment session with track, experience level, and fluency selections.
+        Returns a `thread_id` that the client uses for subsequent `POST /api/v1/agent/chat` calls.
+
+        Requires authentication (JWT cookie) and a valid feature flag query parameter.
+
+        **Feature flag**: Pass `?ff=<AGENT_FEATURE_FLAG>` — requests without a valid flag receive 404.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: ff
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Feature flag value (must match AGENT_FEATURE_FLAG env var)
+          example: "aiagent_x7k9m2"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentInitializeRequest'
+            example:
+              track: "PM"
+              experience: 5
+              fluencies:
+                - code: "FND"
+                  name: "AI Foundations & Mental Models"
+                  target_level: "intermediate"
+                - code: "RSK"
+                  name: "AI Risk Ethics & Compliance"
+                  target_level: "advanced"
+      responses:
+        '201':
+          description: Assessment initialized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentInitializeResponse'
+        '400':
+          description: Validation error (malformed body or invalid business rules)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentAssessmentValidationError'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invalid or missing feature flag (endpoint hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/agent/chat:
     post:
       tags:
@@ -951,14 +1015,15 @@ paths:
               $ref: '#/components/schemas/AgentChatRequest'
             examples:
               startAssessment:
-                summary: Start a new assessment
+                summary: Start a pre-initialized assessment
                 value:
                   message: "Start assessment"
+                  thread_id: "PM_user_20260201_143022"
               resumeAssessment:
                 summary: Resume an existing assessment
                 value:
                   message: "Continue my assessment"
-                  assessment_id: "PM_user_20260201_143022"
+                  thread_id: "PM_user_20260201_143022"
                   conversation_history:
                     - role: "user"
                       content: "Start assessment"
@@ -982,7 +1047,7 @@ paths:
                   value: "data: {\"type\":\"status\",\"content\":\"processing\"}\n\n"
                 doneEvent:
                   summary: Done event
-                  value: "data: {\"type\":\"done\",\"content\":\"Full response text...\",\"assessmentId\":\"PM_user_20260201_143022\"}\n\n"
+                  value: "data: {\"type\":\"done\",\"content\":\"Full response text...\",\"assessmentId\":\"PM_user_20260201_143022\",\"assessmentComplete\":false}\n\n"
                 errorEvent:
                   summary: Error event
                   value: "data: {\"type\":\"error\",\"content\":\"An error occurred\"}\n\n"
@@ -1584,6 +1649,10 @@ components:
     DimensionProfileV1:
       type: object
       properties:
+        code:
+          type: string
+          description: Dimension code (e.g., FND, PRM, ASE)
+          example: "FND"
         name:
           type: string
           description: Full name of the dimension
@@ -1600,6 +1669,10 @@ components:
     DimensionProfileV2:
       type: object
       properties:
+        code:
+          type: string
+          description: Dimension code (e.g., FND, PRM, ASE)
+          example: "PRM"
         name:
           type: string
           description: Full name of the dimension
@@ -1622,36 +1695,23 @@ components:
     FluencyMetadata:
       type: object
       properties:
-        experience_range:
-          type: string
-          description: Experience range bucket
-          example: "2-4"
+        experience:
+          type: integer
+          description: Years of experience
+          example: 5
         role:
           type: string
           example: "software engineer"
-        title:
-          type: string
-          example: "Software Engineer"
         company:
           type: string
           example: "Tech Corp"
         country:
           type: string
           example: "US"
-        company_type:
-          type: string
-          example: "Startup"
-        geography:
-          type: string
-          example: "US"
         goal:
           type: string
           nullable: true
           example: null
-        max_allowed_level:
-          type: string
-          description: Maximum proficiency level allowed based on experience
-          example: "Intermediate"
 
     CompetencyBreakdown:
       type: object
@@ -1738,10 +1798,10 @@ components:
           type: string
           description: The user's message to the assessment agent
           example: "Start assessment"
-        assessment_id:
+        thread_id:
           type: string
           nullable: true
-          description: Assessment ID to resume an existing session. Omit to start new.
+          description: Thread ID (assessment ID) from POST /api/v1/agent/initialize. Required to start or resume a session.
           example: "PM_user_20260201_143022"
         conversation_history:
           type: array
@@ -1790,3 +1850,86 @@ components:
           nullable: true
           description: Assessment ID (included in `done` events)
           example: "PM_user_20260201_143022"
+        assessmentComplete:
+          type: boolean
+          nullable: true
+          description: Whether the assessment has reached the DONE phase. Included in `done` events. When true, the client should end the conversation.
+          example: false
+
+    AgentInitializeRequest:
+      type: object
+      required:
+        - track
+        - experience
+        - fluencies
+      properties:
+        track:
+          type: string
+          enum: [PM, EM, SE]
+          description: Career track for the assessment
+          example: "PM"
+        experience:
+          type: integer
+          minimum: 0
+          description: Years of experience (will be mapped to appropriate experience range internally)
+          example: 5
+        fluencies:
+          type: array
+          description: Fluency areas to assess (1-10)
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/AgentFluencyInput'
+
+    AgentFluencyInput:
+      type: object
+      required:
+        - code
+        - name
+        - target_level
+      properties:
+        code:
+          type: string
+          description: Fluency code (e.g., FND, RSK, COM)
+          example: "FND"
+        name:
+          type: string
+          description: Human-readable fluency name
+          example: "AI Foundations & Mental Models"
+        target_level:
+          type: string
+          enum: [basic, intermediate, advanced, expert]
+          description: Target proficiency level for this fluency
+          example: "intermediate"
+
+    AgentInitializeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          properties:
+            thread_id:
+              type: string
+              description: Unique assessment thread ID. Use this in subsequent POST /api/v1/agent/chat requests.
+              example: "PM_user_20260201_143022"
+
+    AgentAssessmentValidationError:
+      type: object
+      properties:
+        error_type:
+          type: string
+          description: Error classification
+          example: "validation_error"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Invalid experience '99-100' for track PM. Valid levels: 0-2, 2-4, 4-7, 7-10, 10-14, 14-18, 18+"
+        invalid_fields:
+          type: array
+          description: Field paths that failed validation
+          items:
+            type: string
+          example: ["assessment_input.experience"]

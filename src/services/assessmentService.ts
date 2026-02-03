@@ -199,7 +199,7 @@ class AssessmentService {
       role: apiProfile.metadata.role,
       evaluated_dimensions: evaluatedDimensions,
       question_count: questionCount,
-      experience_years: parseInt(apiProfile.metadata.experience_range) || 0,
+      experience_years: apiProfile.metadata.experience,
       company: apiProfile.metadata.company,
       country: apiProfile.metadata.country,
     };

@@ -6,8 +6,9 @@
 // Proficiency levels (matches API v2 enum)
 export type ProficiencyLevel = 'Basic' | 'Intermediate' | 'Advanced' | 'Expert';
 
-// Skill dimension from API (v2 includes priority)
+// Skill dimension from API (v2 includes priority and code)
 export interface SkillDimension {
+  code: string;
   name: string;
   description: string;
   proficiency: ProficiencyLevel;
@@ -18,14 +19,11 @@ export interface SkillDimension {
 export interface FluencyProfileResponse {
   profile: SkillDimension[];
   metadata: {
-    experience_range: string;
+    experience: number;
     role: string;
-    title: string;
     company: string;
     country: string;
-    geography: string;
-    goal?: string;
-    max_allowed_level: ProficiencyLevel;
+    goal?: string | null;
   };
 }
 
@@ -235,4 +233,41 @@ export interface IncompleteAssessmentResponse {
   total_questions: number;
   metadata?: AssessmentMetadata;
   evaluated_dimensions?: EvaluatedDimension[];
+}
+
+// Agent API Types
+export type CareerTrack = 'PM' | 'EM' | 'SE';
+
+export interface AgentFluencyInput {
+  code: string;
+  name: string;
+  target_level: 'basic' | 'intermediate' | 'advanced' | 'expert';
+}
+
+export interface AgentInitializeRequest {
+  track: CareerTrack;
+  experience: number;
+  fluencies: AgentFluencyInput[];
+}
+
+export interface AgentInitializeResponse {
+  thread_id: string;
+}
+
+export interface AgentConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AgentChatRequest {
+  message: string;
+  thread_id: string;
+  conversation_history?: AgentConversationMessage[];
+}
+
+export interface AgentSSEEvent {
+  type: 'token' | 'status' | 'done' | 'error';
+  content: string;
+  assessmentId?: string;
+  assessmentComplete?: boolean;
 }

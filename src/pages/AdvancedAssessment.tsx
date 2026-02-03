@@ -1,127 +1,226 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, Loader } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { getLevelNumber } from '../data/skillsData';
-
-const aiResponses = [
-  "Great! Let's start by understanding your experience with AI tools in your daily work. Can you describe a recent project where you used AI assistance?",
-  "That's insightful! Now, let's dive deeper into prompt engineering. When you need an AI to generate specific output, what's your approach to crafting the prompt?",
-  "Excellent response! I can see you have some practical experience. Let me give you a quick scenario: You need to build a feature that summarizes customer feedback using an LLM. Walk me through your approach.",
-  "Very thorough! Now for a quick assessment: What do you think are the main challenges in integrating AI APIs into production systems?",
-  "Great points! Final question: How do you stay updated with the rapidly evolving AI landscape? What resources do you rely on?",
-  "Thank you for your detailed responses! I've gathered enough information to provide a comprehensive analysis of your AI skills. Click below to see your personalized results."
-]
+import { useAgentChat, ChatMessage } from '../hooks/useAgentChat';
 
 export default function AdvancedAssessment() {
-  const navigate = useNavigate()
-  const { skills, setAdvancedResults, profileData } = useApp()
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [isComplete, setIsComplete] = useState(false)
-  const messagesEndRef = useRef(null)
+  const navigate = useNavigate();
+  const { apiProfile } = useApp();
+  const {
+    messages,
+    isInitializing,
+    isStreaming,
+    isComplete,
+    error,
+    initialize,
+    sendMessage,
+  } = useAgentChat();
 
+  const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
+
+  // Initialize the agent session on mount
   useEffect(() => {
-    setTimeout(() => {
-      setMessages([{
-        type: 'bot',
-        content: `Hello! I'm your AI assessment assistant. I'll be evaluating your skills in ${skills.length} key areas for your role as ${profileData?.role || 'your position'}. Let's begin with an interactive conversation.`,
-        timestamp: new Date()
-      }])
-      
-      setTimeout(() => {
-        setMessages(prev => [...prev, {
-          type: 'bot',
-          content: aiResponses[0],
-          timestamp: new Date()
-        }])
-      }, 1500)
-    }, 500)
-  }, [])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const handleSend = async () => {
-    if (!input.trim() || isTyping) return
-
-    const userMessage = { type: 'user', content: input, timestamp: new Date() }
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setIsTyping(true)
-
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000))
-
-    const nextQ = currentQuestion + 1
-    
-    if (nextQ < aiResponses.length) {
-      setMessages(prev => [...prev, {
-        type: 'bot',
-        content: aiResponses[nextQ],
-        timestamp: new Date()
-      }])
-      setCurrentQuestion(nextQ)
-      
-      if (nextQ === aiResponses.length - 1) {
-        setIsComplete(true)
-      }
+    if (apiProfile && !hasInitialized.current) {
+      hasInitialized.current = true;
+      initialize(apiProfile);
     }
+  }, [apiProfile, initialize]);
 
-    setIsTyping(false)
-  }
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim() || isStreaming) return;
+    sendMessage(input);
+    setInput('');
+  };
 
   const handleViewResults = () => {
-    const results = skills.map(skill => {
-      const base = getLevelNumber(skill.level)
-      const variance = Math.floor(Math.random() * 4) - 2
-      const score = Math.max(1, Math.min(10, base + variance))
-      
-      const reasonings = [
-        `Based on your responses, you demonstrated ${score >= base ? 'strong' : 'developing'} understanding of ${skill.name.toLowerCase()}.`,
-        `Your practical examples showed ${score >= base ? 'solid applied knowledge' : 'room for growth'} in this area.`,
-        `The depth of your answers indicates ${score >= base ? 'proficiency' : 'foundational understanding'} that ${score >= base ? 'meets' : 'is building towards'} expectations.`
-      ]
-      
-      return {
-        ...skill,
-        score,
-        reasoning: reasonings[Math.floor(Math.random() * reasonings.length)]
-      }
-    })
-    
-    setAdvancedResults(results)
-    navigate('/advanced-results')
-  }
+    navigate('/advanced-results');
+  };
 
-  return (
-    <div className="chat-container" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: '24px'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+  const renderMessage = (msg: ChatMessage, index: number) => (
+    <motion.div
+      key={msg.id}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        display: 'flex',
         gap: '12px',
-        marginBottom: '24px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid var(--border)'
-      }}>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
+        alignItems: 'flex-start',
+        flexDirection: msg.type === 'user' ? 'row-reverse' : 'row',
+      }}
+    >
+      <div
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '10px',
+          background: msg.type === 'user' ? 'var(--surface-light)' : 'var(--gradient-1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {msg.type === 'user' ? <User size={18} /> : <Bot size={18} color="white" />}
+      </div>
+      <div
+        style={{
+          maxWidth: '70%',
+          padding: '14px 18px',
+          borderRadius: msg.type === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+          background: msg.type === 'user' ? 'var(--primary)' : 'var(--surface)',
+          color: 'var(--text-primary)',
+          lineHeight: '1.5',
+        }}
+      >
+        {msg.content}
+        {msg.isStreaming && (
+          <span
+            style={{
+              display: 'inline-block',
+              width: '2px',
+              height: '1em',
+              background: 'var(--text-primary)',
+              marginLeft: '2px',
+              animation: 'blink 1s infinite',
+            }}
+          />
+        )}
+      </div>
+    </motion.div>
+  );
+
+  const renderTypingIndicator = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}
+    >
+      <div
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '10px',
           background: 'var(--gradient-1)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+          justifyContent: 'center',
+        }}
+      >
+        <Bot size={18} color="white" />
+      </div>
+      <div
+        style={{
+          padding: '14px 18px',
+          borderRadius: '16px 16px 16px 4px',
+          background: 'var(--surface)',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: 'var(--text-muted)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const renderError = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        display: 'flex',
+        gap: '12px',
+        alignItems: 'center',
+        padding: '16px',
+        background: 'var(--surface)',
+        borderRadius: '12px',
+        border: '1px solid var(--error, #ef4444)',
+      }}
+    >
+      <AlertCircle size={20} color="var(--error, #ef4444)" />
+      <div style={{ flex: 1 }}>
+        <p style={{ color: 'var(--error, #ef4444)', marginBottom: '4px' }}>
+          Something went wrong
+        </p>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{error}</p>
+      </div>
+      <button
+        onClick={() => {
+          if (apiProfile) {
+            hasInitialized.current = false;
+            initialize(apiProfile);
+          }
+        }}
+        className="btn-secondary"
+        style={{ padding: '8px 16px' }}
+      >
+        Retry
+      </button>
+    </motion.div>
+  );
+
+  return (
+    <div
+      className="chat-container"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '24px',
+      }}
+    >
+      {/* Add keyframes for cursor blink animation */}
+      <style>
+        {`
+          @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+          }
+        `}
+      </style>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '24px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        <div
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'var(--gradient-1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Sparkles size={24} color="white" />
         </div>
         <div>
@@ -132,88 +231,58 @@ export default function AdvancedAssessment() {
         </div>
       </div>
 
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        paddingRight: '8px'
-      }}>
-        <AnimatePresence>
-          {messages.map((msg, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'flex-start',
-                flexDirection: msg.type === 'user' ? 'row-reverse' : 'row'
-              }}
-            >
-              <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: msg.type === 'user' ? 'var(--surface-light)' : 'var(--gradient-1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                {msg.type === 'user' ? <User size={18} /> : <Bot size={18} color="white" />}
-              </div>
-              <div style={{
-                maxWidth: '70%',
-                padding: '14px 18px',
-                borderRadius: msg.type === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                background: msg.type === 'user' ? 'var(--primary)' : 'var(--surface)',
-                color: 'var(--text-primary)',
-                lineHeight: '1.5'
-              }}>
-                {msg.content}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {isTyping && (
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          paddingRight: '8px',
+        }}
+      >
+        {/* Loading state during initialization */}
+        {isInitializing && messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}
-          >
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'var(--gradient-1)',
+            style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Bot size={18} color="white" />
-            </div>
-            <div style={{
-              padding: '14px 18px',
-              borderRadius: '16px 16px 16px 4px',
-              background: 'var(--surface)'
-            }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {[0, 1, 2].map(i => (
-                  <motion.div
-                    key={i}
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                    style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }}
-                  />
-                ))}
-              </div>
-            </div>
+              justifyContent: 'center',
+              padding: '48px',
+              gap: '16px',
+            }}
+          >
+            <Loader
+              size={32}
+              style={{
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+            <p style={{ color: 'var(--text-muted)' }}>Starting your assessment...</p>
+            <style>
+              {`
+                @keyframes spin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}
+            </style>
           </motion.div>
         )}
+
+        {/* Error display */}
+        {error && renderError()}
+
+        {/* Messages */}
+        <AnimatePresence>
+          {messages.map((msg, index) => renderMessage(msg, index))}
+        </AnimatePresence>
+
+        {/* Typing indicator when streaming with no content yet */}
+        {isStreaming && messages.length > 0 && !messages[messages.length - 1]?.content && renderTypingIndicator()}
 
         <div ref={messagesEndRef} />
       </div>
@@ -234,16 +303,18 @@ export default function AdvancedAssessment() {
           </button>
         </motion.div>
       ) : (
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          marginTop: '24px',
-          padding: '4px',
-          paddingBottom: 'env(safe-area-inset-bottom, 4px)',
-          background: 'var(--surface)',
-          borderRadius: '16px',
-          border: '1px solid var(--border)'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            marginTop: '24px',
+            padding: '4px',
+            paddingBottom: 'env(safe-area-inset-bottom, 4px)',
+            background: 'var(--surface)',
+            borderRadius: '16px',
+            border: '1px solid var(--border)',
+          }}
+        >
           <input
             type="text"
             value={input}
@@ -257,29 +328,36 @@ export default function AdvancedAssessment() {
               border: 'none',
               color: 'var(--text-primary)',
               fontSize: '16px',
-              outline: 'none'
+              outline: 'none',
             }}
-            disabled={isTyping}
+            disabled={isStreaming || isInitializing}
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isTyping}
+            disabled={!input.trim() || isStreaming || isInitializing}
             style={{
               width: '48px',
               height: '48px',
               borderRadius: '12px',
-              background: input.trim() && !isTyping ? 'var(--gradient-1)' : 'var(--surface-light)',
+              background:
+                input.trim() && !isStreaming && !isInitializing
+                  ? 'var(--gradient-1)'
+                  : 'var(--surface-light)',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: input.trim() && !isTyping ? 1 : 0.5
+              opacity: input.trim() && !isStreaming && !isInitializing ? 1 : 0.5,
             }}
           >
-            {isTyping ? <Loader size={20} /> : <Send size={20} color="white" />}
+            {isStreaming || isInitializing ? (
+              <Loader size={20} />
+            ) : (
+              <Send size={20} color="white" />
+            )}
           </button>
         </div>
       )}
     </div>
-  )
+  );
 }
