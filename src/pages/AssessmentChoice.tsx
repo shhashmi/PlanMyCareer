@@ -1,17 +1,17 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
 import { ComingSoonModal } from '../components/ui';
 import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 import { splitSkillsByPriority, getSkillNamesForAssessment } from '../utils/profileUtils';
 import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { isLoggedIn, skills, loading, apiProfile } = useApp()
   const [startingAssessment, setStartingAssessment] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -229,7 +229,7 @@ export default function AssessmentChoice() {
 
           <AdvancedAssessmentTile
             onClick={() => {
-              if (IS_ADVANCED_ASSESSMENT_BETA) {
+              if (isAdvancedAssessmentBeta()) {
                 navigate('/advanced-assessment');
               } else if (isProduction) {
                 setShowComingSoon(true);

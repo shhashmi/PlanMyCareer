@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { Chrome, Linkedin, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -8,7 +9,7 @@ import { ErrorAlert, Button } from '../components/ui';
 import SEOHead from '../components/SEOHead';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const [searchParams] = useSearchParams();
   const { isLoggedIn } = useApp();
   const { smartNavigate } = useSmartNavigation();

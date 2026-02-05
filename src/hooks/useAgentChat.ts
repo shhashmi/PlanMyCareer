@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { agentService, buildInitializeRequest, getFeatureFlagFromURL } from '../services/agentService';
+import { agentService, buildInitializeRequest } from '../services/agentService';
 import type { FluencyProfileResponse, AgentConversationMessage } from '../types/api.types';
 
 export interface ChatMessage {
@@ -37,7 +37,6 @@ export function useAgentChat(): UseAgentChatReturn {
 
   // Refs to avoid stale closures
   const threadIdRef = useRef<string | null>(null);
-  const featureFlagRef = useRef<string>('');
   const conversationHistoryRef = useRef<AgentConversationMessage[]>([]);
   const streamingContentRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -51,12 +50,9 @@ export function useAgentChat(): UseAgentChatReturn {
     setIsInitializing(true);
     setError(null);
 
-    // Capture feature flag from URL at initialization time
-    featureFlagRef.current = getFeatureFlagFromURL();
-
     try {
       const request = buildInitializeRequest(apiProfile);
-      const response = await agentService.initialize(request, featureFlagRef.current);
+      const response = await agentService.initialize(request);
       threadIdRef.current = response.thread_id;
 
       // Send the initial "Start assessment" message
@@ -169,7 +165,7 @@ export function useAgentChat(): UseAgentChatReturn {
         // Remove the placeholder message on error - do NOT add to conversation history
         setMessages((prev) => prev.filter((msg) => msg.id !== botMessageId));
       },
-    }, featureFlagRef.current);
+    });
   }, []);
 
   /**
@@ -200,7 +196,6 @@ export function useAgentChat(): UseAgentChatReturn {
 
     // Clear refs
     threadIdRef.current = null;
-    featureFlagRef.current = '';
     conversationHistoryRef.current = [];
     streamingContentRef.current = '';
   }, []);

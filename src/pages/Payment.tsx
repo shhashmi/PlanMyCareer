@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { CreditCard, Lock, Check, Shield, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -7,7 +7,7 @@ import SEOHead from '../components/SEOHead';
 import { trackConversion } from '../lib/analytics';
 
 export default function Payment() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { isLoggedIn, skills } = useApp()
   const [isProcessing, setIsProcessing] = useState(false)
   const [formData, setFormData] = useState({

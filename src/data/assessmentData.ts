@@ -34,5 +34,9 @@ export const ADVANCED_ASSESSMENT_INFO = {
   features: ADVANCED_ASSESSMENT_FEATURES
 };
 
-export const IS_ADVANCED_ASSESSMENT_BETA =
-  import.meta.env.VITE_ADVANCED_ASSESSMENT_STAGE === 'beta';
+export function isAdvancedAssessmentBeta(): boolean {
+  const param = import.meta.env.VITE_BETA_FF_PARAM;
+  const value = import.meta.env.VITE_BETA_FF_VALUE;
+  if (!param || !value) return false;
+  return new URLSearchParams(window.location.search).get(param) === value;
+}

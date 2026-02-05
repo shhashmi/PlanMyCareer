@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, ArrowRight, Sparkles, Info, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -13,7 +13,7 @@ import SEOHead from '../components/SEOHead';
 import type { ProfileData } from '../types/context.types';
 
 export default function Skills() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { profileData, setProfileData, skills, setSkills, setApiProfile, isLoggedIn } = useApp()
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null)
   const [pageError, setPageError] = useState<string | null>(null)

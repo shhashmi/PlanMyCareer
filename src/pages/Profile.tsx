@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { User, ArrowLeft, Briefcase, MapPin, Target, Clock, Building, Edit2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -20,7 +20,7 @@ interface ProfileFormData {
 }
 
 export default function Profile() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const { user, isLoggedIn, setProfileData, setSkills, setApiProfile, setAssessmentResults, setAdvancedResults, setIncompleteAssessment, roles, rolesLoading } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);

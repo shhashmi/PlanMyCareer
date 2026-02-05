@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, MessageSquare, Target } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -8,7 +8,7 @@ import SEOHead from '../components/SEOHead';
 import { trackAssessmentComplete } from '../lib/analytics';
 
 export default function AdvancedResults() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { advancedResults, profileData } = useApp()
 
   if (!advancedResults || advancedResults.length === 0) {

@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { useApp } from '../context/AppContext';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import SEOHead from '../components/SEOHead';
 import { trackLogin } from '../lib/analytics';
 
 export default function AuthCallback() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const { isLoggedIn, loading } = useApp();
   const { smartNavigate } = useSmartNavigation();
 

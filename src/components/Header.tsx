@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { User, LogOut, LogIn, ChevronDown, Menu, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useSmartNavigation } from "../hooks/useSmartNavigation";
+import { useNavigateWithParams } from "../hooks/useNavigateWithParams";
 import logoImage from "@assets/logo-1_1767800057394.png";
 
 const navLinks = [
@@ -13,7 +14,7 @@ const navLinks = [
 ];
 
 export default function Header() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const location = useLocation();
   const { isLoggedIn, user, logout } = useApp();
   const { smartNavigate, isNavigating } = useSmartNavigation();

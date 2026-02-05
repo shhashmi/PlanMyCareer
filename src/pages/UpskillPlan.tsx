@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, BookOpen, ExternalLink, CheckCircle, Play, Target } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -14,7 +14,7 @@ const timeOptions = [
 ]
 
 export default function UpskillPlan() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { advancedResults, setUpskillPlan, profileData } = useApp()
   const [selectedTime, setSelectedTime] = useState(null)
   const [showPlan, setShowPlan] = useState(false)

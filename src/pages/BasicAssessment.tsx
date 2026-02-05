@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -13,7 +14,7 @@ import type { AssessmentStartResponse, AssessmentQuestion, SelectedOption, Dimen
 const OPTION_LETTERS: SelectedOption[] = ['A', 'B', 'C', 'D'];
 
 export default function BasicAssessment() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const location = useLocation();
   const { setIncompleteAssessment } = useApp();
 

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { buildUrlWithParams } from "../utils/queryParamStore";
 
 const productLinks = [
   { label: "How It Works", path: "/how-it-works" },
@@ -61,7 +62,7 @@ export default function Footer() {
             {productLinks.map((link) => (
               <Link
                 key={link.path}
-                to={link.path}
+                to={buildUrlWithParams(link.path)}
                 style={linkStyle}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
@@ -79,7 +80,7 @@ export default function Footer() {
             {companyLinks.map((link) => (
               <Link
                 key={link.path}
-                to={link.path}
+                to={buildUrlWithParams(link.path)}
                 style={linkStyle}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
@@ -118,7 +119,7 @@ export default function Footer() {
             {legalLinks.map((link) => (
               <Link
                 key={link.path}
-                to={link.path}
+                to={buildUrlWithParams(link.path)}
                 style={{ ...linkStyle, fontSize: "13px" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}

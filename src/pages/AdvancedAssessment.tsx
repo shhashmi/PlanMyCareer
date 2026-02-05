@@ -1,14 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Sparkles, Loader, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAgentChat, ChatMessage } from '../hooks/useAgentChat';
 import SEOHead from '../components/SEOHead';
 import { trackAssessmentStart } from '../lib/analytics';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import AutoExpandingTextarea from '../components/ui/AutoExpandingTextarea';
 
 export default function AdvancedAssessment() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const { apiProfile } = useApp();
   const {
     messages,
@@ -21,8 +23,11 @@ export default function AdvancedAssessment() {
   } = useAgentChat();
 
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const latestBotMessageRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
+  const prevMessagesLength = useRef(0);
+  const wasStreaming = useRef(false);
 
   // Initialize the agent session on mount
   useEffect(() => {
@@ -33,10 +38,34 @@ export default function AdvancedAssessment() {
     }
   }, [apiProfile, initialize]);
 
-  // Auto-scroll to bottom when messages change
+  // Smart scroll behavior
+  const isNearBottom = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    const threshold = 100;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const newBotMessageStarted =
+      messages.length > prevMessagesLength.current &&
+      messages[messages.length - 1]?.type === 'bot';
+
+    // When a new bot message starts streaming, scroll to the top of that message
+    if (newBotMessageStarted && latestBotMessageRef.current) {
+      latestBotMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    // When streaming ends and user is near bottom, scroll to bottom
+    else if (wasStreaming.current && !isStreaming && isNearBottom()) {
+      container.scrollTop = container.scrollHeight;
+    }
+
+    prevMessagesLength.current = messages.length;
+    wasStreaming.current = isStreaming;
+  }, [messages, isStreaming, isNearBottom]);
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
@@ -48,9 +77,10 @@ export default function AdvancedAssessment() {
     navigate('/advanced-results');
   };
 
-  const renderMessage = (msg: ChatMessage, index: number) => (
+  const renderMessage = (msg: ChatMessage, index: number, isLatestBot: boolean) => (
     <motion.div
       key={msg.id}
+      ref={isLatestBot ? latestBotMessageRef : undefined}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       style={{
@@ -84,7 +114,7 @@ export default function AdvancedAssessment() {
           lineHeight: '1.5',
         }}
       >
-        {msg.content}
+        {msg.type === 'bot' ? <MarkdownRenderer content={msg.content} /> : msg.content}
         {msg.isStreaming && (
           <span
             style={{
@@ -236,6 +266,7 @@ export default function AdvancedAssessment() {
       </div>
 
       <div
+        ref={messagesContainerRef}
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -282,13 +313,17 @@ export default function AdvancedAssessment() {
 
         {/* Messages */}
         <AnimatePresence>
-          {messages.map((msg, index) => renderMessage(msg, index))}
+          {messages.map((msg, index) => {
+            const isLatestBot =
+              msg.type === 'bot' &&
+              index === messages.length - 1 ||
+              (index === messages.length - 2 && messages[messages.length - 1]?.type === 'user');
+            return renderMessage(msg, index, isLatestBot && msg.type === 'bot');
+          })}
         </AnimatePresence>
 
         {/* Typing indicator when streaming with no content yet */}
         {isStreaming && messages.length > 0 && !messages[messages.length - 1]?.content && renderTypingIndicator()}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {isComplete ? (
@@ -319,12 +354,13 @@ export default function AdvancedAssessment() {
             border: '1px solid var(--border)',
           }}
         >
-          <input
-            type="text"
+          <AutoExpandingTextarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            onSubmit={handleSend}
             placeholder="Type your response..."
+            minHeight={48}
+            maxHeight={150}
             style={{
               flex: 1,
               padding: '14px 16px',
@@ -333,6 +369,7 @@ export default function AdvancedAssessment() {
               color: 'var(--text-primary)',
               fontSize: '16px',
               outline: 'none',
+              fontFamily: 'inherit',
             }}
             disabled={isStreaming || isInitializing}
           />

@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -10,6 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
 import { useUTMTracking } from './hooks/useUTMTracking';
+import { captureQueryParams } from './utils/queryParamStore';
 
 const Skills = lazy(() => import('./pages/Skills'));
 const Login = lazy(() => import('./pages/Login'));
@@ -34,6 +35,8 @@ const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 
 function AppRoutes() {
+  const { search } = useLocation();
+  captureQueryParams(search);
   useAnalytics();
   useUTMTracking();
 

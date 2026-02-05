@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import {
   PlayCircle,
@@ -10,12 +10,12 @@ import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
 import { ErrorAlert, ComingSoonModal, ProgressBar } from '../components/ui';
 import { getLevelColor } from '../data/skillsData';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
 import SEOHead from '../components/SEOHead';
 
 export default function AssessmentProgress() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const {
     isLoggedIn,
     incompleteAssessment,
@@ -339,7 +339,7 @@ export default function AssessmentProgress() {
           {/* Advanced Assessment Tile */}
           <AdvancedAssessmentTile
             onClick={() => {
-              if (IS_ADVANCED_ASSESSMENT_BETA) {
+              if (isAdvancedAssessmentBeta()) {
                 navigate('/advanced-assessment');
               } else if (isProduction) {
                 setShowComingSoon(true);

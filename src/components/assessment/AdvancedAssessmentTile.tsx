@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Check, Crown, ArrowRight } from 'lucide-react';
-import { ADVANCED_ASSESSMENT_FEATURES, IS_ADVANCED_ASSESSMENT_BETA } from '../../data/assessmentData';
+import { ADVANCED_ASSESSMENT_FEATURES, isAdvancedAssessmentBeta } from '../../data/assessmentData';
 
 interface AdvancedAssessmentTileProps {
   onClick: () => void;
@@ -18,6 +18,7 @@ export function AdvancedAssessmentTile({
   buttonText = 'Get Advanced Assessment',
   style
 }: AdvancedAssessmentTileProps) {
+  const isBeta = isAdvancedAssessmentBeta();
   const xOffset = animationDirection === 'left' ? -20 : 20;
 
   return (
@@ -73,7 +74,7 @@ export function AdvancedAssessmentTile({
 
       <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         Advanced Assessment
-        {IS_ADVANCED_ASSESSMENT_BETA && (
+        {isBeta && (
           <span style={{
             background: 'linear-gradient(135deg, #14b8a6, #8b5cf6)',
             color: 'white',
@@ -98,7 +99,7 @@ export function AdvancedAssessmentTile({
         borderRadius: '12px',
         marginBottom: '24px'
       }}>
-        {IS_ADVANCED_ASSESSMENT_BETA ? (
+        {isBeta ? (
           <>
             <span style={{ fontSize: '26px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through' }}>$20</span>
             <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)', marginLeft: '10px' }}>Free</span>

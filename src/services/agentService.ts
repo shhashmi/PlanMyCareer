@@ -13,18 +13,11 @@ import type {
   AgentFluencyInput,
 } from '../types/api.types';
 import { getTopCompetencies } from '../utils/profileUtils';
+import { buildUrlWithParams } from '../utils/queryParamStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : 'https://api.aifluens.com/api';
-
-/**
- * Get feature flag from URL query parameters
- */
-export function getFeatureFlagFromURL(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('ff') || '';
-}
 
 /**
  * Map role string to CareerTrack
@@ -71,9 +64,8 @@ export interface StreamCallbacks {
 /**
  * Initialize an agent session
  */
-export async function initialize(request: AgentInitializeRequest, featureFlag?: string): Promise<AgentInitializeResponse> {
-  const ff = featureFlag || getFeatureFlagFromURL();
-  const url = `${API_BASE_URL}/v1/agent/initialize${ff ? `?ff=${ff}` : ''}`;
+export async function initialize(request: AgentInitializeRequest): Promise<AgentInitializeResponse> {
+  const url = buildUrlWithParams(`${API_BASE_URL}/v1/agent/initialize`);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -101,11 +93,9 @@ export async function initialize(request: AgentInitializeRequest, featureFlag?: 
 export function streamChat(
   request: AgentChatRequest,
   callbacks: StreamCallbacks,
-  featureFlag?: string
 ): AbortController {
   const controller = new AbortController();
-  const ff = featureFlag || getFeatureFlagFromURL();
-  const url = `${API_BASE_URL}/v1/agent/chat${ff ? `?ff=${ff}` : ''}`;
+  const url = buildUrlWithParams(`${API_BASE_URL}/v1/agent/chat`);
 
   (async () => {
     try {
@@ -192,7 +182,6 @@ export const agentService = {
   initialize,
   streamChat,
   buildInitializeRequest,
-  getFeatureFlagFromURL,
 };
 
 export default agentService;

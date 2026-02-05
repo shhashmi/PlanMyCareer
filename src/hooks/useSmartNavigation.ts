@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useNavigateWithParams } from './useNavigateWithParams';
 import { profileService } from '../services/profileService';
 import { assessmentService } from '../services/assessmentService';
 import { fluencyService } from '../services/fluencyService';
@@ -17,7 +17,7 @@ export interface SmartNavigationResult {
 }
 
 export function useSmartNavigation() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const {
     isLoggedIn,
     logout,

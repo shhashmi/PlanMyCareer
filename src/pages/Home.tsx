@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, MapPin, Target, Clock, Building, Zap, Lightbulb, TrendingUp, Users, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -39,7 +39,7 @@ const values = [
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const { isLoggedIn, loading, setProfileData, setSkills, setApiProfile, roles, rolesLoading } = useApp();
   const { smartNavigate, isNavigating } = useSmartNavigation();
   const formRef = useRef<HTMLFormElement>(null);

@@ -2,7 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
-  readonly VITE_ADVANCED_ASSESSMENT_STAGE?: string;
+  readonly VITE_BETA_FF_PARAM?: string;
+  readonly VITE_BETA_FF_VALUE?: string;
 }
 
 interface ImportMeta {

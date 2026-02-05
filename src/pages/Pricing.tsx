@@ -1,57 +1,60 @@
 import { motion } from 'framer-motion';
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { GetStartedCTA } from '../components/GetStartedCTA';
 import SEOHead from '../components/SEOHead';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 
-const plans = [
-  {
-    name: 'Basic Assessment',
-    price: 'Free',
-    priceSubtext: 'No credit card required',
-    description: 'Quick AI skill evaluation to get you started',
-    icon: Zap,
-    color: '#14b8a6',
-    features: [
-      { text: 'AI skill gap analysis', included: true },
-      { text: 'Basic competency scoring', included: true },
-      { text: 'Instant results', included: true },
-      { text: 'General learning recommendations', included: true },
-      { text: 'Detailed weekly learning plan', included: false },
-      { text: 'Hands-on assignments', included: false },
-      { text: 'Curated resource library', included: false },
-      { text: 'Progress tracking', included: false }
-    ],
-    cta: 'Start Free Assessment',
-    highlighted: false
-  },
-  {
-    name: 'Advanced Assessment',
-    price: IS_ADVANCED_ASSESSMENT_BETA ? 'Free' : '$20',
-    originalPrice: IS_ADVANCED_ASSESSMENT_BETA ? '$20' : undefined,
-    priceSubtext: IS_ADVANCED_ASSESSMENT_BETA ? 'Complimentary during Beta' : 'One-time payment',
-    isBeta: IS_ADVANCED_ASSESSMENT_BETA,
-    description: 'Comprehensive analysis with personalized learning plan',
-    icon: Crown,
-    color: '#6366f1',
-    features: [
-      { text: 'AI skill gap analysis', included: true },
-      { text: 'Detailed competency scoring', included: true },
-      { text: 'In-depth results & insights', included: true },
-      { text: 'Personalized recommendations', included: true },
-      { text: 'Detailed weekly learning plan', included: true },
-      { text: 'Hands-on assignments', included: true },
-      { text: 'Curated resource library', included: true },
-      { text: 'Progress tracking', included: true }
-    ],
-    cta: 'Get Advanced Assessment',
-    highlighted: true
-  }
-];
+function getPlans(isBeta: boolean) {
+  return [
+    {
+      name: 'Basic Assessment',
+      price: 'Free',
+      priceSubtext: 'No credit card required',
+      description: 'Quick AI skill evaluation to get you started',
+      icon: Zap,
+      color: '#14b8a6',
+      features: [
+        { text: 'AI skill gap analysis', included: true },
+        { text: 'Basic competency scoring', included: true },
+        { text: 'Instant results', included: true },
+        { text: 'General learning recommendations', included: true },
+        { text: 'Detailed weekly learning plan', included: false },
+        { text: 'Hands-on assignments', included: false },
+        { text: 'Curated resource library', included: false },
+        { text: 'Progress tracking', included: false }
+      ],
+      cta: 'Start Free Assessment',
+      highlighted: false
+    },
+    {
+      name: 'Advanced Assessment',
+      price: isBeta ? 'Free' : '$20',
+      originalPrice: isBeta ? '$20' : undefined,
+      priceSubtext: isBeta ? 'Complimentary during Beta' : 'One-time payment',
+      isBeta,
+      description: 'Comprehensive analysis with personalized learning plan',
+      icon: Crown,
+      color: '#6366f1',
+      features: [
+        { text: 'AI skill gap analysis', included: true },
+        { text: 'Detailed competency scoring', included: true },
+        { text: 'In-depth results & insights', included: true },
+        { text: 'Personalized recommendations', included: true },
+        { text: 'Detailed weekly learning plan', included: true },
+        { text: 'Hands-on assignments', included: true },
+        { text: 'Curated resource library', included: true },
+        { text: 'Progress tracking', included: true }
+      ],
+      cta: 'Get Advanced Assessment',
+      highlighted: true
+    }
+  ];
+}
 
 export default function Pricing() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
+  const plans = getPlans(isAdvancedAssessmentBeta());
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>

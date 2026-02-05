@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
 import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner, ComingSoonModal } from '../components/ui';
 import { getCompetencyStatus, calculatePercentage, getDifficultyOrder } from '../utils/statusHelpers';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 import SEOHead from '../components/SEOHead';
 import { trackAssessmentComplete } from '../lib/analytics';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
 
 export default function BasicResults() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const location = useLocation();
   const { apiProfile } = useApp();
 
@@ -344,7 +345,7 @@ export default function BasicResults() {
           </p>
           <button
             onClick={() => {
-              if (IS_ADVANCED_ASSESSMENT_BETA) {
+              if (isAdvancedAssessmentBeta()) {
                 navigate('/advanced-assessment');
               } else if (isProduction) {
                 setShowComingSoon(true);
@@ -355,7 +356,7 @@ export default function BasicResults() {
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            {IS_ADVANCED_ASSESSMENT_BETA ? (
+            {isAdvancedAssessmentBeta() ? (
               <>
                 Get Advanced Assessment — <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>$20</span> Free
               </>
@@ -364,7 +365,7 @@ export default function BasicResults() {
             )}
             <ArrowRight size={18} />
           </button>
-          {IS_ADVANCED_ASSESSMENT_BETA && (
+          {isAdvancedAssessmentBeta() && (
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '12px' }}>
               Complimentary during Beta
             </p>
