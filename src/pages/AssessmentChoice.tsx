@@ -7,6 +7,7 @@ import { assessmentService } from '../services/assessmentService';
 import { ComingSoonModal } from '../components/ui';
 import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
 import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { splitSkillsByPriority, getSkillNamesForAssessment } from '../utils/profileUtils';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
@@ -21,14 +22,13 @@ export default function AssessmentChoice() {
   // Sort skills by priority and split into priority (top 4) and remaining
   const sortedSkills = useMemo(() => {
     if (!apiProfile?.profile) return { priority: [], remaining: [] };
-    const sorted = [...apiProfile.profile].sort((a, b) => a.priority - b.priority);
-    return { priority: sorted.slice(0, 4), remaining: sorted.slice(4) };
+    return splitSkillsByPriority(apiProfile.profile);
   }, [apiProfile]);
 
   const hasExtraSkills = sortedSkills.remaining.length > 0;
-  const selectedSkills = includeAllSkills
-    ? apiProfile?.profile.map(s => s.name) || []
-    : sortedSkills.priority.map(s => s.name);
+  const selectedSkills = apiProfile?.profile
+    ? getSkillNamesForAssessment(apiProfile.profile, includeAllSkills)
+    : [];
 
   if (loading) {
     return (

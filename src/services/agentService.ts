@@ -12,6 +12,7 @@ import type {
   CareerTrack,
   AgentFluencyInput,
 } from '../types/api.types';
+import { getTopCompetencies } from '../utils/profileUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
@@ -42,12 +43,16 @@ function mapRoleToTrack(role: string): CareerTrack {
 
 /**
  * Build AgentInitializeRequest from FluencyProfileResponse
+ * Only includes top 4 competencies by priority (lower priority number = higher importance)
  */
 export function buildInitializeRequest(apiProfile: FluencyProfileResponse): AgentInitializeRequest {
   const track = mapRoleToTrack(apiProfile.metadata.role);
   const experience = apiProfile.metadata.experience;
 
-  const fluencies: AgentFluencyInput[] = apiProfile.profile.map((skill) => ({
+  // Get top 4 competencies by priority
+  const topCompetencies = getTopCompetencies(apiProfile.profile);
+
+  const fluencies: AgentFluencyInput[] = topCompetencies.map((skill) => ({
     code: skill.code,
     name: skill.name,
     target_level: skill.proficiency.toLowerCase() as AgentFluencyInput['target_level'],
