@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import { trackCTAClick } from '../lib/analytics';
 
 interface GetStartedButtonProps {
   text?: string;
@@ -14,9 +15,14 @@ export function GetStartedButton({
 }: GetStartedButtonProps) {
   const { smartNavigate, isNavigating } = useSmartNavigation();
 
+  const handleClick = () => {
+    trackCTAClick('get_started', 'button');
+    smartNavigate();
+  };
+
   return (
     <button
-      onClick={smartNavigate}
+      onClick={handleClick}
       disabled={isNavigating}
       className="btn-primary"
       style={{ padding: '14px 32px', fontSize: '16px' }}

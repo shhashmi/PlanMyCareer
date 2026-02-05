@@ -12,6 +12,7 @@ import { ErrorAlert, ComingSoonModal, ProgressBar } from '../components/ui';
 import { getLevelColor } from '../data/skillsData';
 import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
 import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
+import SEOHead from '../components/SEOHead';
 
 export default function AssessmentProgress() {
   const navigate = useNavigate();
@@ -159,6 +160,7 @@ export default function AssessmentProgress() {
       minHeight: 'calc(100vh - 80px)',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '1000px' }}>
 
         {/* SECTION 1: Header */}

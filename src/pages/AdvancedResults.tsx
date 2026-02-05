@@ -1,8 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, MessageSquare, Target } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getLevelNumber, getLevelColor } from '../data/skillsData';
+import SEOHead from '../components/SEOHead';
+import { trackAssessmentComplete } from '../lib/analytics';
 
 export default function AdvancedResults() {
   const navigate = useNavigate()
@@ -25,8 +28,17 @@ export default function AdvancedResults() {
   const topSkills = advancedResults.filter(s => s.score >= getLevelNumber(s.level)).slice(0, 3)
   const focusSkills = advancedResults.filter(s => s.score < getLevelNumber(s.level) - 1).slice(0, 3)
 
+  const hasTracked = useRef(false);
+  useEffect(() => {
+    if (!hasTracked.current) {
+      trackAssessmentComplete('advanced', averageScore);
+      hasTracked.current = true;
+    }
+  }, [averageScore]);
+
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '1000px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

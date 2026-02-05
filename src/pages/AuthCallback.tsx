@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import SEOHead from '../components/SEOHead';
+import { trackLogin } from '../lib/analytics';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function AuthCallback() {
     }
 
     if (isLoggedIn) {
+      trackLogin('github');
       smartNavigate();
     } else {
       // Not logged in - redirect to login page
@@ -30,6 +33,7 @@ export default function AuthCallback() {
       justifyContent: 'center',
       gap: '16px'
     }}>
+      <SEOHead />
       <div style={{
         width: '40px',
         height: '40px',

@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { profileService, type CreateProfileRequest, type UserProfile } from '../services/profileService';
 import { fluencyService } from '../services/fluencyService';
 import { Modal, ErrorAlert, LoadingSpinner } from '../components/ui';
+import SEOHead from '../components/SEOHead';
 
 interface ProfileFormData {
   name: string;
@@ -20,7 +21,7 @@ interface ProfileFormData {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, setProfileData, setSkills, roles, rolesLoading } = useApp();
+  const { user, isLoggedIn, setProfileData, setSkills, setApiProfile, setAssessmentResults, setAdvancedResults, setIncompleteAssessment, roles, rolesLoading } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(true);
@@ -157,6 +158,7 @@ export default function Profile() {
         });
 
         if (fluencyResult.success && fluencyResult.data) {
+          setApiProfile(fluencyResult.data);
           const updatedSkills = fluencyResult.data.profile.map(skillDimension => ({
             name: skillDimension.name,
             level: skillDimension.proficiency.toLowerCase(),
@@ -164,6 +166,11 @@ export default function Profile() {
           }));
           setSkills(updatedSkills);
         }
+
+        // Clear stale assessment data tied to the old profile
+        setAssessmentResults(null);
+        setAdvancedResults(null);
+        setIncompleteAssessment(null);
 
         setSaveMessage({ type: 'success', text: 'Profile saved successfully!' });
         setIsEditing(false);
@@ -220,6 +227,7 @@ export default function Profile() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '700px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

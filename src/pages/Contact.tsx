@@ -2,6 +2,7 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Send, User, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
 import { emailService } from '../services/emailService';
+import SEOHead from '../components/SEOHead';
 
 interface FormData {
   name: string;
@@ -105,7 +106,8 @@ export default function Contact() {
 
   if (isSubmitted) {
     return (
-      <main style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <SEOHead />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -139,12 +141,13 @@ export default function Contact() {
             Thank you for reaching out. We'll get back to you as soon as possible.
           </p>
         </motion.div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '60px 24px 40px',
@@ -379,6 +382,6 @@ export default function Contact() {
           </motion.form>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

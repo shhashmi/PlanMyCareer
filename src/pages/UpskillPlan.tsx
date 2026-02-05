@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, BookOpen, ExternalLink, CheckCircle, Play, Target } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { studyMaterials, getLevelNumber } from '../data/skillsData';
+import SEOHead from '../components/SEOHead';
 
 const timeOptions = [
   { value: 2, label: '2 hours/week', intensity: 'Light' },
@@ -110,6 +111,7 @@ export default function UpskillPlan() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '1000px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

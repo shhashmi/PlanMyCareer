@@ -82,3 +82,7 @@ export const trackSignup = (method: string) => {
 export const trackLogin = (method: string) => {
   trackEvent('login', 'user', method);
 };
+
+export const trackCTAClick = (ctaName: string, location: string) => {
+  trackEvent('cta_click', 'engagement', `${ctaName}_${location}`);
+};

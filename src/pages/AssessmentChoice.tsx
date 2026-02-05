@@ -8,6 +8,7 @@ import { ComingSoonModal } from '../components/ui';
 import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
 import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
 import { splitSkillsByPriority, getSkillNamesForAssessment } from '../utils/profileUtils';
+import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
   const navigate = useNavigate()
@@ -96,13 +97,14 @@ export default function AssessmentChoice() {
   }
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '900px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

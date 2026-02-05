@@ -14,6 +14,7 @@ const companyLinks = [
 const legalLinks = [
   { label: "Privacy Policy", path: "/privacy-policy" },
   { label: "Terms of Use", path: "/terms-of-use" },
+  { label: "Refund Policy", path: "/refund-policy" },
 ];
 
 export default function Footer() {

@@ -9,6 +9,7 @@ import { useCachedData } from '../hooks/useCachedData';
 import { profileService, UserProfile } from '../services/profileService';
 import { fluencyService } from '../services/fluencyService';
 import { ErrorAlert } from '../components/ui/ErrorAlert';
+import SEOHead from '../components/SEOHead';
 import type { ProfileData } from '../types/context.types';
 
 export default function Skills() {
@@ -138,6 +139,7 @@ export default function Skills() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

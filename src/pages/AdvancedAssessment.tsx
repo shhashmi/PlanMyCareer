@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Sparkles, Loader, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAgentChat, ChatMessage } from '../hooks/useAgentChat';
+import SEOHead from '../components/SEOHead';
+import { trackAssessmentStart } from '../lib/analytics';
 
 export default function AdvancedAssessment() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function AdvancedAssessment() {
   useEffect(() => {
     if (apiProfile && !hasInitialized.current) {
       hasInitialized.current = true;
+      trackAssessmentStart('advanced');
       initialize(apiProfile);
     }
   }, [apiProfile, initialize]);
@@ -190,6 +193,7 @@ export default function AdvancedAssessment() {
         padding: '24px',
       }}
     >
+      <SEOHead />
       {/* Add keyframes for cursor blink animation */}
       <style>
         {`

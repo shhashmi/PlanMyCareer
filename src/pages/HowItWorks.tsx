@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { UserCircle, ClipboardCheck, Route, ArrowRight, Sparkles } from 'lucide-react';
 import { GetStartedCTA } from '../components/GetStartedCTA';
+import SEOHead from '../components/SEOHead';
 
 const steps = [
   {
@@ -28,7 +29,8 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <main style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '60px 24px',
@@ -161,6 +163,6 @@ export default function HowItWorks() {
           </p>
         </GetStartedCTA>
       </section>
-    </main>
+    </div>
   );
 }

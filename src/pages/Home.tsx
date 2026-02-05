@@ -7,6 +7,8 @@ import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { fluencyService } from '../services/fluencyService';
 import { profileService, type CreateProfileRequest } from '../services/profileService';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import SEOHead from '../components/SEOHead';
+import { trackEvent } from '../lib/analytics';
 import type { ProfileFormData } from '../types/api.types';
 
 const values = [
@@ -72,6 +74,7 @@ export default function Home() {
   formData.geography = formData.country;
 
   const scrollToForm = () => {
+    trackEvent('cta_click', 'engagement', 'hero_start_assessment');
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
@@ -179,6 +182,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '80px 24px 60px',

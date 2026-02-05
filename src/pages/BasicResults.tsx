@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, RefreshCw, BarChart3, X } from 'lucide-react';
@@ -7,6 +7,8 @@ import { useApp } from '../context/AppContext';
 import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner, ComingSoonModal } from '../components/ui';
 import { getCompetencyStatus, calculatePercentage, getDifficultyOrder } from '../utils/statusHelpers';
 import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import SEOHead from '../components/SEOHead';
+import { trackAssessmentComplete } from '../lib/analytics';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
 
 export default function BasicResults() {
@@ -29,6 +31,7 @@ export default function BasicResults() {
   const [showComingSoon, setShowComingSoon] = useState(false);
 
   const isProduction = import.meta.env.PROD;
+  const hasTrackedComplete = useRef(false);
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
@@ -50,6 +53,11 @@ export default function BasicResults() {
 
         if (summaryResponse.success && summaryResponse.data) {
           setSummary(summaryResponse.data);
+          if (!hasTrackedComplete.current) {
+            const score = Math.round((summaryResponse.data.total_correct / summaryResponse.data.total_questions) * 100);
+            trackAssessmentComplete('basic', score);
+            hasTrackedComplete.current = true;
+          }
         } else {
           setError(summaryResponse.error?.message || 'Failed to load assessment summary');
         }
@@ -160,6 +168,7 @@ export default function BasicResults() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '900px' }}>
         <PageHeader
           title="Your Assessment Results"

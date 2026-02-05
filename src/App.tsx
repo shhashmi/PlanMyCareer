@@ -1,40 +1,46 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+import PageLoader from './components/PageLoader';
 import Home from './pages/Home';
-import Skills from './pages/Skills';
-import Login from './pages/Login';
-import AssessmentChoice from './pages/AssessmentChoice';
-import BasicAssessment from './pages/BasicAssessment';
-import BasicResults from './pages/BasicResults';
-import Payment from './pages/Payment';
-import AdvancedAssessment from './pages/AdvancedAssessment';
-import AdvancedResults from './pages/AdvancedResults';
-import UpskillPlan from './pages/UpskillPlan';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfUse from './pages/TermsOfUse';
-import Profile from './pages/Profile';
-import ResumeAssessment from './pages/ResumeAssessment';
-import AssessmentProgress from './pages/AssessmentProgress';
-import AuthCallback from './pages/AuthCallback';
-import HowItWorks from './pages/HowItWorks';
-import Pricing from './pages/Pricing';
-import FAQ from './pages/FAQ';
-import About from './pages/About';
-import Contact from './pages/Contact';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import { initGA } from './lib/analytics';
 import { useAnalytics } from './hooks/useAnalytics';
+import { useUTMTracking } from './hooks/useUTMTracking';
+
+const Skills = lazy(() => import('./pages/Skills'));
+const Login = lazy(() => import('./pages/Login'));
+const AssessmentChoice = lazy(() => import('./pages/AssessmentChoice'));
+const BasicAssessment = lazy(() => import('./pages/BasicAssessment'));
+const BasicResults = lazy(() => import('./pages/BasicResults'));
+const Payment = lazy(() => import('./pages/Payment'));
+const AdvancedAssessment = lazy(() => import('./pages/AdvancedAssessment'));
+const AdvancedResults = lazy(() => import('./pages/AdvancedResults'));
+const UpskillPlan = lazy(() => import('./pages/UpskillPlan'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const Profile = lazy(() => import('./pages/Profile'));
+const ResumeAssessment = lazy(() => import('./pages/ResumeAssessment'));
+const AssessmentProgress = lazy(() => import('./pages/AssessmentProgress'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const HowItWorks = lazy(() => import('./pages/HowItWorks'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
 
 function AppRoutes() {
   useAnalytics();
-  
+  useUTMTracking();
+
   return (
     <>
     <ScrollToTop />
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/skills" element={<Skills />} />
@@ -49,6 +55,7 @@ function AppRoutes() {
       <Route path="/upskill-plan" element={<ProtectedRoute><UpskillPlan /></ProtectedRoute>} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/faq" element={<FAQ />} />
@@ -58,6 +65,7 @@ function AppRoutes() {
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
       <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
     </Routes>
+    </Suspense>
     </>
   );
 }
@@ -73,7 +81,9 @@ function App() {
     <div className="app" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <ErrorBoundary>
         <Header />
-        <AppRoutes />
+        <main style={{ flex: 1 }}>
+          <AppRoutes />
+        </main>
         <Footer />
       </ErrorBoundary>
     </div>

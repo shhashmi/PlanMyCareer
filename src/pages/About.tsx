@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Target, Lightbulb, TrendingUp, Users, Zap, Clock } from 'lucide-react';
 import { GetStartedCTA } from '../components/GetStartedCTA';
+import SEOHead from '../components/SEOHead';
 
 const values = [
   {
@@ -31,7 +32,8 @@ const values = [
 
 export default function About() {
   return (
-    <main style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '60px 24px 40px',
@@ -275,6 +277,6 @@ export default function About() {
           </p>
         </GetStartedCTA>
       </section>
-    </main>
+    </div>
   );
 }

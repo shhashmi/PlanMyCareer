@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GetStartedCTA } from '../components/GetStartedCTA';
+import SEOHead from '../components/SEOHead';
 import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
 
 const plans = [
@@ -53,7 +54,8 @@ export default function Pricing() {
   const navigate = useNavigate();
 
   return (
-    <main style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '60px 24px',
@@ -254,6 +256,6 @@ export default function Pricing() {
           </p>
         </motion.div>
       </section>
-    </main>
+    </div>
   );
 }
