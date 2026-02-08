@@ -252,6 +252,8 @@ export interface AgentInitializeRequest {
 
 export interface AgentInitializeResponse {
   thread_id: string;
+  session_id: number;
+  resumed?: boolean; // true when resuming an in-progress assessment
 }
 
 export interface AgentConversationMessage {
@@ -270,4 +272,137 @@ export interface AgentSSEEvent {
   content: string;
   assessmentId?: string;
   assessmentComplete?: boolean;
+}
+
+// Advanced Assessment API Types
+export interface AdvancedAssessmentSummary {
+  session_id: number;
+  agent_assessment_id: string;
+  status: 'in_progress' | 'completed';
+  started_at: string;
+  completed_at: string | null;
+  total_questions_answered: number;
+  track: string;
+  experience: string;
+  can_start_new: boolean;
+  cooldown_ends_at: string | null;
+}
+
+export interface TranscriptEntry {
+  question_number: number;
+  fluency_code: string;
+  module_id: string;
+  subtopic_title: string | null;
+  asked_at_level: string;
+  question_text: string;
+  user_response: string;
+  expected_good_response: string | null;
+  score: number | null;
+  score_justification: string | null;
+  module_scores: Record<string, number> | null;
+}
+
+export interface AdvancedAssessmentStatusResponse {
+  data: AdvancedAssessmentSummary | null;
+  can_start_new: boolean;
+}
+
+// Assessment Output types (from agent assessment results)
+export interface AssessmentOutputMetadata {
+  assessment_id: string;
+  track: string;
+  experience: string;
+  started_at: string;
+  completed_at: string;
+  total_questions_asked: number;
+  fluencies_assessed: number;
+}
+
+export interface ModuleResult {
+  module_id: string;
+  module_title: string;
+  signal_score: number;
+  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'insufficient_data';
+  questions_asked: number;
+  is_focus_area: boolean;
+}
+
+export interface FluencyResult {
+  code: string;
+  name: string;
+  target_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'insufficient_data';
+  confidence: 'high' | 'medium' | 'low';
+  modules: ModuleResult[];
+}
+
+export interface AssessmentOutput {
+  metadata: AssessmentOutputMetadata;
+  fluency_results: FluencyResult[];
+  overall_summary: string;
+}
+
+export interface AdvancedAssessmentResultsResponse {
+  data: {
+    results: AssessmentOutput;
+    transcript: TranscriptEntry[];
+  };
+}
+
+// Error shape returned by initialize on cooldown (409)
+export interface CooldownError {
+  error_type: 'cooldown_active';
+  message: string;
+  cooldown_ends_at: string;
+}
+
+// Upskill Plan Types
+export interface UpskillPlanItem {
+  item_id: number;
+  fluency_code: string;
+  fluency_name: string;
+  module_id: string;
+  module_title: string;
+  subtopic_id: string;
+  subtopic_title: string;
+  level: string;
+  priority: number;
+  status: 'pending' | 'done';
+  completed_at: string | null;
+  rationale: string | null;
+}
+
+export interface UpskillWeek {
+  week_number: number;
+  items: UpskillPlanItem[];
+}
+
+export interface UpskillPlanProgress {
+  completed: number;
+  remaining: number;
+  percentage: number;
+}
+
+export interface UpskillPlanResponse {
+  plan_id: number;
+  session_id: number;
+  total_items: number;
+  total_weeks: number;
+  hours_per_week: number;
+  is_active: boolean;
+  progress: UpskillPlanProgress;
+  weeks: UpskillWeek[];
+  created_at: string;
+}
+
+export interface UpskillPlanUpdateRequest {
+  is_active: boolean;
+}
+
+export interface UpskillPlanMarkItemsRequest {
+  item_ids: number[];
+}
+
+export interface UpskillPlanMarkItemsResponse {
+  data: { updated_count: number };
 }

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, Loader, AlertCircle } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader, AlertCircle, Clock, ArrowLeft, Eye } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAgentChat, ChatMessage } from '../hooks/useAgentChat';
 import SEOHead from '../components/SEOHead';
@@ -9,14 +10,25 @@ import { trackAssessmentStart } from '../lib/analytics';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import AutoExpandingTextarea from '../components/ui/AutoExpandingTextarea';
 
+interface LocationState {
+  selectedSkillCodes?: string[];
+  resumeSessionId?: number;
+}
+
 export default function AdvancedAssessment() {
   const navigate = useNavigateWithParams();
-  const { apiProfile } = useApp();
+  const location = useLocation();
+  const { apiProfile, setAdvancedSessionId } = useApp();
+  const locationState = location.state as LocationState | null;
+  const selectedSkillCodes = locationState?.selectedSkillCodes;
   const {
     messages,
     isInitializing,
     isStreaming,
     isComplete,
+    isResumed,
+    sessionId,
+    cooldownEndsAt,
     error,
     initialize,
     sendMessage,
@@ -34,9 +46,16 @@ export default function AdvancedAssessment() {
     if (apiProfile && !hasInitialized.current) {
       hasInitialized.current = true;
       trackAssessmentStart('advanced');
-      initialize(apiProfile);
+      initialize(apiProfile, selectedSkillCodes);
     }
-  }, [apiProfile, initialize]);
+  }, [apiProfile, initialize, selectedSkillCodes]);
+
+  // Store sessionId in context when it's set
+  useEffect(() => {
+    if (sessionId) {
+      setAdvancedSessionId(sessionId);
+    }
+  }, [sessionId, setAdvancedSessionId]);
 
   // Smart scroll behavior
   const isNearBottom = useCallback(() => {
@@ -74,7 +93,7 @@ export default function AdvancedAssessment() {
   };
 
   const handleViewResults = () => {
-    navigate('/advanced-results');
+    navigate('/advanced-results', { state: { sessionId } });
   };
 
   const renderMessage = (msg: ChatMessage, index: number, isLatestBot: boolean) => (
@@ -176,6 +195,76 @@ export default function AdvancedAssessment() {
     </motion.div>
   );
 
+  const formatCooldownDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const renderCooldown = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '48px 24px',
+        gap: '24px',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '72px',
+          height: '72px',
+          borderRadius: '50%',
+          background: 'rgba(245, 158, 11, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Clock size={36} color="var(--accent)" />
+      </div>
+      <div>
+        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>
+          Assessment Cooldown Active
+        </h3>
+        <p style={{ color: 'var(--text-muted)', maxWidth: '400px' }}>
+          You recently completed an assessment. Your next assessment will be available on:
+        </p>
+        <p style={{ color: 'var(--primary-light)', fontSize: '18px', fontWeight: '600', marginTop: '12px' }}>
+          {cooldownEndsAt && formatCooldownDate(cooldownEndsAt)}
+        </p>
+      </div>
+      <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+        <button
+          onClick={() => navigate('/assessment-choice')}
+          className="btn-secondary"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <ArrowLeft size={18} />
+          Go Back
+        </button>
+        <button
+          onClick={() => navigate('/advanced-results')}
+          className="btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <Eye size={18} />
+          View Results
+        </button>
+      </div>
+    </motion.div>
+  );
+
   const renderError = () => (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -201,7 +290,7 @@ export default function AdvancedAssessment() {
         onClick={() => {
           if (apiProfile) {
             hasInitialized.current = false;
-            initialize(apiProfile);
+            initialize(apiProfile, selectedSkillCodes);
           }
         }}
         className="btn-secondary"
@@ -308,8 +397,50 @@ export default function AdvancedAssessment() {
           </motion.div>
         )}
 
-        {/* Error display */}
-        {error && renderError()}
+        {/* Cooldown display */}
+        {cooldownEndsAt && renderCooldown()}
+
+        {/* Error display (only show if not a cooldown error) */}
+        {error && !cooldownEndsAt && renderError()}
+
+        {/* Resume indicator */}
+        {isResumed && messages.length === 0 && !isInitializing && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'flex-start',
+            }}
+          >
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'var(--gradient-1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Bot size={18} color="white" />
+            </div>
+            <div
+              style={{
+                padding: '14px 18px',
+                borderRadius: '16px 16px 16px 4px',
+                background: 'var(--surface)',
+                color: 'var(--text-primary)',
+                lineHeight: '1.5',
+              }}
+            >
+              Welcome back! I see you have an assessment in progress. Type a message to continue where you left off.
+            </div>
+          </motion.div>
+        )}
 
         {/* Messages */}
         <AnimatePresence>

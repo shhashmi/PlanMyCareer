@@ -37,6 +37,8 @@ tags:
     description: Email enquiry endpoints
   - name: Agent
     description: AI Assessment Agent (feature-flagged, SSE streaming)
+  - name: AdvancedAssessments
+    description: Advanced (agent-based) assessment management — eligibility, results, reset
 
 paths:
   /:
@@ -919,7 +921,12 @@ paths:
       summary: Initialize AI assessment session
       description: |
         Pre-initializes an AI Fluency Assessment session with track, experience level, and fluency selections.
-        Returns a `thread_id` that the client uses for subsequent `POST /api/v1/agent/chat` calls.
+        Returns a `thread_id` and `session_id` that the client uses for subsequent calls.
+
+        **Eligibility checks** (performed before initialization):
+        1. User must have an active profile.
+        2. If an in-progress assessment exists, it is returned for resume (HTTP 200).
+        3. A 30-day cooldown applies after a completed assessment (HTTP 409).
 
         Requires authentication (JWT cookie) and a valid feature flag query parameter.
 
@@ -934,6 +941,13 @@ paths:
             type: string
           description: Feature flag value (must match AGENT_FEATURE_FLAG env var)
           example: "aiagent_x7k9m2"
+        - name: strategy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [module_based, fluency_based]
+          description: Optional A/B strategy override for question generation
       requestBody:
         required: true
         content:
@@ -957,8 +971,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgentInitializeResponse'
+        '200':
+          description: Existing in-progress assessment returned for resume
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentInitializeResumeResponse'
         '400':
-          description: Validation error (malformed body or invalid business rules)
+          description: Validation error (no active profile, malformed body, or invalid business rules)
           content:
             application/json:
               schema:
@@ -971,6 +991,18 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Invalid or missing feature flag (endpoint hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Cooldown period active — user must wait before starting a new assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCooldownError'
+        '500':
+          description: Server error
           content:
             application/json:
               schema:
@@ -1065,6 +1097,440 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Invalid or missing feature flag (endpoint hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments:
+    get:
+      tags:
+        - AdvancedAssessments
+      summary: Get current advanced assessment
+      description: |
+        Returns the user's current advanced assessment summary.
+        If an in-progress assessment exists, returns it. Otherwise returns the most recent completed
+        assessment with cooldown information. Returns `null` data if no assessment exists.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current assessment data (or null if none exists)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - $ref: '#/components/schemas/AdvancedAssessmentSummary'
+                      - type: 'null'
+                  can_start_new:
+                    type: boolean
+                    description: Whether the user can start a new assessment (only present when data is null or absent)
+              examples:
+                inProgress:
+                  summary: In-progress assessment
+                  value:
+                    data:
+                      session_id: 42
+                      agent_assessment_id: "PM_user_20260201_143022"
+                      status: "in_progress"
+                      started_at: "2026-02-01T14:30:22.000Z"
+                      completed_at: null
+                      total_questions_answered: 5
+                      track: "PM"
+                      experience: "4-7"
+                      can_start_new: false
+                      cooldown_ends_at: null
+                completed:
+                  summary: Completed assessment (cooldown active)
+                  value:
+                    data:
+                      session_id: 42
+                      agent_assessment_id: "PM_user_20260201_143022"
+                      status: "completed"
+                      started_at: "2026-02-01T14:30:22.000Z"
+                      completed_at: "2026-02-01T15:10:00.000Z"
+                      total_questions_answered: 20
+                      track: "PM"
+                      experience: "4-7"
+                      can_start_new: false
+                      cooldown_ends_at: "2026-03-03T15:10:00.000Z"
+                noAssessment:
+                  summary: No assessment exists
+                  value:
+                    data: null
+                    can_start_new: true
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments/{sessionId}/results:
+    get:
+      tags:
+        - AdvancedAssessments
+      summary: Get assessment results with transcript
+      description: |
+        Returns full results and question-by-question transcript for a completed assessment session.
+        Validates that the session belongs to the authenticated user and is complete.
+
+        **Note:** `recommended_subtopics` in each fluency result is always returned as an empty array.
+        Use the `POST /{sessionId}/upskill-plan` endpoint to generate a structured weekly study plan from those recommendations.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID
+          example: 42
+      responses:
+        '200':
+          description: Results and transcript returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        $ref: '#/components/schemas/AssessmentOutput'
+                      transcript:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TranscriptEntry'
+        '400':
+          description: Invalid session ID or assessment not yet complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied — session belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments/{sessionId}/reset:
+    post:
+      tags:
+        - AdvancedAssessments
+      summary: Reset in-progress assessment
+      description: |
+        Resets an in-progress advanced assessment so the user can start fresh.
+        Only works for assessments that are still in progress and belong to the authenticated user.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID to reset
+          example: 42
+      responses:
+        '200':
+          description: Assessment reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Assessment reset successfully."
+        '400':
+          description: Invalid session ID or no matching in-progress assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments/{sessionId}/upskill-plan:
+    post:
+      tags:
+        - AdvancedAssessments
+      summary: Create upskill plan
+      description: |
+        Creates a weekly upskill plan from the assessment's recommended subtopics.
+        Groups subtopics into weekly study blocks (default 6 hours/week, 1 hour/subtopic).
+        Idempotent — first call creates (201), subsequent calls return existing (200).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID
+          example: 42
+      responses:
+        '201':
+          description: Plan created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpskillPlanResponse'
+        '200':
+          description: Plan already exists (idempotent return)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpskillPlanResponse'
+        '400':
+          description: Assessment incomplete or no recommended subtopics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied — session belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - AdvancedAssessments
+      summary: Get upskill plan
+      description: |
+        Returns the upskill plan for a completed assessment session, including current progress.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID
+          example: 42
+      responses:
+        '200':
+          description: Plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpskillPlanResponse'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Plan or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - AdvancedAssessments
+      summary: Update upskill plan
+      description: |
+        Updates plan-level fields such as `is_active`. Returns the full updated plan.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_active:
+                  type: boolean
+                  description: Set to false to deactivate the plan
+                  example: false
+      responses:
+        '200':
+          description: Plan updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpskillPlanResponse'
+        '400':
+          description: No valid fields to update or assessment incomplete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Plan or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments/{sessionId}/upskill-plan/items:
+    patch:
+      tags:
+        - AdvancedAssessments
+      summary: Bulk mark plan items as done
+      description: |
+        Marks one or more upskill plan items as completed. Only updates items that are currently pending.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - item_ids
+              properties:
+                item_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: IDs of plan items to mark as done
+                  example: [1, 3, 5]
+      responses:
+        '200':
+          description: Items updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updated_count:
+                        type: integer
+                        description: Number of items that were updated
+                        example: 3
+        '400':
+          description: Invalid item_ids or assessment incomplete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Plan or session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
           content:
             application/json:
               schema:
@@ -1915,6 +2381,47 @@ components:
               type: string
               description: Unique assessment thread ID. Use this in subsequent POST /api/v1/agent/chat requests.
               example: "PM_user_20260201_143022"
+            session_id:
+              type: integer
+              description: Database session ID linking the assessment to the user's profile
+              example: 42
+
+    AgentInitializeResumeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        data:
+          type: object
+          properties:
+            thread_id:
+              type: string
+              description: Existing assessment thread ID to resume
+              example: "PM_user_20260201_143022"
+            session_id:
+              type: integer
+              description: Existing DB session ID
+              example: 42
+            resumed:
+              type: boolean
+              description: Always true — indicates this is a resumed assessment
+              example: true
+
+    AgentCooldownError:
+      type: object
+      properties:
+        error_type:
+          type: string
+          example: "cooldown_active"
+        message:
+          type: string
+          example: "Assessment cooldown period active."
+        cooldown_ends_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the cooldown expires
+          example: "2026-03-03T15:10:00.000Z"
 
     AgentAssessmentValidationError:
       type: object
@@ -1933,4 +2440,343 @@ components:
           items:
             type: string
           example: ["assessment_input.experience"]
-2
+
+    AdvancedAssessmentSummary:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          description: Database session ID
+          example: 42
+        agent_assessment_id:
+          type: string
+          description: Agent assessment thread ID
+          example: "PM_user_20260201_143022"
+        status:
+          type: string
+          enum: [in_progress, completed]
+          description: Current assessment status
+          example: "in_progress"
+        started_at:
+          type: string
+          format: date-time
+          example: "2026-02-01T14:30:22.000Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null if still in progress
+          example: null
+        total_questions_answered:
+          type: integer
+          description: Number of questions answered so far
+          example: 5
+        track:
+          type: string
+          description: Career track (PM, EM, SE)
+          example: "PM"
+        experience:
+          type: string
+          description: Experience range string
+          example: "4-7"
+        can_start_new:
+          type: boolean
+          description: Whether the user can start a new assessment
+          example: false
+        cooldown_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the cooldown expires (null if no cooldown or in progress)
+          example: null
+
+    AssessmentOutput:
+      type: object
+      description: Full assessment results computed at completion
+      required:
+        - metadata
+        - fluency_results
+        - overall_summary
+      properties:
+        metadata:
+          $ref: '#/components/schemas/AssessmentOutputMetadata'
+        fluency_results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FluencyResult'
+        overall_summary:
+          type: string
+          description: Human-readable summary of the assessment outcome
+          example: "Strong foundations with room to grow in applied ML."
+
+    AssessmentOutputMetadata:
+      type: object
+      required:
+        - assessment_id
+        - track
+        - experience
+        - started_at
+        - completed_at
+        - total_questions_asked
+        - fluencies_assessed
+      properties:
+        assessment_id:
+          type: string
+          example: "abc-123"
+        track:
+          type: string
+          example: "AI Engineer"
+        experience:
+          type: string
+          example: "mid"
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        total_questions_asked:
+          type: integer
+          example: 15
+        fluencies_assessed:
+          type: integer
+          example: 3
+
+    FluencyResult:
+      type: object
+      required:
+        - code
+        - name
+        - target_level
+        - demonstrated_level
+        - confidence
+        - modules
+        - recommended_subtopics
+      properties:
+        code:
+          type: string
+          example: "FND"
+        name:
+          type: string
+          example: "AI Foundations"
+        target_level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+        demonstrated_level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert, insufficient_data]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModuleResult'
+        recommended_subtopics:
+          type: array
+          description: Always returned as an empty array in the results API. Use the upskill-plan endpoint to access study recommendations.
+          items:
+            $ref: '#/components/schemas/RecommendedSubtopic'
+
+    ModuleResult:
+      type: object
+      required:
+        - module_id
+        - module_title
+        - signal_score
+        - demonstrated_level
+        - questions_asked
+        - is_focus_area
+      properties:
+        module_id:
+          type: string
+          example: "FND-M1"
+        module_title:
+          type: string
+          example: "Neural Networks"
+        signal_score:
+          type: number
+          example: 7.5
+        demonstrated_level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert, insufficient_data]
+        questions_asked:
+          type: integer
+          example: 3
+        is_focus_area:
+          type: boolean
+
+    RecommendedSubtopic:
+      type: object
+      required:
+        - subtopic_id
+        - title
+        - level
+        - module_id
+        - priority
+      properties:
+        subtopic_id:
+          type: string
+          example: "FND-M1-S2"
+        title:
+          type: string
+          example: "Backpropagation"
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+        module_id:
+          type: string
+          example: "FND-M1"
+        priority:
+          type: integer
+          example: 1
+
+    TranscriptEntry:
+      type: object
+      properties:
+        question_number:
+          type: integer
+          description: Sequential question number in the assessment
+          example: 1
+        fluency_code:
+          type: string
+          description: Fluency area code
+          example: "FND"
+        module_id:
+          type: string
+          description: Module identifier
+          example: "FND-M1"
+        subtopic_title:
+          type: string
+          nullable: true
+          description: Subtopic title if applicable
+          example: "Neural Network Basics"
+        asked_at_level:
+          type: string
+          description: Difficulty level the question was asked at
+          example: "intermediate"
+        question_text:
+          type: string
+          description: The question that was asked
+          example: "Explain how gradient descent optimizes a neural network."
+        user_response:
+          type: string
+          description: The user's answer
+          example: "Gradient descent adjusts weights by..."
+        expected_good_response:
+          type: string
+          nullable: true
+          description: Reference answer for comparison
+        score:
+          type: number
+          nullable: true
+          description: Score assigned to the response (0-10)
+          example: 7
+        score_justification:
+          type: string
+          nullable: true
+          description: Explanation for the score
+          example: "Good understanding of the core concept but missed..."
+        module_scores:
+          type: object
+          nullable: true
+          description: Per-module score breakdown (if fluency-based strategy)
+          additionalProperties:
+            type: number
+
+    UpskillPlanResponse:
+      type: object
+      properties:
+        plan_id:
+          type: integer
+          example: 1
+        session_id:
+          type: integer
+          example: 42
+        total_items:
+          type: integer
+          example: 18
+        total_weeks:
+          type: integer
+          example: 3
+        hours_per_week:
+          type: integer
+          example: 6
+        is_active:
+          type: boolean
+          description: Whether the plan is active
+          example: true
+        progress:
+          type: object
+          properties:
+            completed:
+              type: integer
+              example: 0
+            remaining:
+              type: integer
+              example: 18
+            percentage:
+              type: integer
+              example: 0
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpskillWeek'
+        created_at:
+          type: string
+          format: date-time
+
+    UpskillWeek:
+      type: object
+      properties:
+        week_number:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpskillPlanItem'
+
+    UpskillPlanItem:
+      type: object
+      properties:
+        item_id:
+          type: integer
+          example: 1
+        fluency_code:
+          type: string
+          example: "AGT"
+        fluency_name:
+          type: string
+          example: "Agentic AI Systems"
+        module_id:
+          type: string
+          example: "1"
+        module_title:
+          type: string
+          example: "Foundations of Agentic AI"
+        subtopic_id:
+          type: string
+          example: "1.1.2"
+        subtopic_title:
+          type: string
+          example: "Agent Architecture Patterns"
+        level:
+          type: string
+          example: "intermediate"
+        priority:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [pending, done]
+          example: "pending"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        rationale:
+          type: string
+          nullable: true
+          description: Explanation of why this subtopic was recommended
+          example: "Scored below threshold on agent architecture concepts"

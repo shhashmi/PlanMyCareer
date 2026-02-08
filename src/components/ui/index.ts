@@ -35,3 +35,6 @@ export type { LoadingSpinnerProps } from './LoadingSpinner';
 
 export { ComingSoonModal } from './ComingSoonModal';
 export type { ComingSoonModalProps } from './ComingSoonModal';
+
+export { FluencyCheckbox } from './FluencyCheckbox';
+export type { FluencyCheckboxProps } from './FluencyCheckbox';

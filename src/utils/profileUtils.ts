@@ -47,3 +47,24 @@ export function getSkillNamesForAssessment(
   }
   return getTopCompetencies(skills).map(s => s.name);
 }
+
+/**
+ * Get skill objects by their codes
+ * @param skills - Array of skill dimensions from the profile
+ * @param codes - Array of skill codes to filter by
+ * @returns Array of matching skill dimensions
+ */
+export function getSkillsByCodes(skills: SkillDimension[], codes: string[]): SkillDimension[] {
+  const codeSet = new Set(codes);
+  return skills.filter(skill => codeSet.has(skill.code));
+}
+
+/**
+ * Get skill names from skill codes
+ * @param skills - Array of skill dimensions from the profile
+ * @param codes - Array of skill codes
+ * @returns Array of skill names for the matching codes
+ */
+export function getSkillNamesFromCodes(skills: SkillDimension[], codes: string[]): string[] {
+  return getSkillsByCodes(skills, codes).map(s => s.name);
+}

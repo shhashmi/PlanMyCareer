@@ -20,6 +20,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const [skills, setSkills] = useLocalStorage<Skill[]>('skills', []);
   const [assessmentResults, setAssessmentResults] = useLocalStorage<AssessmentResult[] | null>('assessmentResults', null);
   const [advancedResults, setAdvancedResults] = useLocalStorage<any>('advancedResults', null);
+  const [advancedSessionId, setAdvancedSessionId] = useLocalStorage<number | null>('advancedSessionId', null);
   const [upskillPlan, setUpskillPlan] = useLocalStorage<any>('upskillPlan', null);
   const [apiProfile, setApiProfile] = useLocalStorage<FluencyProfileResponse | null>('apiProfile', null);
   const [incompleteAssessment, setIncompleteAssessment] = useLocalStorage<IncompleteAssessmentSession | null>('incompleteAssessment', null);
@@ -94,6 +95,8 @@ export function AppProvider({ children }: AppProviderProps) {
       setAssessmentResults,
       advancedResults,
       setAdvancedResults,
+      advancedSessionId,
+      setAdvancedSessionId,
       upskillPlan,
       setUpskillPlan,
       apiProfile,

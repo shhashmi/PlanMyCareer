@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { agentService, buildInitializeRequest } from '../services/agentService';
+import { agentService, buildInitializeRequest, CooldownActiveError } from '../services/agentService';
 import type { FluencyProfileResponse, AgentConversationMessage } from '../types/api.types';
 
 export interface ChatMessage {
@@ -20,9 +20,12 @@ interface UseAgentChatReturn {
   isInitializing: boolean;
   isStreaming: boolean;
   isComplete: boolean;
+  isResumed: boolean;
   assessmentId: string | null;
+  sessionId: number | null;
+  cooldownEndsAt: string | null;
   error: string | null;
-  initialize: (apiProfile: FluencyProfileResponse) => Promise<boolean>;
+  initialize: (apiProfile: FluencyProfileResponse, selectedSkillCodes?: string[]) => Promise<boolean>;
   sendMessage: (message: string) => void;
   reset: () => void;
 }
@@ -32,11 +35,15 @@ export function useAgentChat(): UseAgentChatReturn {
   const [isInitializing, setIsInitializing] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [isResumed, setIsResumed] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const [cooldownEndsAt, setCooldownEndsAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Refs to avoid stale closures
   const threadIdRef = useRef<string | null>(null);
+  const sessionIdRef = useRef<number | null>(null);
   const conversationHistoryRef = useRef<AgentConversationMessage[]>([]);
   const streamingContentRef = useRef<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -44,23 +51,42 @@ export function useAgentChat(): UseAgentChatReturn {
   const generateMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   /**
-   * Initialize the agent session and send the first message
+   * Initialize the agent session and send the first message (unless resuming)
    */
-  const initialize = useCallback(async (apiProfile: FluencyProfileResponse): Promise<boolean> => {
+  const initialize = useCallback(async (
+    apiProfile: FluencyProfileResponse,
+    selectedSkillCodes?: string[]
+  ): Promise<boolean> => {
     setIsInitializing(true);
     setError(null);
+    setCooldownEndsAt(null);
 
     try {
-      const request = buildInitializeRequest(apiProfile);
+      const request = buildInitializeRequest(apiProfile, selectedSkillCodes);
       const response = await agentService.initialize(request);
       threadIdRef.current = response.thread_id;
+      sessionIdRef.current = response.session_id;
+      setSessionId(response.session_id);
 
-      // Send the initial "Start assessment" message
-      sendMessageInternal('Start assessment');
+      if (response.resumed) {
+        // Resuming an in-progress assessment - don't send automatic message
+        setIsResumed(true);
+        setIsInitializing(false);
+        // Let the user send the first message to continue
+      } else {
+        // New assessment - send the initial "Start assessment" message
+        setIsResumed(false);
+        sendMessageInternal('Start assessment');
+      }
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize assessment';
-      setError(errorMessage);
+      if (err instanceof CooldownActiveError) {
+        setCooldownEndsAt(err.cooldown_ends_at);
+        setError(err.message);
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to initialize assessment';
+        setError(errorMessage);
+      }
       setIsInitializing(false);
       return false;
     }
@@ -191,11 +217,15 @@ export function useAgentChat(): UseAgentChatReturn {
     setIsInitializing(false);
     setIsStreaming(false);
     setIsComplete(false);
+    setIsResumed(false);
     setAssessmentId(null);
+    setSessionId(null);
+    setCooldownEndsAt(null);
     setError(null);
 
     // Clear refs
     threadIdRef.current = null;
+    sessionIdRef.current = null;
     conversationHistoryRef.current = [];
     streamingContentRef.current = '';
   }, []);
@@ -205,7 +235,10 @@ export function useAgentChat(): UseAgentChatReturn {
     isInitializing,
     isStreaming,
     isComplete,
+    isResumed,
     assessmentId,
+    sessionId,
+    cooldownEndsAt,
     error,
     initialize,
     sendMessage,

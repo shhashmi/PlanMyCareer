@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
-import { ComingSoonModal } from '../components/ui';
-import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
+import { ComingSoonModal, ErrorAlert } from '../components/ui';
+import { BasicAssessmentTile, AdvancedAssessmentTile, FluencySelector } from '../components/assessment';
 import { isAdvancedAssessmentBeta } from '../data/assessmentData';
-import { splitSkillsByPriority, getSkillNamesForAssessment } from '../utils/profileUtils';
+import { splitSkillsByPriority, getSkillNamesFromCodes } from '../utils/profileUtils';
 import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
@@ -16,20 +16,33 @@ export default function AssessmentChoice() {
   const [startingAssessment, setStartingAssessment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
-  const [includeAllSkills, setIncludeAllSkills] = useState(false)
+  const [selectionWarning, setSelectionWarning] = useState<string | null>(null)
+
+  const MAX_SELECTIONS = 4;
+
+  // Initialize selected skill codes with top priority skills
+  const [selectedSkillCodes, setSelectedSkillCodes] = useState<Set<string>>(() => {
+    if (!apiProfile?.profile) return new Set();
+    const sorted = splitSkillsByPriority(apiProfile.profile, MAX_SELECTIONS);
+    return new Set(sorted.priority.map(s => s.code));
+  });
 
   const isProduction = import.meta.env.PROD
 
-  // Sort skills by priority and split into priority (top 4) and remaining
-  const sortedSkills = useMemo(() => {
-    if (!apiProfile?.profile) return { priority: [], remaining: [] };
-    return splitSkillsByPriority(apiProfile.profile);
-  }, [apiProfile]);
+  // Get selected skill names for API
+  const selectedSkillNames = useMemo(() => {
+    if (!apiProfile?.profile) return [];
+    return getSkillNamesFromCodes(apiProfile.profile, Array.from(selectedSkillCodes));
+  }, [apiProfile, selectedSkillCodes]);
 
-  const hasExtraSkills = sortedSkills.remaining.length > 0;
-  const selectedSkills = apiProfile?.profile
-    ? getSkillNamesForAssessment(apiProfile.profile, includeAllSkills)
-    : [];
+  const handleFluencyChange = useCallback((codes: Set<string>) => {
+    setSelectionWarning(null);
+    if (codes.size > MAX_SELECTIONS) {
+      setSelectionWarning(`Maximum ${MAX_SELECTIONS} fluencies can be selected. Uncheck one to select another.`);
+      return;
+    }
+    setSelectedSkillCodes(codes);
+  }, []);
 
   if (loading) {
     return (
@@ -80,7 +93,7 @@ export default function AssessmentChoice() {
     setError(null)
 
     try {
-      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkills)
+      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkillNames)
       const response = await assessmentService.startAssessment(request)
 
       if (response.success && response.data) {
@@ -133,70 +146,28 @@ export default function AssessmentChoice() {
           </div>
         )}
 
-        {/* Skill Selection Banner */}
-        {sortedSkills.priority.length > 0 && (
+        {/* Selection Warning */}
+        {selectionWarning && (
+          <ErrorAlert
+            message={selectionWarning}
+            variant="warning"
+            onDismiss={() => setSelectionWarning(null)}
+          />
+        )}
+
+        {/* Skill Selection */}
+        {apiProfile?.profile && apiProfile.profile.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            style={{
-              background: 'rgba(20, 184, 166, 0.06)',
-              border: '1px solid rgba(20, 184, 166, 0.15)',
-              borderRadius: '16px',
-              padding: '20px 24px',
-              marginBottom: '32px'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <Sparkles size={18} color="var(--primary-light)" />
-              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                Assessing skills most relevant to your daily work
-              </span>
-            </div>
-
-            {/* Skill chips row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: hasExtraSkills ? '16px' : 0 }}>
-              {(includeAllSkills ? apiProfile?.profile || [] : sortedSkills.priority).map(skill => (
-                <div key={skill.name} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  background: 'rgba(20, 184, 166, 0.1)',
-                  border: '1px solid rgba(20, 184, 166, 0.3)',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: 'var(--text-primary)'
-                }}>
-                  <Check size={14} color="var(--primary-light)" />
-                  {skill.name}
-                </div>
-              ))}
-            </div>
-
-            {/* Include all checkbox */}
-            {hasExtraSkills && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={includeAllSkills}
-                  onChange={(e) => setIncludeAllSkills(e.target.checked)}
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    accentColor: 'var(--primary)',
-                    cursor: 'pointer'
-                  }}
-                />
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                  {includeAllSkills
-                    ? `Assess on top priority skills`
-                    : `Include all ${apiProfile?.profile.length} skills`
-                  }
-                </span>
-              </label>
-            )}
+            <FluencySelector
+              skills={apiProfile.profile}
+              selectedCodes={selectedSkillCodes}
+              onSelectionChange={handleFluencyChange}
+              maxSelections={MAX_SELECTIONS}
+            />
           </motion.div>
         )}
 
@@ -230,7 +201,9 @@ export default function AssessmentChoice() {
           <AdvancedAssessmentTile
             onClick={() => {
               if (isAdvancedAssessmentBeta()) {
-                navigate('/advanced-assessment');
+                navigate('/advanced-assessment', {
+                  state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
+                });
               } else if (isProduction) {
                 setShowComingSoon(true);
               } else {
