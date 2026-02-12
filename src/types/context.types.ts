@@ -65,4 +65,6 @@ export interface AppContextType {
   setIncompleteAssessment: LocalStorageSetter<IncompleteAssessmentSession | null>;
   roles: Role[];
   rolesLoading: boolean;
+  isPaid: boolean;
+  refreshPaidStatus: () => Promise<void>;
 }

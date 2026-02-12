@@ -113,6 +113,45 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
             {children}
           </a>
         ),
+        table: ({ children }) => (
+          <div style={{ overflowX: 'auto', marginBottom: '0.75em' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '0.9em',
+              }}
+            >
+              {children}
+            </table>
+          </div>
+        ),
+        thead: ({ children }) => (
+          <thead style={{ background: 'var(--surface-light)' }}>{children}</thead>
+        ),
+        th: ({ children }) => (
+          <th
+            style={{
+              border: '1px solid var(--border)',
+              padding: '10px 12px',
+              textAlign: 'left',
+              fontWeight: 600,
+            }}
+          >
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td
+            style={{
+              border: '1px solid var(--border)',
+              padding: '10px 12px',
+              lineHeight: 1.5,
+            }}
+          >
+            {children}
+          </td>
+        ),
       }}
     >
       {content}

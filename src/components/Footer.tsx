@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 import { buildUrlWithParams } from "../utils/queryParamStore";
 
 const productLinks = [
@@ -19,6 +20,8 @@ const legalLinks = [
 ];
 
 export default function Footer() {
+  const { isPaid } = useApp();
+  const filteredProductLinks = productLinks.filter(link => !(isPaid && link.path === '/pricing'));
   const linkStyle = {
     color: "var(--text-muted)",
     fontSize: "14px",
@@ -59,7 +62,7 @@ export default function Footer() {
         <div>
           <h4 style={headingStyle}>Product</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {productLinks.map((link) => (
+            {filteredProductLinks.map((link) => (
               <Link
                 key={link.path}
                 to={buildUrlWithParams(link.path)}

@@ -284,6 +284,7 @@ export interface AdvancedAssessmentSummary {
   total_questions_answered: number;
   track: string;
   experience: string;
+  fluencies: { code: string; name: string; target_level: string }[];
   can_start_new: boolean;
   cooldown_ends_at: string | null;
 }
@@ -390,6 +391,7 @@ export interface UpskillPlanResponse {
   total_weeks: number;
   hours_per_week: number;
   is_active: boolean;
+  track: string;
   progress: UpskillPlanProgress;
   weeks: UpskillWeek[];
   created_at: string;
@@ -405,4 +407,75 @@ export interface UpskillPlanMarkItemsRequest {
 
 export interface UpskillPlanMarkItemsResponse {
   data: { updated_count: number };
+}
+
+// Paid Status
+export interface PaidStatusResponse {
+  is_paid: boolean;
+  payment_valid_till: string | null;
+}
+
+// Study Material Content
+export interface StudyMaterialContentSection {
+  heading: string;
+  body: string;
+  key_points: string[];
+}
+
+export interface StudyMaterialExercise {
+  title: string;
+  instructions: string;
+  hints: string[];
+  solution_guide: string;
+}
+
+export interface StudyMaterialScenario {
+  scenario: string;
+  options: string[];
+  discussion: string;
+}
+
+export interface StudyMaterialDebate {
+  statement: string;
+  for_arguments: string[];
+  against_arguments: string[];
+  facilitator_note: string;
+}
+
+export interface StudyMaterialSelfAssessment {
+  question: string;
+  answer: string;
+}
+
+export interface StudyMaterialResource {
+  title: string;
+  type: string;
+  description: string;
+}
+
+export interface StudyMaterialContent {
+  subtopic_id: string;
+  track: string;
+  fluency_code: string;
+  subtopic_title: string;
+  level: string;
+  type: string;
+  tldr_summary: string;
+  think_before_you_read: string;
+  learning_objectives: string[];
+  prerequisites: string[];
+  estimated_study_time_minutes: number;
+  content_sections: StudyMaterialContentSection[];
+  exercises: StudyMaterialExercise[];
+  what_would_you_do_scenarios: StudyMaterialScenario[];
+  debate_this: StudyMaterialDebate;
+  quick_win: string;
+  self_assessment_questions: StudyMaterialSelfAssessment[];
+  confidence_check: {
+    before_prompt: string;
+    after_prompt: string;
+    reflection: string;
+  };
+  resources: StudyMaterialResource[];
+  key_takeaways: string[];
 }

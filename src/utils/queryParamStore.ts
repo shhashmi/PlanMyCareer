@@ -1,31 +1,28 @@
 const STORAGE_KEY = 'query_params';
-const CAPTURED_FLAG = '_params_captured';
 
 // Params injected by OAuth redirects that should never be persisted
 const TRANSIENT_PARAMS = new Set(['error', 'code', 'state']);
 
 /**
- * Capture all query params from the initial URL into sessionStorage.
- * Only captures once per session — the flag is set only when meaningful
- * params are found, so a no-param first visit won't block a later
- * param-bearing visit from being captured.
+ * Merge any non-transient query params from the current URL into
+ * sessionStorage. Runs on every location change so params added at
+ * any point in the session are preserved until the tab is closed.
  */
 export function captureQueryParams(search: string): void {
-  if (sessionStorage.getItem(CAPTURED_FLAG)) return;
-
   const params = new URLSearchParams(search);
-  const stored: Record<string, string> = {};
+  const existing = getStoredQueryParams();
+  let changed = false;
 
   params.forEach((value, key) => {
-    if (!TRANSIENT_PARAMS.has(key)) {
-      stored[key] = value;
+    if (!TRANSIENT_PARAMS.has(key) && existing[key] !== value) {
+      existing[key] = value;
+      changed = true;
     }
   });
 
-  if (Object.keys(stored).length === 0) return;
-
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  sessionStorage.setItem(CAPTURED_FLAG, '1');
+  if (changed) {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+  }
 }
 
 /**

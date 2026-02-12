@@ -39,6 +39,8 @@ tags:
     description: AI Assessment Agent (feature-flagged, SSE streaming)
   - name: AdvancedAssessments
     description: Advanced (agent-based) assessment management — eligibility, results, reset
+  - name: StudyMaterial
+    description: Study material content for paid users
 
 paths:
   /:
@@ -210,6 +212,43 @@ paths:
                     properties:
                       user:
                         $ref: '#/components/schemas/User'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/paid-status:
+    get:
+      tags:
+        - Auth
+      summary: Get paid subscription status
+      description: Returns whether the authenticated user has an active paid subscription
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Paid status data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      is_paid:
+                        type: boolean
+                        example: true
+                      payment_valid_till:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        example: "2026-03-01T00:00:00.000Z"
         '401':
           description: Not authenticated
           content:
@@ -914,6 +953,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/study-material/{track}/{fluencyCode}/{subtopicId}:
+    get:
+      tags:
+        - StudyMaterial
+      summary: Get study material content
+      description: |
+        Returns study material content for a specific subtopic. Requires authentication and an active paid subscription.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: track
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [EM, SE, PM]
+          description: Career track
+          example: PM
+        - name: fluencyCode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Fluency area code (e.g., FND, AGT, COM)
+          example: FND
+        - name: subtopicId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Subtopic identifier
+          example: "1.1.2"
+      responses:
+        '200':
+          description: Study material content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    description: Study material content (structure varies by subtopic)
+                    additionalProperties: true
+        '400':
+          description: Invalid track
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Paid subscription required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Study material not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/agent/initialize:
     post:
       tags:
@@ -1141,10 +1258,16 @@ paths:
                       total_questions_answered: 5
                       track: "PM"
                       experience: "4-7"
+                      fluencies:
+                        - code: "FND"
+                          name: "Foundational"
+                          target_level: "intermediate"
+                        - code: "PRM"
+                          name: "Prompting"
+                          target_level: "advanced"
                       can_start_new: false
-                      cooldown_ends_at: null
                 completed:
-                  summary: Completed assessment (cooldown active)
+                  summary: Completed assessment
                   value:
                     data:
                       session_id: 42
@@ -1155,8 +1278,14 @@ paths:
                       total_questions_answered: 20
                       track: "PM"
                       experience: "4-7"
-                      can_start_new: false
-                      cooldown_ends_at: "2026-03-03T15:10:00.000Z"
+                      fluencies:
+                        - code: "FND"
+                          name: "Foundational"
+                          target_level: "intermediate"
+                        - code: "PRM"
+                          name: "Prompting"
+                          target_level: "advanced"
+                      can_start_new: true
                 noAssessment:
                   summary: No assessment exists
                   value:
@@ -1233,6 +1362,64 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/agent/assessments/{sessionId}/terminate:
+    post:
+      tags:
+        - AdvancedAssessments
+      summary: Terminate in-progress assessment
+      description: |
+        Terminates an in-progress advanced assessment and computes partial results.
+        Unassessed modules will appear with score 1, confidence 0 in results.
+        Terminated sessions can have upskill plans generated from them.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The assessment session ID to terminate
+          example: 42
+      responses:
+        '200':
+          description: Assessment terminated successfully with partial results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Assessment terminated successfully."
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: object
+                        description: Partial assessment results
+        '400':
+          description: Invalid session ID or no matching in-progress assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Not authenticated
           content:
             application/json:
               schema:
@@ -1595,6 +1782,15 @@ components:
           type: string
           enum: [google, github, linkedin]
           example: "google"
+        is_paid:
+          type: boolean
+          nullable: true
+          example: null
+        payment_valid_till:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
 
     CreateProfileRequest:
       type: object
@@ -2454,7 +2650,7 @@ components:
           example: "PM_user_20260201_143022"
         status:
           type: string
-          enum: [in_progress, completed]
+          enum: [in_progress, completed, terminated]
           description: Current assessment status
           example: "in_progress"
         started_at:
@@ -2479,16 +2675,29 @@ components:
           type: string
           description: Experience range string
           example: "4-7"
+        fluencies:
+          type: array
+          description: Fluency areas being assessed with target proficiency levels
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                description: Fluency code (e.g. FND, PRM, ASE)
+                example: "FND"
+              name:
+                type: string
+                description: Human-readable fluency name
+                example: "Foundational"
+              target_level:
+                type: string
+                enum: [basic, intermediate, advanced, expert]
+                description: Target proficiency level for this fluency
+                example: "intermediate"
         can_start_new:
           type: boolean
           description: Whether the user can start a new assessment
           example: false
-        cooldown_ends_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: When the cooldown expires (null if no cooldown or in progress)
-          example: null
 
     AssessmentOutput:
       type: object
@@ -2549,7 +2758,6 @@ components:
         - name
         - target_level
         - demonstrated_level
-        - confidence
         - modules
         - recommended_subtopics
       properties:
@@ -2565,9 +2773,6 @@ components:
         demonstrated_level:
           type: string
           enum: [beginner, intermediate, advanced, expert, insufficient_data]
-        confidence:
-          type: string
-          enum: [high, medium, low]
         modules:
           type: array
           items:
@@ -2583,9 +2788,10 @@ components:
       required:
         - module_id
         - module_title
-        - signal_score
+        - aggregate_score
         - demonstrated_level
-        - questions_asked
+        - assessed
+        - subtopic_results
         - is_focus_area
       properties:
         module_id:
@@ -2594,17 +2800,57 @@ components:
         module_title:
           type: string
           example: "Neural Networks"
-        signal_score:
+        aggregate_score:
           type: number
-          example: 7.5
+          description: Aggregate score across subtopics (0-3)
+          example: 2.1
         demonstrated_level:
           type: string
           enum: [beginner, intermediate, advanced, expert, insufficient_data]
-        questions_asked:
-          type: integer
-          example: 3
+        assessed:
+          type: boolean
+          description: Whether this module was actually assessed (false for unassessed/terminated modules)
+          example: true
+        subtopic_results:
+          type: array
+          description: Per-subtopic score breakdown
+          items:
+            $ref: '#/components/schemas/SubtopicResult'
         is_focus_area:
           type: boolean
+
+    SubtopicResult:
+      type: object
+      required:
+        - subtopic_id
+        - title
+        - level
+        - score
+        - confidence
+        - assessed
+      properties:
+        subtopic_id:
+          type: string
+          example: "1.1.2"
+        title:
+          type: string
+          example: "Agent Architecture Patterns"
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+          example: "intermediate"
+        score:
+          type: number
+          description: Score for this subtopic (0-3)
+          example: 2.0
+        confidence:
+          type: number
+          description: Confidence level (0.0-1.0)
+          example: 0.8
+        assessed:
+          type: boolean
+          description: Whether this subtopic was actually assessed
+          example: true
 
     RecommendedSubtopic:
       type: object
@@ -2630,6 +2876,21 @@ components:
         priority:
           type: integer
           example: 1
+        gap_type:
+          type: string
+          enum: [no_signal, surface_only, below_target, unassessed]
+          description: Type of gap identified for this subtopic
+          example: "below_target"
+        score:
+          type: number
+          nullable: true
+          description: Subtopic score (0-3) if assessed
+          example: 1.5
+        confidence:
+          type: number
+          nullable: true
+          description: Confidence level (0.0-1.0) if assessed
+          example: 0.7
 
     TranscriptEntry:
       type: object
@@ -2706,6 +2967,10 @@ components:
           type: boolean
           description: Whether the plan is active
           example: true
+        track:
+          type: string
+          description: Career track (PM, EM, SE)
+          example: "PM"
         progress:
           type: object
           properties:

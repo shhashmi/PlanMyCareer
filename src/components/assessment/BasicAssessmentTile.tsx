@@ -11,6 +11,8 @@ interface BasicAssessmentTileProps {
   animationDirection?: 'left' | 'right';
   children: ReactNode;
   style?: CSSProperties;
+  showPaymentTier?: boolean;
+  showDescription?: boolean;
 }
 
 export function BasicAssessmentTile({
@@ -20,7 +22,9 @@ export function BasicAssessmentTile({
   animationDelay = 0.1,
   animationDirection = 'left',
   children,
-  style
+  style,
+  showPaymentTier = true,
+  showDescription = true
 }: BasicAssessmentTileProps) {
   const xOffset = animationDirection === 'left' ? -20 : 20;
 
@@ -60,28 +64,34 @@ export function BasicAssessmentTile({
       <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>
         Basic Assessment
       </h2>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        A quick, personalized evaluation with instant insights
-      </p>
+      {showDescription && (
+        <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+          A quick, personalized evaluation with instant insights
+        </p>
+      )}
 
-      <div style={{
-        background: 'rgba(20, 184, 166, 0.1)',
-        padding: '16px',
-        borderRadius: '12px',
-        marginBottom: '24px'
-      }}>
-        <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>Free</span>
-        <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>5-10 minutes</span>
-      </div>
+      {showPaymentTier && (
+        <div style={{
+          background: 'rgba(20, 184, 166, 0.1)',
+          padding: '16px',
+          borderRadius: '12px',
+          marginBottom: '24px'
+        }}>
+          <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>Free</span>
+          <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>5-10 minutes</span>
+        </div>
+      )}
 
-      <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
-        {BASIC_ASSESSMENT_FEATURES.map((item, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
-            <Check size={18} color="var(--secondary)" />
-            {item}
-          </li>
-        ))}
-      </ul>
+      {showDescription && (
+        <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px' }}>
+          {BASIC_ASSESSMENT_FEATURES.map((item, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
+              <Check size={18} color="var(--secondary)" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {children}
     </motion.div>

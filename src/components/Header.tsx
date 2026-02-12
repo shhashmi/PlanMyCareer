@@ -16,7 +16,7 @@ const navLinks = [
 export default function Header() {
   const navigate = useNavigateWithParams();
   const location = useLocation();
-  const { isLoggedIn, user, logout } = useApp();
+  const { isLoggedIn, user, logout, isPaid } = useApp();
   const { smartNavigate, isNavigating } = useSmartNavigation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,6 +43,7 @@ export default function Header() {
   };
 
   const isActivePath = (path: string) => location.pathname === path;
+  const filteredNavLinks = navLinks.filter(link => !(isPaid && link.path === '/pricing'));
 
   return (
     <header
@@ -104,7 +105,7 @@ export default function Header() {
           }}
           className="desktop-nav"
         >
-          {navLinks.map(link => (
+          {filteredNavLinks.map(link => (
             <button
               key={link.path}
               onClick={() => navigate(link.path)}
@@ -300,7 +301,7 @@ export default function Header() {
           padding: "8px 0",
         }}
       >
-        {navLinks.map(link => (
+        {filteredNavLinks.map(link => (
           <button
             key={link.path}
             onClick={() => navigate(link.path)}

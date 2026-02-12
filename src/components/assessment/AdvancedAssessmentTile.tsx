@@ -12,6 +12,8 @@ interface AdvancedAssessmentTileProps {
   animationDirection?: 'left' | 'right';
   buttonText?: string;
   style?: CSSProperties;
+  showPaymentTier?: boolean;
+  showDescription?: boolean;
 }
 
 type AssessmentState = 'loading' | 'none' | 'in_progress' | 'completed_cooldown' | 'completed_ready';
@@ -21,7 +23,9 @@ export function AdvancedAssessmentTile({
   animationDelay = 0.2,
   animationDirection = 'right',
   buttonText = 'Get Advanced Assessment',
-  style
+  style,
+  showPaymentTier = true,
+  showDescription = true
 }: AdvancedAssessmentTileProps) {
   const navigate = useNavigateWithParams();
   const isBeta = isAdvancedAssessmentBeta();
@@ -274,38 +278,44 @@ export function AdvancedAssessmentTile({
           </span>
         )}
       </h2>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-        Comprehensive evaluation with structured learning and hands-on practice
-      </p>
+      {showDescription && (
+        <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+          Comprehensive evaluation with structured learning and hands-on practice
+        </p>
+      )}
 
-      <div style={{
-        background: 'rgba(20, 184, 166, 0.15)',
-        padding: '16px',
-        borderRadius: '12px',
-        marginBottom: '24px'
-      }}>
-        {isBeta ? (
-          <>
-            <span style={{ fontSize: '26px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through' }}>$20</span>
-            <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)', marginLeft: '10px' }}>Free</span>
-            <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>Complimentary during Beta</span>
-          </>
-        ) : (
-          <>
-            <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>$20</span>
-            <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>one-time</span>
-          </>
-        )}
-      </div>
+      {showPaymentTier && (
+        <div style={{
+          background: 'rgba(20, 184, 166, 0.15)',
+          padding: '16px',
+          borderRadius: '12px',
+          marginBottom: '24px'
+        }}>
+          {isBeta ? (
+            <>
+              <span style={{ fontSize: '26px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through' }}>$20</span>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)', marginLeft: '10px' }}>Free</span>
+              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>Complimentary during Beta</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>$20</span>
+              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>one-time</span>
+            </>
+          )}
+        </div>
+      )}
 
-      <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px', flex: 1 }}>
-        {ADVANCED_ASSESSMENT_FEATURES.map((item, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
-            <Check size={18} color="var(--secondary)" />
-            {item}
-          </li>
-        ))}
-      </ul>
+      {showDescription && (
+        <ul style={{ listStyle: 'none', display: 'grid', gap: '12px', marginBottom: '24px', flex: 1 }}>
+          {ADVANCED_ASSESSMENT_FEATURES.map((item, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)' }}>
+              <Check size={18} color="var(--secondary)" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {renderButtons()}
     </motion.div>

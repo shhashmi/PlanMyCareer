@@ -377,8 +377,32 @@ export default function UpskillPlan() {
                         )}
                       </div>
 
-                      {/* Badges */}
-                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {/* Study link + Badges */}
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        {plan.track && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/study-material/${plan.track}/${item.fluency_code}/${item.subtopic_id}`);
+                            }}
+                            title="Study this topic"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border)',
+                              background: 'var(--surface-light)',
+                              cursor: 'pointer',
+                              color: 'var(--primary-light)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <BookOpen size={14} />
+                          </button>
+                        )}
                         <span style={{
                           padding: '3px 8px',
                           borderRadius: '6px',

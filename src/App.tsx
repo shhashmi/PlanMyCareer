@@ -33,6 +33,7 @@ const Pricing = lazy(() => import('./pages/Pricing'));
 const FAQ = lazy(() => import('./pages/FAQ'));
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
+const StudyMaterial = lazy(() => import('./pages/StudyMaterial'));
 
 function AppRoutes() {
   const { search } = useLocation();
@@ -67,6 +68,7 @@ function AppRoutes() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
       <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
+      <Route path="/study-material/:track/:fluencyCode/:subtopicId" element={<ProtectedRoute><StudyMaterial /></ProtectedRoute>} />
     </Routes>
     </Suspense>
     </>

@@ -12,7 +12,7 @@ import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
   const navigate = useNavigateWithParams()
-  const { isLoggedIn, skills, loading, apiProfile } = useApp()
+  const { isLoggedIn, skills, loading, apiProfile, isPaid, refreshPaidStatus } = useApp()
   const [startingAssessment, setStartingAssessment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
@@ -178,6 +178,7 @@ export default function AssessmentChoice() {
             dimmed={startingAssessment}
             animationDelay={0.1}
             animationDirection="left"
+            showPaymentTier={!isPaid}
           >
             <button
               className="btn-primary"
@@ -199,7 +200,8 @@ export default function AssessmentChoice() {
           </BasicAssessmentTile>
 
           <AdvancedAssessmentTile
-            onClick={() => {
+            onClick={async () => {
+              await refreshPaidStatus();
               if (isAdvancedAssessmentBeta()) {
                 navigate('/advanced-assessment', {
                   state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
@@ -212,6 +214,7 @@ export default function AssessmentChoice() {
             }}
             animationDelay={0.2}
             animationDirection="right"
+            showPaymentTier={!isPaid}
           />
         </div>
       </div>

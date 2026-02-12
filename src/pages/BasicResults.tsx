@@ -15,7 +15,7 @@ import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessment
 export default function BasicResults() {
   const navigate = useNavigateWithParams();
   const location = useLocation();
-  const { apiProfile } = useApp();
+  const { apiProfile, isPaid, refreshPaidStatus } = useApp();
 
   // Get session_id from route state
   const sessionId = location.state?.sessionId as number | undefined;
@@ -344,7 +344,8 @@ export default function BasicResults() {
             curated resources, and weekly action plans
           </p>
           <button
-            onClick={() => {
+            onClick={async () => {
+              await refreshPaidStatus();
               if (isAdvancedAssessmentBeta()) {
                 navigate('/advanced-assessment');
               } else if (isProduction) {
@@ -356,7 +357,9 @@ export default function BasicResults() {
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            {isAdvancedAssessmentBeta() ? (
+            {isPaid ? (
+              'Get Advanced Assessment'
+            ) : isAdvancedAssessmentBeta() ? (
               <>
                 Get Advanced Assessment — <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>$20</span> Free
               </>
@@ -365,7 +368,7 @@ export default function BasicResults() {
             )}
             <ArrowRight size={18} />
           </button>
-          {isAdvancedAssessmentBeta() && (
+          {!isPaid && isAdvancedAssessmentBeta() && (
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '12px' }}>
               Complimentary during Beta
             </p>

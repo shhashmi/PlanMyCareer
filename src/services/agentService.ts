@@ -16,6 +16,7 @@ import type {
   UpskillPlanResponse,
   UpskillPlanUpdateRequest,
   UpskillPlanMarkItemsResponse,
+  StudyMaterialContent,
 } from '../types/api.types';
 import { getTopCompetencies } from '../utils/profileUtils';
 import { buildUrlWithParams } from '../utils/queryParamStore';
@@ -251,6 +252,12 @@ export async function markPlanItemsDone(sessionId: number, itemIds: number[]): P
   return response.data;
 }
 
+/** GET /api/v1/study-material/:track/:fluencyCode/:subtopicId — Get study material content */
+export async function getStudyMaterial(track: string, fluencyCode: string, subtopicId: string): Promise<StudyMaterialContent> {
+  const response = await api.get(`/v1/study-material/${track}/${fluencyCode}/${subtopicId}`);
+  return response.data.data;
+}
+
 export const agentService = {
   initialize,
   streamChat,
@@ -262,6 +269,7 @@ export const agentService = {
   getUpskillPlan,
   updateUpskillPlan,
   markPlanItemsDone,
+  getStudyMaterial,
 };
 
 export default agentService;

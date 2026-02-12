@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
+import { useApp } from '../context/AppContext';
 import { GetStartedCTA } from '../components/GetStartedCTA';
 import SEOHead from '../components/SEOHead';
 import { isAdvancedAssessmentBeta } from '../data/assessmentData';
@@ -54,6 +55,7 @@ function getPlans(isBeta: boolean) {
 
 export default function Pricing() {
   const navigate = useNavigateWithParams();
+  const { isPaid } = useApp();
   const plans = getPlans(isAdvancedAssessmentBeta());
 
   return (
@@ -184,19 +186,23 @@ export default function Pricing() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
                   {plan.description}
                 </p>
-                <div style={{ marginBottom: '4px' }}>
-                  {plan.originalPrice && (
-                    <span style={{ fontSize: '32px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through', marginRight: '10px' }}>
-                      {plan.originalPrice}
+                {!isPaid && (
+                  <>
+                    <div style={{ marginBottom: '4px' }}>
+                      {plan.originalPrice && (
+                        <span style={{ fontSize: '32px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through', marginRight: '10px' }}>
+                          {plan.originalPrice}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '42px', fontWeight: '700', color: plan.color }}>
+                        {plan.price}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                      {plan.priceSubtext}
                     </span>
-                  )}
-                  <span style={{ fontSize: '42px', fontWeight: '700', color: plan.color }}>
-                    {plan.price}
-                  </span>
-                </div>
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                  {plan.priceSubtext}
-                </span>
+                  </>
+                )}
               </div>
 
               {/* Features List */}

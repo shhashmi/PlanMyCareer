@@ -192,10 +192,10 @@ export default function AdvancedResults() {
                           borderRadius: '6px',
                           fontSize: '11px',
                           fontWeight: '600',
-                          background: `${confidenceColors[skill.confidence]}20`,
-                          color: confidenceColors[skill.confidence]
+                          background: `${confidenceColors[skill.confidence] ?? 'var(--text-muted)'}20`,
+                          color: confidenceColors[skill.confidence] ?? 'var(--text-muted)'
                         }}>
-                          {skill.confidence.charAt(0).toUpperCase() + skill.confidence.slice(1)} confidence
+                          {skill.confidence ? skill.confidence.charAt(0).toUpperCase() + skill.confidence.slice(1) : 'Unknown'} confidence
                         </span>
                       </div>
                     </div>
