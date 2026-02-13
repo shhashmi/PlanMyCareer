@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Clock, BookOpen, Target, Lightbulb, ChevronDown, ChevronRight,
+  ArrowLeft, Clock, BookOpen, Lightbulb, ChevronDown, ChevronRight,
   Loader, Award, ExternalLink, CheckCircle, Zap, MessageSquare, Scale,
   HelpCircle, Star, Lock,
 } from 'lucide-react';
@@ -12,29 +12,11 @@ import { getStudyMaterial } from '../services/agentService';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import SEOHead from '../components/SEOHead';
 import type { StudyMaterialContent } from '../types/api.types';
+import './StudyMaterial.css';
 
 function LevelBadge({ level }: { level: string }) {
-  const colors: Record<string, { bg: string; color: string }> = {
-    basic: { bg: 'rgba(16, 185, 129, 0.12)', color: 'var(--secondary)' },
-    intermediate: { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' },
-    advanced: { bg: 'rgba(168, 85, 247, 0.12)', color: '#a855f7' },
-    expert: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
-  };
-  const style = colors[level] ?? colors.basic;
-
-  return (
-    <span style={{
-      padding: '4px 10px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 600,
-      background: style.bg,
-      color: style.color,
-      textTransform: 'capitalize',
-    }}>
-      {level}
-    </span>
-  );
+  const badgeClass = `sm-badge sm-badge-${level}`;
+  return <span className={badgeClass}>{level}</span>;
 }
 
 function CollapsibleCard({
@@ -51,20 +33,14 @@ function CollapsibleCard({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="card" style={{ marginBottom: '16px' }}>
+    <div className="card" style={{ marginBottom: '12px' }}>
       <div
+        className="sm-collapsible-header"
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {icon}
-          <h3 style={{ fontSize: '16px', fontWeight: 600 }}>{title}</h3>
+          <h3>{title}</h3>
         </div>
         {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       </div>
@@ -134,15 +110,14 @@ export default function StudyMaterial() {
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="study-material-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}
         >
-          <Loader size={32} style={{ animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: 'var(--text-muted)' }}>Loading study material...</p>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          <Loader size={32} color="#5c6bc0" style={{ animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: '#666' }}>Loading study material...</p>
         </motion.div>
       </div>
     );
@@ -150,11 +125,11 @@ export default function StudyMaterial() {
 
   if (error || !content) {
     return (
-      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="study-material-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <Lock size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-          <h2 style={{ marginBottom: '12px' }}>Unable to Load</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+          <Lock size={48} color="#999" style={{ marginBottom: '16px' }} />
+          <h2 style={{ marginBottom: '12px', color: '#1a1a2e' }}>Unable to Load</h2>
+          <p style={{ color: '#666', marginBottom: '24px' }}>
             {error || 'Study material not found.'}
           </p>
           <button className="btn-primary" onClick={() => navigate('/upskill-plan')}>
@@ -166,27 +141,12 @@ export default function StudyMaterial() {
   }
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+    <div className="study-material-page">
       <SEOHead />
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="sm-container">
         {/* Back link */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <button
-            onClick={() => navigate('/upskill-plan')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: 'var(--primary-light)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 500,
-              padding: 0,
-              marginBottom: '24px',
-            }}
-          >
+          <button className="sm-back-btn" onClick={() => navigate('/upskill-plan')}>
             <ArrowLeft size={16} />
             Back to Plan
           </button>
@@ -194,42 +154,23 @@ export default function StudyMaterial() {
 
         {/* Header */}
         <motion.div
+          className="sm-header"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: '32px' }}
+          style={{ marginBottom: '2rem' }}
         >
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+          <h1>{content.subtopic_id}: {content.subtopic_title}</h1>
+          <div className="sm-meta">
+            <span className="sm-badge sm-badge-track">{content.track}</span>
+            <span className="sm-badge sm-badge-fluency">{content.fluency_code}</span>
             <LevelBadge level={content.level} />
-            <span style={{
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              background: 'rgba(20, 184, 166, 0.1)',
-              color: 'var(--primary-light)',
-            }}>
-              {content.fluency_code}
-            </span>
-            <span style={{
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              background: 'var(--surface-light)',
-              color: 'var(--text-muted)',
-              textTransform: 'capitalize',
-            }}>
-              {content.type}
-            </span>
-          </div>
-          <h1 style={{ fontSize: '32px', fontWeight: 700, lineHeight: 1.3, marginBottom: '12px' }}>
-            {content.subtopic_title}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: 'var(--text-muted)', fontSize: '14px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Clock size={14} />
-              {content.estimated_study_time_minutes} min
-            </span>
+            <span className={`sm-badge sm-badge-${content.type}`}>{content.type}</span>
+            {content.estimated_study_time_minutes && (
+              <span className="sm-badge sm-badge-time">
+                <Clock size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                {content.estimated_study_time_minutes} min
+              </span>
+            )}
           </div>
         </motion.div>
 
@@ -238,22 +179,10 @@ export default function StudyMaterial() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="card"
-          style={{
-            marginBottom: '24px',
-            background: 'var(--gradient-1)',
-            borderLeft: '4px solid var(--primary)',
-          }}
+          className="sm-tldr"
         >
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <Zap size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                TL;DR
-              </h3>
-              <p style={{ lineHeight: 1.7, fontSize: '15px' }}>{content.tldr_summary}</p>
-            </div>
-          </div>
+          <div className="sm-tldr-label">TL;DR</div>
+          <p style={{ lineHeight: 1.7 }}>{content.tldr_summary}</p>
         </motion.div>
 
         {/* Think Before You Read */}
@@ -262,24 +191,10 @@ export default function StudyMaterial() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="card"
-            style={{
-              marginBottom: '24px',
-              borderLeft: '4px solid var(--accent)',
-              background: 'rgba(245, 158, 11, 0.04)',
-            }}
+            className="sm-think-box"
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <MessageSquare size={20} color="var(--accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: 'var(--accent)' }}>
-                  Think Before You Read
-                </h3>
-                <p style={{ lineHeight: 1.7, fontSize: '15px', fontStyle: 'italic' }}>
-                  {content.think_before_you_read}
-                </p>
-              </div>
-            </div>
+            <div className="sm-think-label">Think Before You Read</div>
+            <p style={{ lineHeight: 1.7 }}>{content.think_before_you_read}</p>
           </motion.div>
         )}
 
@@ -288,18 +203,14 @@ export default function StudyMaterial() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="card"
-          style={{ marginBottom: '24px' }}
+          className="card card-accent"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <Target size={20} color="var(--primary-light)" />
-            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Learning Objectives</h2>
-          </div>
-          <ol style={{ paddingLeft: '20px', display: 'grid', gap: '10px' }}>
+          <div className="sm-card-header">Learning Objectives</div>
+          <ul className="sm-objectives-list">
             {content.learning_objectives.map((obj, i) => (
-              <li key={i} style={{ lineHeight: 1.6, fontSize: '15px' }}>{obj}</li>
+              <li key={i}>{obj}</li>
             ))}
-          </ol>
+          </ul>
         </motion.div>
 
         {/* Content Sections */}
@@ -310,28 +221,18 @@ export default function StudyMaterial() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 + i * 0.05 }}
             className="card"
-            style={{ marginBottom: '24px' }}
           >
-            <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px' }}>
-              {section.heading}
-            </h2>
+            <div className="sm-card-header">{section.heading}</div>
             <MarkdownRenderer content={section.body} />
             {section.key_points.length > 0 && (
-              <div style={{
-                marginTop: '20px',
-                padding: '16px',
-                background: 'var(--surface-light)',
-                borderRadius: '12px',
-              }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Star size={14} color="var(--accent)" />
+              <div className="sm-key-points">
+                <div className="sm-key-points-label">
+                  <Star size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                   Key Points
-                </h4>
-                <ul style={{ paddingLeft: '16px', display: 'grid', gap: '6px' }}>
+                </div>
+                <ul>
                   {section.key_points.map((point, j) => (
-                    <li key={j} style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-                      {point}
-                    </li>
+                    <li key={j}>{point}</li>
                   ))}
                 </ul>
               </div>
@@ -339,23 +240,25 @@ export default function StudyMaterial() {
           </motion.div>
         ))}
 
+        <div className="sm-divider" />
+
         {/* Exercises */}
         {content.exercises.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            style={{ marginBottom: '24px' }}
+            style={{ marginBottom: '1.25rem' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <BookOpen size={20} color="var(--primary-light)" />
-              <h2 style={{ fontSize: '20px', fontWeight: 600 }}>Exercises</h2>
+            <div className="sm-section-heading">
+              <BookOpen size={20} />
+              <h2>Exercises</h2>
             </div>
             {content.exercises.map((exercise, i) => (
               <CollapsibleCard
                 key={i}
                 title={exercise.title}
-                icon={<Award size={18} color="var(--primary-light)" />}
+                icon={<Award size={18} color="#5c6bc0" />}
                 defaultOpen={i === 0}
               >
                 <div style={{ marginBottom: '16px' }}>
@@ -364,11 +267,11 @@ export default function StudyMaterial() {
                 {exercise.hints.length > 0 && (
                   <CollapsibleCard
                     title="Hints"
-                    icon={<Lightbulb size={16} color="var(--accent)" />}
+                    icon={<Lightbulb size={16} color="#f57f17" />}
                   >
                     <ul style={{ paddingLeft: '16px', display: 'grid', gap: '8px' }}>
                       {exercise.hints.map((hint, j) => (
-                        <li key={j} style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                        <li key={j} style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#444' }}>
                           {hint}
                         </li>
                       ))}
@@ -377,7 +280,7 @@ export default function StudyMaterial() {
                 )}
                 <CollapsibleCard
                   title="Solution Guide"
-                  icon={<CheckCircle size={16} color="var(--secondary)" />}
+                  icon={<CheckCircle size={16} color="#43a047" />}
                 >
                   <MarkdownRenderer content={exercise.solution_guide} />
                 </CollapsibleCard>
@@ -386,48 +289,41 @@ export default function StudyMaterial() {
           </motion.div>
         )}
 
+        <div className="sm-divider" />
+
         {/* What Would You Do Scenarios */}
         {content.what_would_you_do_scenarios.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
-            style={{ marginBottom: '24px' }}
+            style={{ marginBottom: '1.25rem' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <HelpCircle size={20} color="var(--primary-light)" />
-              <h2 style={{ fontSize: '20px', fontWeight: 600 }}>What Would You Do?</h2>
+            <div className="sm-section-heading">
+              <HelpCircle size={20} />
+              <h2>What Would You Do?</h2>
             </div>
             {content.what_would_you_do_scenarios.map((scenario, i) => (
               <CollapsibleCard
                 key={i}
                 title={`Scenario ${i + 1}`}
-                icon={<MessageSquare size={18} color="var(--primary-light)" />}
+                icon={<MessageSquare size={18} color="#5c6bc0" />}
                 defaultOpen={i === 0}
               >
-                <p style={{ lineHeight: 1.7, fontSize: '15px', marginBottom: '16px' }}>
+                <p style={{ lineHeight: 1.7, fontSize: '0.95rem', marginBottom: '16px', color: '#333' }}>
                   {scenario.scenario}
                 </p>
                 <div style={{ display: 'grid', gap: '8px', marginBottom: '16px' }}>
                   {scenario.options.map((option, j) => (
-                    <div
-                      key={j}
-                      style={{
-                        padding: '12px 16px',
-                        background: 'var(--surface-light)',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      <strong style={{ color: 'var(--primary-light)' }}>Option {String.fromCharCode(65 + j)}:</strong>{' '}
+                    <div key={j} className="sm-option">
+                      <strong style={{ color: '#5c6bc0' }}>Option {String.fromCharCode(65 + j)}:</strong>{' '}
                       {option}
                     </div>
                   ))}
                 </div>
                 <CollapsibleCard
                   title="Discussion"
-                  icon={<MessageSquare size={16} color="var(--secondary)" />}
+                  icon={<MessageSquare size={16} color="#43a047" />}
                 >
                   <MarkdownRenderer content={scenario.discussion} />
                 </CollapsibleCard>
@@ -436,6 +332,8 @@ export default function StudyMaterial() {
           </motion.div>
         )}
 
+        <div className="sm-divider" />
+
         {/* Debate This */}
         {content.debate_this && (
           <motion.div
@@ -443,61 +341,41 @@ export default function StudyMaterial() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="card"
-            style={{ marginBottom: '24px' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <Scale size={20} color="var(--primary-light)" />
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Debate This</h2>
+            <div className="sm-card-header">
+              <Scale size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              Debate This
             </div>
-            <p style={{
-              fontSize: '16px',
-              fontWeight: 500,
-              fontStyle: 'italic',
-              lineHeight: 1.7,
-              marginBottom: '20px',
-              padding: '16px',
-              background: 'var(--surface-light)',
-              borderRadius: '12px',
-            }}>
+            <div className="sm-debate-statement">
               "{content.debate_this.statement}"
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--secondary)', marginBottom: '10px' }}>
-                  For
-                </h4>
-                <ul style={{ paddingLeft: '16px', display: 'grid', gap: '8px' }}>
+            </div>
+            <div className="sm-args-grid">
+              <div className="sm-args-for">
+                <h4>For</h4>
+                <ul>
                   {content.debate_this.for_arguments.map((arg, i) => (
-                    <li key={i} style={{ fontSize: '14px', lineHeight: 1.6 }}>{arg}</li>
+                    <li key={i}>{arg}</li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#ef4444', marginBottom: '10px' }}>
-                  Against
-                </h4>
-                <ul style={{ paddingLeft: '16px', display: 'grid', gap: '8px' }}>
+              <div className="sm-args-against">
+                <h4>Against</h4>
+                <ul>
                   {content.debate_this.against_arguments.map((arg, i) => (
-                    <li key={i} style={{ fontSize: '14px', lineHeight: 1.6 }}>{arg}</li>
+                    <li key={i}>{arg}</li>
                   ))}
                 </ul>
               </div>
             </div>
             {content.debate_this.facilitator_note && (
-              <div style={{
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: 'rgba(245, 158, 11, 0.06)',
-                borderRadius: '10px',
-                borderLeft: '3px solid var(--accent)',
-              }}>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>
-                  {content.debate_this.facilitator_note}
-                </p>
+              <div className="sm-facilitator-note">
+                {content.debate_this.facilitator_note}
               </div>
             )}
           </motion.div>
         )}
+
+        <div className="sm-divider" />
 
         {/* Quick Win */}
         {content.quick_win && (
@@ -505,22 +383,13 @@ export default function StudyMaterial() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
-            className="card"
-            style={{
-              marginBottom: '24px',
-              borderLeft: '4px solid var(--secondary)',
-              background: 'rgba(16, 185, 129, 0.04)',
-            }}
+            className="sm-quick-win"
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <Zap size={20} color="var(--secondary)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: 'var(--secondary)' }}>
-                  Quick Win (15 min)
-                </h3>
-                <p style={{ lineHeight: 1.7, fontSize: '15px' }}>{content.quick_win}</p>
-              </div>
+            <div className="sm-quick-win-label">
+              <Zap size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+              Quick Win
             </div>
+            <p style={{ lineHeight: 1.7 }}>{content.quick_win}</p>
           </motion.div>
         )}
 
@@ -530,101 +399,98 @@ export default function StudyMaterial() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            style={{ marginBottom: '24px' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <HelpCircle size={20} color="var(--primary-light)" />
-              <h2 style={{ fontSize: '20px', fontWeight: 600 }}>Self-Assessment</h2>
-            </div>
-            {content.self_assessment_questions.map((qa, i) => (
-              <CollapsibleCard
-                key={i}
-                title={`Question ${i + 1}`}
-                icon={<HelpCircle size={16} color="var(--primary-light)" />}
-              >
-                <p style={{ fontWeight: 500, lineHeight: 1.7, marginBottom: '12px' }}>
-                  {qa.question}
-                </p>
-                <div style={{
-                  padding: '12px 16px',
-                  background: 'var(--surface-light)',
-                  borderRadius: '10px',
-                }}>
-                  <MarkdownRenderer content={qa.answer} />
-                </div>
-              </CollapsibleCard>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Resources */}
-        {content.resources.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            className="card"
-            style={{ marginBottom: '24px' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <ExternalLink size={20} color="var(--primary-light)" />
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Resources</h2>
-            </div>
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {content.resources.map((resource, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '12px 16px',
-                    background: 'var(--surface-light)',
-                    borderRadius: '10px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 500, fontSize: '15px' }}>{resource.title}</span>
-                    <span style={{
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      background: 'var(--surface)',
-                      color: 'var(--text-muted)',
-                      textTransform: 'capitalize',
-                    }}>
-                      {resource.type}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    {resource.description}
-                  </p>
+            <div className="card card-accent" style={{ marginTop: '1.25rem' }}>
+              <div className="sm-card-header">Self-Assessment</div>
+              {content.self_assessment_questions.map((qa, i) => (
+                <div key={i} className="sm-sa-question">
+                  <div className="sm-sa-q-text">{qa.question}</div>
+                  <CollapsibleCard
+                    title="Show Answer"
+                    icon={<CheckCircle size={16} color="#5c6bc0" />}
+                  >
+                    <MarkdownRenderer content={qa.answer} />
+                  </CollapsibleCard>
                 </div>
               ))}
             </div>
           </motion.div>
         )}
+
+        <div className="sm-divider" />
 
         {/* Key Takeaways */}
         {content.key_takeaways.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="card card-green"
+          >
+            <div className="sm-card-header">
+              <CheckCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              Key Takeaways
+            </div>
+            <ol className="sm-takeaway-list">
+              {content.key_takeaways.map((takeaway, i) => (
+                <li key={i}>{takeaway}</li>
+              ))}
+            </ol>
+          </motion.div>
+        )}
+
+        {/* Confidence Check */}
+        {content.confidence_check && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
             className="card"
-            style={{
-              marginBottom: '24px',
-              background: 'var(--gradient-1)',
-              borderLeft: '4px solid var(--primary)',
-            }}
+            style={{ marginTop: '1.25rem' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <CheckCircle size={20} />
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Key Takeaways</h2>
+            <div className="sm-card-header">Confidence Check</div>
+            <div className="sm-confidence-prompt">
+              <div className="sm-confidence-label">Before</div>
+              {content.confidence_check.before_prompt}
             </div>
-            <ul style={{ paddingLeft: '16px', display: 'grid', gap: '10px' }}>
-              {content.key_takeaways.map((takeaway, i) => (
-                <li key={i} style={{ lineHeight: 1.7, fontSize: '15px' }}>{takeaway}</li>
-              ))}
-            </ul>
+            <div className="sm-confidence-prompt">
+              <div className="sm-confidence-label">After</div>
+              {content.confidence_check.after_prompt}
+            </div>
+            {content.confidence_check.reflection && (
+              <CollapsibleCard
+                title="Reflection Prompt"
+                icon={<Lightbulb size={16} color="#f57f17" />}
+              >
+                <MarkdownRenderer content={content.confidence_check.reflection} />
+              </CollapsibleCard>
+            )}
+          </motion.div>
+        )}
+
+        <div className="sm-divider" />
+
+        {/* Resources */}
+        {content.resources.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+            className="card"
+          >
+            <div className="sm-card-header">
+              <ExternalLink size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              Resources
+            </div>
+            {content.resources.map((resource, i) => (
+              <div key={i} className="sm-resource-item">
+                <div>
+                  <span className="sm-resource-title">{resource.title}</span>
+                  <span className="sm-resource-type">{resource.type}</span>
+                </div>
+                <div className="sm-resource-desc">{resource.description}</div>
+              </div>
+            ))}
           </motion.div>
         )}
 
@@ -632,15 +498,11 @@ export default function StudyMaterial() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.75 }}
-          style={{ textAlign: 'center', paddingBottom: '20px' }}
+          transition={{ delay: 0.8 }}
+          style={{ textAlign: 'center', padding: '2rem 0 1rem' }}
         >
-          <button
-            onClick={() => navigate('/upskill-plan')}
-            className="btn-primary"
-            style={{ padding: '14px 32px', fontSize: '16px' }}
-          >
-            <ArrowLeft size={18} style={{ marginRight: '8px' }} />
+          <button className="btn-primary" onClick={() => navigate('/upskill-plan')}>
+            <ArrowLeft size={18} />
             Back to Plan
           </button>
         </motion.div>
