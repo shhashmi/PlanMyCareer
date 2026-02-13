@@ -33,13 +33,10 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
         </div>
 
         <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
-          Something Awesome is Brewing!
+          Invitation Only Access
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: '1.6', marginBottom: '16px' }}>
-          Our Advanced Assessment is getting its final polish and will be ready to supercharge your AI journey very soon!
-        </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
-          In the meantime, take the Basic Assessment to get a head start on discovering your AI superpowers.
+          This functionality is available to limited users, to get access through invitation only, write to <a href="mailto:support@aifluens.com" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>support@aifluens.com</a> to get invitation.
         </p>
 
         <button
@@ -47,7 +44,7 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
           className="btn-primary"
           style={{ marginTop: '24px', width: '100%', justifyContent: 'center' }}
         >
-          Sounds Great!
+          Got It
         </button>
       </div>
     </Modal>
