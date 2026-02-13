@@ -1,16 +1,111 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, MessageSquare, ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, MessageSquare, ChevronDown, ChevronUp, Loader, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import SEOHead from '../components/SEOHead';
+import { Modal } from '../components/ui/Modal';
 import { trackAssessmentComplete } from '../lib/analytics';
 import { getAssessmentStatus, getAssessmentResults, createUpskillPlan, getUpskillPlan } from '../services/agentService';
 import type { FluencyResult, TranscriptEntry } from '../types/api.types';
 
 interface LocationState {
   sessionId?: number;
+}
+
+const PLAN_STEPS = [
+  { icon: '🔍', text: 'Analyzing your skill gaps...' },
+  { icon: '📚', text: 'Curating learning resources...' },
+  { icon: '📅', text: 'Building your weekly schedule...' },
+  { icon: '✨', text: 'Finalizing your plan...' },
+];
+
+function PlanCreationModal({ isOpen }: { isOpen: boolean }) {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) { setStepIndex(0); return; }
+    const interval = setInterval(() => {
+      setStepIndex(prev => (prev + 1) % PLAN_STEPS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  const currentStep = PLAN_STEPS[stepIndex];
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {}}
+      showCloseButton={false}
+      closeOnOverlayClick={false}
+      maxWidth="440px"
+    >
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <motion.div
+          animate={{ scale: [1, 1.15, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ marginBottom: '20px' }}
+        >
+          <Sparkles size={40} color="var(--primary-light)" />
+        </motion.div>
+
+        <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>
+          Creating Your Personalized Learning Plan
+        </h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5', marginBottom: '24px' }}>
+          Please wait while we analyze your assessment results and build a tailored upskill plan just for you.
+        </p>
+
+        {/* Shimmer progress bar */}
+        <div style={{
+          height: '6px',
+          borderRadius: '3px',
+          background: 'var(--surface-light)',
+          overflow: 'hidden',
+          marginBottom: '24px',
+        }}>
+          <div style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '3px',
+            background: 'linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 50%, var(--primary) 100%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s ease-in-out infinite',
+          }} />
+        </div>
+
+        {/* Rotating step indicator */}
+        <div style={{ height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={stepIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-secondary)' }}
+            >
+              <span>{currentStep.icon}</span>
+              <span>{currentStep.text}</span>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '20px' }}>
+          This usually takes 15–30 seconds
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </Modal>
+  );
 }
 
 export default function AdvancedResults() {
@@ -25,6 +120,7 @@ export default function AdvancedResults() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [showTranscript, setShowTranscript] = useState(false);
   const [creatingPlan, setCreatingPlan] = useState(false);
+  const [planExists, setPlanExists] = useState(false);
   const hasTracked = useRef(false);
   const hasFetched = useRef(false);
 
@@ -67,6 +163,16 @@ export default function AdvancedResults() {
     };
 
     fetchResults();
+  }, [passedSessionId]);
+
+  // Check if an upskill plan already exists for this session
+  useEffect(() => {
+    if (!passedSessionId) return;
+    let cancelled = false;
+    getUpskillPlan(passedSessionId)
+      .then(() => { if (!cancelled) setPlanExists(true); })
+      .catch(() => { /* 404 or error — no plan, keep false */ });
+    return () => { cancelled = true; };
   }, [passedSessionId]);
 
   // Redirect if no results available
@@ -344,10 +450,12 @@ export default function AdvancedResults() {
           }}
         >
           <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '12px' }}>
-            Ready to Close Your Skill Gaps?
+            {planExists ? 'Your Upskill Plan is Ready' : 'Ready to Close Your Skill Gaps?'}
           </h2>
           <p style={{ marginBottom: '24px', opacity: 0.9, maxWidth: '500px', margin: '0 auto 24px' }}>
-            Get a personalized weekly upskilling plan with curated resources and exercises
+            {planExists
+              ? 'Continue your personalized learning journey where you left off'
+              : 'Get a personalized weekly upskilling plan with curated resources and exercises'}
           </p>
           <button
             onClick={async () => {
@@ -355,11 +463,16 @@ export default function AdvancedResults() {
               if (!sessionId) return;
               setCreatingPlan(true);
               try {
-                const response = await createUpskillPlan(sessionId);
-                navigate('/upskill-plan', { state: { plan: response.data } });
+                if (planExists) {
+                  const existing = await getUpskillPlan(sessionId);
+                  navigate('/upskill-plan', { state: { plan: existing.data } });
+                } else {
+                  const response = await createUpskillPlan(sessionId);
+                  navigate('/upskill-plan', { state: { plan: response.data } });
+                }
               } catch (err: any) {
-                // Plan already exists — fetch it instead
-                if (err?.response?.status === 409) {
+                // Plan already exists — fetch it instead (409 fallback)
+                if (!planExists && err?.response?.status === 409) {
                   try {
                     const existing = await getUpskillPlan(sessionId);
                     navigate('/upskill-plan', { state: { plan: existing.data } });
@@ -367,7 +480,9 @@ export default function AdvancedResults() {
                     alert('Failed to load your existing plan. Please try again.');
                   }
                 } else {
-                  alert('Failed to create upskill plan. Please try again.');
+                  alert(planExists
+                    ? 'Failed to load your plan. Please try again.'
+                    : 'Failed to create upskill plan. Please try again.');
                 }
               } finally {
                 setCreatingPlan(false);
@@ -392,17 +507,19 @@ export default function AdvancedResults() {
             {creatingPlan ? (
               <>
                 <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} />
-                Creating Plan...
+                {planExists ? 'Loading Plan...' : 'Creating Plan...'}
               </>
             ) : (
               <>
-                Create My Upskill Plan
+                {planExists ? 'View My Upskill Plan' : 'Create My Upskill Plan'}
                 <ArrowRight size={20} />
               </>
             )}
           </button>
         </motion.div>
       </div>
+
+      <PlanCreationModal isOpen={creatingPlan && !planExists} />
     </div>
   );
 }
