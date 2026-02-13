@@ -355,29 +355,6 @@ export default function AdvancedAssessment() {
             Interactive skill evaluation
           </p>
         </div>
-        {!isComplete && !isInitializing && !cooldownEndsAt && (
-          <button
-            onClick={() => setShowEndConfirmation(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              transition: 'background 0.2s',
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--surface-light)')}
-            onMouseOut={(e) => (e.currentTarget.style.background = 'none')}
-          >
-            <X size={14} />
-            End Assessment
-          </button>
-        )}
       </div>
 
       <div
@@ -499,11 +476,37 @@ export default function AdvancedAssessment() {
           </button>
         </motion.div>
       ) : (
+        <>
+        {!isComplete && !isInitializing && !cooldownEndsAt && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+            <button
+              onClick={() => setShowEndConfirmation(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.background = 'var(--surface-light)')}
+              onMouseOut={(e) => (e.currentTarget.style.background = 'none')}
+            >
+              <X size={14} />
+              End Assessment
+            </button>
+          </div>
+        )}
         <div
           style={{
             display: 'flex',
             gap: '12px',
-            marginTop: '24px',
+            marginTop: !isComplete && !isInitializing && !cooldownEndsAt ? '8px' : '24px',
             padding: '4px',
             paddingBottom: 'env(safe-area-inset-bottom, 4px)',
             background: 'var(--surface)',
@@ -555,6 +558,7 @@ export default function AdvancedAssessment() {
             )}
           </button>
         </div>
+        </>
       )}
 
       <Modal
