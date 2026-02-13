@@ -1,4 +1,4 @@
-import { Sparkles, Check, Info } from 'lucide-react';
+import { Sparkles, Check, Info, Clock } from 'lucide-react';
 import type { SkillDimension } from '../../types/api.types';
 import { splitSkillsByPriority, getSkillsByCodes } from '../../utils/profileUtils';
 import { FluencyCheckbox } from '../ui/FluencyCheckbox';
@@ -21,7 +21,12 @@ export function FluencySelector({
   maxSelections = 3,
 }: FluencySelectorProps) {
   const { priority, remaining } = splitSkillsByPriority(skills, maxSelections);
-  const isAtMax = selectedCodes.size >= maxSelections;
+  const selectionCount = selectedCodes.size;
+  const isAtMax = selectionCount >= maxSelections;
+  const hintColor =
+    selectionCount >= 3 ? '#ef4444'
+    : selectionCount === 2 ? '#f59e0b'
+    : 'var(--text-muted)';
   const selectedSkills = getSkillsByCodes(skills, Array.from(selectedCodes));
 
   const handleChange = (code: string, checked: boolean) => {
@@ -99,13 +104,36 @@ export function FluencySelector({
       <p
         style={{
           fontSize: '13px',
-          color: 'var(--text-muted)',
-          marginBottom: '20px',
+          color: hintColor,
+          marginBottom: selectionCount > 0 ? '8px' : '20px',
           lineHeight: '1.5',
+          fontWeight: selectionCount >= 2 ? '600' : '400',
         }}
       >
-        You can select up to {maxSelections} skills, but we recommend focusing on one at a time for more structured learning.
+        You can select up to {maxSelections} skills, but{' '}
+        <strong style={{ fontWeight: '700' }}>
+          we recommend focusing on one at a time
+        </strong>{' '}
+        for more structured learning.
       </p>
+
+      {/* Assessment time estimate */}
+      {selectionCount > 0 && (
+        <p
+          style={{
+            fontSize: '12px',
+            color: hintColor,
+            marginBottom: '20px',
+            lineHeight: '1.5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Clock size={12} />
+          Estimated assessment time: {12 * selectionCount}–{15 * selectionCount} min
+        </p>
+      )}
 
       {/* Two-column layout */}
       <div

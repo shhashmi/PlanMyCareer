@@ -18,6 +18,7 @@ export default function AssessmentChoice() {
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null)
   const [showMultiFluencyWarning, setShowMultiFluencyWarning] = useState(false)
+  const [pendingAssessmentType, setPendingAssessmentType] = useState<'basic' | 'advanced' | null>(null)
 
   const MAX_SELECTIONS = 3;
 
@@ -87,10 +88,33 @@ export default function AssessmentChoice() {
 
   const handleStartBasicClick = () => {
     if (selectedSkillCodes.size > 1) {
+      setPendingAssessmentType('basic');
       setShowMultiFluencyWarning(true);
       return;
     }
     handleStartBasicAssessment();
+  };
+
+  const handleAdvancedFlow = async () => {
+    await refreshPaidStatus();
+    if (isAdvancedAssessmentBeta()) {
+      navigate('/advanced-assessment', {
+        state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
+      });
+    } else if (isProduction) {
+      setShowComingSoon(true);
+    } else {
+      navigate('/payment');
+    }
+  };
+
+  const handleStartAdvancedClick = async () => {
+    if (selectedSkillCodes.size > 1) {
+      setPendingAssessmentType('advanced');
+      setShowMultiFluencyWarning(true);
+      return;
+    }
+    await handleAdvancedFlow();
   };
 
   const handleStartBasicAssessment = async () => {
@@ -211,18 +235,7 @@ export default function AssessmentChoice() {
           </BasicAssessmentTile>
 
           <AdvancedAssessmentTile
-            onClick={async () => {
-              await refreshPaidStatus();
-              if (isAdvancedAssessmentBeta()) {
-                navigate('/advanced-assessment', {
-                  state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
-                });
-              } else if (isProduction) {
-                setShowComingSoon(true);
-              } else {
-                navigate('/payment');
-              }
-            }}
+            onClick={handleStartAdvancedClick}
             animationDelay={0.2}
             animationDirection="right"
             showPaymentTier={!isPaid}
@@ -268,7 +281,11 @@ export default function AssessmentChoice() {
             <button
               onClick={() => {
                 setShowMultiFluencyWarning(false);
-                handleStartBasicAssessment();
+                if (pendingAssessmentType === 'advanced') {
+                  handleAdvancedFlow();
+                } else {
+                  handleStartBasicAssessment();
+                }
               }}
               className="btn-primary"
               style={{ flex: 1 }}
