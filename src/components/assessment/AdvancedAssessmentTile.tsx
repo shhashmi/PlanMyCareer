@@ -43,7 +43,8 @@ export function AdvancedAssessmentTile({
           setAssessmentData(response.data);
           if (response.data.status === 'in_progress') {
             setAssessmentState('in_progress');
-          } else if (response.data.status === 'completed') {
+          } else {
+            // Covers 'completed', 'terminated', and any other finished state
             setAssessmentState(response.can_start_new ? 'completed_ready' : 'completed_cooldown');
           }
         } else {

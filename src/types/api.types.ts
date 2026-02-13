@@ -323,7 +323,7 @@ export interface ModuleResult {
   module_id: string;
   module_title: string;
   signal_score: number;
-  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'insufficient_data';
+  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'not_demonstrated' | 'insufficient_data';
   questions_asked: number;
   is_focus_area: boolean;
 }
@@ -332,7 +332,7 @@ export interface FluencyResult {
   code: string;
   name: string;
   target_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'insufficient_data';
+  demonstrated_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'not_demonstrated' | 'insufficient_data';
   confidence: 'high' | 'medium' | 'low';
   modules: ModuleResult[];
 }

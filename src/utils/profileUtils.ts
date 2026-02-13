@@ -11,7 +11,7 @@ import type { SkillDimension } from '../types/api.types';
  * @param count - Number of top competencies to return (default: 4)
  * @returns Sorted array of top competencies
  */
-export function getTopCompetencies(skills: SkillDimension[], count: number = 4): SkillDimension[] {
+export function getTopCompetencies(skills: SkillDimension[], count: number = 3): SkillDimension[] {
   return [...skills].sort((a, b) => a.priority - b.priority).slice(0, count);
 }
 
@@ -23,7 +23,7 @@ export function getTopCompetencies(skills: SkillDimension[], count: number = 4):
  */
 export function splitSkillsByPriority(
   skills: SkillDimension[],
-  count: number = 4
+  count: number = 3
 ): { priority: SkillDimension[]; remaining: SkillDimension[] } {
   const sorted = [...skills].sort((a, b) => a.priority - b.priority);
   return {

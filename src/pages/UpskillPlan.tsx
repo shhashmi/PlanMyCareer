@@ -390,17 +390,21 @@ export default function UpskillPlan() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              width: '30px',
-                              height: '30px',
+                              gap: '4px',
+                              height: '32px',
+                              padding: '6px 12px',
                               borderRadius: '8px',
-                              border: '1px solid var(--border)',
-                              background: 'var(--surface-light)',
+                              border: '1px solid rgba(20, 184, 166, 0.3)',
+                              background: 'rgba(20, 184, 166, 0.15)',
                               cursor: 'pointer',
                               color: 'var(--primary-light)',
                               flexShrink: 0,
+                              fontSize: '12px',
+                              fontWeight: '600',
                             }}
                           >
-                            <BookOpen size={14} />
+                            <BookOpen size={16} />
+                            Study
                           </button>
                         )}
                         <span style={{

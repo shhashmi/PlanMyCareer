@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { agentService, buildInitializeRequest, CooldownActiveError } from '../services/agentService';
+import { agentService, buildInitializeRequest, CooldownActiveError, terminateAssessment } from '../services/agentService';
 import type { FluencyProfileResponse, AgentConversationMessage } from '../types/api.types';
 
 export interface ChatMessage {
@@ -27,6 +27,7 @@ interface UseAgentChatReturn {
   error: string | null;
   initialize: (apiProfile: FluencyProfileResponse, selectedSkillCodes?: string[]) => Promise<boolean>;
   sendMessage: (message: string) => void;
+  endAssessment: () => Promise<boolean>;
   reset: () => void;
 }
 
@@ -203,6 +204,33 @@ export function useAgentChat(): UseAgentChatReturn {
   }, [isStreaming, sendMessageInternal]);
 
   /**
+   * End the assessment early by calling the terminate API
+   * Returns true if termination was successful
+   */
+  const endAssessment = useCallback(async (): Promise<boolean> => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+
+    if (!sessionIdRef.current) {
+      setError('No active session to terminate');
+      return false;
+    }
+
+    try {
+      await terminateAssessment(sessionIdRef.current);
+      setIsComplete(true);
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to end assessment';
+      setError(errorMessage);
+      return false;
+    }
+  }, []);
+
+  /**
    * Reset the chat state
    */
   const reset = useCallback(() => {
@@ -242,6 +270,7 @@ export function useAgentChat(): UseAgentChatReturn {
     error,
     initialize,
     sendMessage,
+    endAssessment,
     reset,
   };
 }

@@ -156,6 +156,35 @@ export function streamChat(
       const decoder = new TextDecoder();
       let buffer = '';
 
+      const processSSEBlock = (block: string) => {
+        const lines = block.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6);
+            try {
+              const data: AgentSSEEvent = JSON.parse(jsonStr);
+
+              switch (data.type) {
+                case 'token':
+                  callbacks.onToken(data.content);
+                  break;
+                case 'status':
+                  callbacks.onStatus(data.content);
+                  break;
+                case 'done':
+                  callbacks.onDone(data.content, data.assessmentId, data.assessmentComplete);
+                  break;
+                case 'error':
+                  callbacks.onError(data.content);
+                  break;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE event:', jsonStr, parseError);
+            }
+          }
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -168,35 +197,13 @@ export function streamChat(
 
         for (const event of events) {
           if (!event.trim()) continue;
-
-          // Parse SSE format: "data: {...}"
-          const lines = event.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const jsonStr = line.slice(6);
-              try {
-                const data: AgentSSEEvent = JSON.parse(jsonStr);
-
-                switch (data.type) {
-                  case 'token':
-                    callbacks.onToken(data.content);
-                    break;
-                  case 'status':
-                    callbacks.onStatus(data.content);
-                    break;
-                  case 'done':
-                    callbacks.onDone(data.content, data.assessmentId, data.assessmentComplete);
-                    break;
-                  case 'error':
-                    callbacks.onError(data.content);
-                    break;
-                }
-              } catch (parseError) {
-                console.error('Failed to parse SSE event:', jsonStr, parseError);
-              }
-            }
-          }
+          processSSEBlock(event);
         }
+      }
+
+      // Process any remaining data in the buffer after stream ends
+      if (buffer.trim()) {
+        processSSEBlock(buffer);
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
@@ -219,6 +226,12 @@ export async function getAssessmentStatus(): Promise<AdvancedAssessmentStatusRes
 /** GET /api/v1/agent/assessments/:sessionId/results — get results + transcript */
 export async function getAssessmentResults(sessionId: number): Promise<AdvancedAssessmentResultsResponse> {
   const response = await api.get(`/v1/agent/assessments/${sessionId}/results`);
+  return response.data;
+}
+
+/** POST /api/v1/agent/assessments/:sessionId/terminate — terminate and compute partial results */
+export async function terminateAssessment(sessionId: number): Promise<{ status: string; message: string; data: { results: unknown } }> {
+  const response = await api.post(`/v1/agent/assessments/${sessionId}/terminate`);
   return response.data;
 }
 
@@ -264,6 +277,7 @@ export const agentService = {
   buildInitializeRequest,
   getAssessmentStatus,
   getAssessmentResults,
+  terminateAssessment,
   resetAssessment,
   createUpskillPlan,
   getUpskillPlan,

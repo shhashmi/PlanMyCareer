@@ -2,13 +2,14 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, Loader, AlertCircle, Clock, ArrowLeft, Eye } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader, AlertCircle, Clock, ArrowLeft, Eye, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAgentChat, ChatMessage } from '../hooks/useAgentChat';
 import SEOHead from '../components/SEOHead';
 import { trackAssessmentStart } from '../lib/analytics';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import AutoExpandingTextarea from '../components/ui/AutoExpandingTextarea';
+import { Modal } from '../components/ui';
 
 interface LocationState {
   selectedSkillCodes?: string[];
@@ -32,9 +33,11 @@ export default function AdvancedAssessment() {
     error,
     initialize,
     sendMessage,
+    endAssessment,
   } = useAgentChat();
 
   const [input, setInput] = useState('');
+  const [showEndConfirmation, setShowEndConfirmation] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const latestBotMessageRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
@@ -346,12 +349,35 @@ export default function AdvancedAssessment() {
         >
           <Sparkles size={24} color="white" />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '18px', fontWeight: '600' }}>AI Assessment Assistant</h2>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
             Interactive skill evaluation
           </p>
         </div>
+        {!isComplete && !isInitializing && !cooldownEndsAt && (
+          <button
+            onClick={() => setShowEndConfirmation(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              transition: 'background 0.2s',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--surface-light)')}
+            onMouseOut={(e) => (e.currentTarget.style.background = 'none')}
+          >
+            <X size={14} />
+            End Assessment
+          </button>
+        )}
       </div>
 
       <div
@@ -530,6 +556,40 @@ export default function AdvancedAssessment() {
           </button>
         </div>
       )}
+
+      <Modal
+        isOpen={showEndConfirmation}
+        onClose={() => setShowEndConfirmation(false)}
+        title="End Assessment Early?"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            Completing the full assessment helps us create a more accurate and contextual learning plan tailored to your needs. Are you sure you want to end now?
+          </p>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <button
+              onClick={() => setShowEndConfirmation(false)}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              Continue Assessment
+            </button>
+            <button
+              onClick={async () => {
+                setShowEndConfirmation(false);
+                const success = await endAssessment();
+                if (success) {
+                  navigate('/advanced-results', { state: { sessionId } });
+                }
+              }}
+              className="btn-secondary"
+              style={{ flex: 1, color: 'var(--error)' }}
+            >
+              End &amp; View Results
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardList, Check } from 'lucide-react';
+import { ClipboardList, Check, Clock } from 'lucide-react';
 import { BASIC_ASSESSMENT_FEATURES } from '../../data/assessmentData';
 
 interface BasicAssessmentTileProps {
@@ -13,6 +13,7 @@ interface BasicAssessmentTileProps {
   style?: CSSProperties;
   showPaymentTier?: boolean;
   showDescription?: boolean;
+  estimatedMinutes?: number;
 }
 
 export function BasicAssessmentTile({
@@ -24,7 +25,8 @@ export function BasicAssessmentTile({
   children,
   style,
   showPaymentTier = true,
-  showDescription = true
+  showDescription = true,
+  estimatedMinutes
 }: BasicAssessmentTileProps) {
   const xOffset = animationDirection === 'left' ? -20 : 20;
 
@@ -78,7 +80,10 @@ export function BasicAssessmentTile({
           marginBottom: '24px'
         }}>
           <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-light)' }}>Free</span>
-          <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>5-10 minutes</span>
+          <span style={{ color: 'var(--text-muted)', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Clock size={14} />
+            {estimatedMinutes ? `~${estimatedMinutes} minutes` : '5-10 minutes'}
+          </span>
         </div>
       )}
 

@@ -1489,7 +1489,8 @@ paths:
       summary: Create upskill plan
       description: |
         Creates a weekly upskill plan from the assessment's recommended subtopics.
-        Groups subtopics into weekly study blocks (default 6 hours/week, 1 hour/subtopic).
+        Groups subtopics into weekly study blocks (default 7 hours/week, 1 hour/subtopic, max 3 weeks).
+        Items that don't fit within the specified duration are dropped (lowest priority excluded).
         Idempotent — first call creates (201), subsequent calls return existing (200).
       security:
         - cookieAuth: []
@@ -1501,6 +1502,25 @@ paths:
             type: integer
           description: The assessment session ID
           example: 42
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                max_weeks:
+                  type: integer
+                  minimum: 1
+                  default: 3
+                  description: Maximum number of weeks for the plan. Items that don't fit are dropped.
+                  example: 3
+                hours_per_week:
+                  type: integer
+                  minimum: 1
+                  default: 7
+                  description: Hours per week available for study. Determines items per week (hours_per_week / 1 hour per subtopic).
+                  example: 7
       responses:
         '201':
           description: Plan created successfully
@@ -2772,7 +2792,7 @@ components:
           enum: [beginner, intermediate, advanced, expert]
         demonstrated_level:
           type: string
-          enum: [beginner, intermediate, advanced, expert, insufficient_data]
+          enum: [beginner, intermediate, advanced, expert, not_demonstrated, insufficient_data]
         modules:
           type: array
           items:
@@ -2806,7 +2826,7 @@ components:
           example: 2.1
         demonstrated_level:
           type: string
-          enum: [beginner, intermediate, advanced, expert, insufficient_data]
+          enum: [beginner, intermediate, advanced, expert, not_demonstrated, insufficient_data]
         assessed:
           type: boolean
           description: Whether this module was actually assessed (false for unassessed/terminated modules)

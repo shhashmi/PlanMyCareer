@@ -1,10 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
-import { ComingSoonModal, ErrorAlert } from '../components/ui';
+import { ComingSoonModal, ErrorAlert, Modal } from '../components/ui';
 import { BasicAssessmentTile, AdvancedAssessmentTile, FluencySelector } from '../components/assessment';
 import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 import { splitSkillsByPriority, getSkillNamesFromCodes } from '../utils/profileUtils';
@@ -17,16 +17,18 @@ export default function AssessmentChoice() {
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null)
+  const [showMultiFluencyWarning, setShowMultiFluencyWarning] = useState(false)
 
-  const MAX_SELECTIONS = 4;
+  const MAX_SELECTIONS = 3;
 
   // Initialize selected skill codes with top priority skills
   const [selectedSkillCodes, setSelectedSkillCodes] = useState<Set<string>>(() => {
     if (!apiProfile?.profile) return new Set();
     const sorted = splitSkillsByPriority(apiProfile.profile, MAX_SELECTIONS);
-    return new Set(sorted.priority.map(s => s.code));
+    return new Set([sorted.priority[0]?.code].filter(Boolean));
   });
 
+  const estimatedMinutes = selectedSkillCodes.size * 12;
   const isProduction = import.meta.env.PROD
 
   // Get selected skill names for API
@@ -82,6 +84,14 @@ export default function AssessmentChoice() {
       </div>
     )
   }
+
+  const handleStartBasicClick = () => {
+    if (selectedSkillCodes.size > 1) {
+      setShowMultiFluencyWarning(true);
+      return;
+    }
+    handleStartBasicAssessment();
+  };
 
   const handleStartBasicAssessment = async () => {
     if (!apiProfile) {
@@ -173,12 +183,13 @@ export default function AssessmentChoice() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
           <BasicAssessmentTile
-            onClick={handleStartBasicAssessment}
+            onClick={handleStartBasicClick}
             cursor={startingAssessment ? 'wait' : 'pointer'}
             dimmed={startingAssessment}
             animationDelay={0.1}
             animationDirection="left"
             showPaymentTier={!isPaid}
+            estimatedMinutes={estimatedMinutes}
           >
             <button
               className="btn-primary"
@@ -223,6 +234,50 @@ export default function AssessmentChoice() {
         isOpen={showComingSoon}
         onClose={() => setShowComingSoon(false)}
       />
+
+      <Modal
+        isOpen={showMultiFluencyWarning}
+        onClose={() => setShowMultiFluencyWarning(false)}
+        title="Assess Multiple Fluencies?"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            Assessing fewer fluencies leads to more focused learning and a shorter assessment. You can always assess remaining fluencies later.
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            background: 'rgba(245, 158, 11, 0.1)',
+            borderRadius: '10px',
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+          }}>
+            <Clock size={16} color="var(--accent)" />
+            {selectedSkillCodes.size} fluencies &times; 12 min = ~{selectedSkillCodes.size * 12} min
+          </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <button
+              onClick={() => setShowMultiFluencyWarning(false)}
+              className="btn-secondary"
+              style={{ flex: 1 }}
+            >
+              Reduce Fluencies
+            </button>
+            <button
+              onClick={() => {
+                setShowMultiFluencyWarning(false);
+                handleStartBasicAssessment();
+              }}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              Continue with {selectedSkillCodes.size} Fluencies
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

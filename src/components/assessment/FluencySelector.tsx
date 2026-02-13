@@ -1,4 +1,4 @@
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles, Check, Info } from 'lucide-react';
 import type { SkillDimension } from '../../types/api.types';
 import { splitSkillsByPriority, getSkillsByCodes } from '../../utils/profileUtils';
 import { FluencyCheckbox } from '../ui/FluencyCheckbox';
@@ -18,7 +18,7 @@ export function FluencySelector({
   skills,
   selectedCodes,
   onSelectionChange,
-  maxSelections = 4,
+  maxSelections = 3,
 }: FluencySelectorProps) {
   const { priority, remaining } = splitSkillsByPriority(skills, maxSelections);
   const isAtMax = selectedCodes.size >= maxSelections;
@@ -194,6 +194,25 @@ export function FluencySelector({
                 }}
               >
                 Select {maxSelections - selectedSkills.length} more
+              </div>
+            )}
+            {selectedSkills.length > 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '6px',
+                  marginTop: '12px',
+                  padding: '10px 12px',
+                  background: 'rgba(245, 158, 11, 0.08)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  lineHeight: '1.5',
+                }}
+              >
+                <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} color="var(--accent)" />
+                <span>Tip: Assessing one fluency at a time leads to more focused learning. You can always assess more later.</span>
               </div>
             )}
           </div>
