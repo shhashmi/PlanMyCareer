@@ -1,39 +1,18 @@
 import { motion } from 'framer-motion';
-import { Check, X, Sparkles, Zap, Crown } from 'lucide-react';
+import { Check, Sparkles, Crown } from 'lucide-react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { useApp } from '../context/AppContext';
 import { GetStartedCTA } from '../components/GetStartedCTA';
 import SEOHead from '../components/SEOHead';
-import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 
-function getPlans(isBeta: boolean) {
+function getPlans() {
   return [
     {
-      name: 'Basic Assessment',
-      price: 'Free',
-      priceSubtext: 'No credit card required',
-      description: 'Quick AI skill evaluation to get you started',
-      icon: Zap,
-      color: '#14b8a6',
-      features: [
-        { text: 'AI skill gap analysis', included: true },
-        { text: 'Basic competency scoring', included: true },
-        { text: 'Instant results', included: true },
-        { text: 'General learning recommendations', included: true },
-        { text: 'Detailed weekly learning plan', included: false },
-        { text: 'Hands-on assignments', included: false },
-        { text: 'Curated resource library', included: false },
-        { text: 'Progress tracking', included: false }
-      ],
-      cta: 'Start Free Assessment',
-      highlighted: false
-    },
-    {
       name: 'Advanced Assessment',
-      price: isBeta ? 'Free' : '$20',
-      originalPrice: isBeta ? '$20' : undefined,
-      priceSubtext: isBeta ? 'Complimentary during Beta' : 'One-time payment',
-      isBeta,
+      price: 'Free',
+      originalPrice: '$20',
+      priceSubtext: 'Complimentary during Beta',
+      isBeta: true,
       description: 'Comprehensive analysis with personalized learning plan',
       icon: Crown,
       color: '#6366f1',
@@ -56,7 +35,7 @@ function getPlans(isBeta: boolean) {
 export default function Pricing() {
   const navigate = useNavigateWithParams();
   const { isPaid } = useApp();
-  const plans = getPlans(isAdvancedAssessmentBeta());
+  const plans = getPlans();
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
@@ -101,7 +80,7 @@ export default function Pricing() {
             maxWidth: '600px',
             margin: '0 auto'
           }}>
-            Start with a free basic assessment or unlock the full potential with our advanced analysis.
+            Unlock the full potential with our advanced analysis and personalized learning plan.
           </p>
         </motion.div>
       </section>
@@ -109,10 +88,10 @@ export default function Pricing() {
       {/* Pricing Cards */}
       <section className="container" style={{ padding: '40px 24px 80px' }}>
         <div style={{
-          maxWidth: '900px',
+          maxWidth: '480px',
           margin: '0 auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+          gridTemplateColumns: '1fr',
           gap: '24px'
         }}>
           {plans.map((plan, index) => (
@@ -122,35 +101,29 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
               style={{
-                background: plan.highlighted
-                  ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)'
-                  : 'var(--surface)',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
                 borderRadius: '20px',
                 padding: '32px',
-                border: plan.highlighted
-                  ? '2px solid rgba(99, 102, 241, 0.5)'
-                  : '1px solid var(--border)',
+                border: '2px solid rgba(99, 102, 241, 0.5)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column'
               }}
             >
-              {plan.highlighted && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-12px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'var(--gradient-1)',
-                  padding: '6px 16px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: 'white'
-                }}>
-                  MOST POPULAR
-                </div>
-              )}
+              <div style={{
+                position: 'absolute',
+                top: '-12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'var(--gradient-1)',
+                padding: '6px 16px',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'white'
+              }}>
+                MOST POPULAR
+              </div>
 
               {/* Plan Header */}
               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -168,20 +141,18 @@ export default function Pricing() {
                 </div>
                 <h2 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   {plan.name}
-                  {plan.isBeta && (
-                    <span style={{
-                      background: 'linear-gradient(135deg, #14b8a6, #8b5cf6)',
-                      color: 'white',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      letterSpacing: '0.5px',
-                      lineHeight: '1.4'
-                    }}>
-                      BETA
-                    </span>
-                  )}
+                  <span style={{
+                    background: 'linear-gradient(135deg, #14b8a6, #8b5cf6)',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    letterSpacing: '0.5px',
+                    lineHeight: '1.4'
+                  }}>
+                    BETA
+                  </span>
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>
                   {plan.description}
@@ -189,11 +160,9 @@ export default function Pricing() {
                 {!isPaid && (
                   <>
                     <div style={{ marginBottom: '4px' }}>
-                      {plan.originalPrice && (
-                        <span style={{ fontSize: '32px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through', marginRight: '10px' }}>
-                          {plan.originalPrice}
-                        </span>
-                      )}
+                      <span style={{ fontSize: '32px', fontWeight: '600', color: 'var(--text-secondary)', textDecoration: 'line-through', marginRight: '10px' }}>
+                        {plan.originalPrice}
+                      </span>
                       <span style={{ fontSize: '42px', fontWeight: '700', color: plan.color }}>
                         {plan.price}
                       </span>
@@ -218,14 +187,10 @@ export default function Pricing() {
                       borderBottom: i < plan.features.length - 1 ? '1px solid var(--border)' : 'none'
                     }}
                   >
-                    {feature.included ? (
-                      <Check size={18} color="#14b8a6" />
-                    ) : (
-                      <X size={18} color="var(--text-muted)" />
-                    )}
+                    <Check size={18} color="#14b8a6" />
                     <span style={{
                       fontSize: '14px',
-                      color: feature.included ? 'var(--text-secondary)' : 'var(--text-muted)'
+                      color: 'var(--text-secondary)'
                     }}>
                       {feature.text}
                     </span>

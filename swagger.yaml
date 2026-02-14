@@ -36,11 +36,13 @@ tags:
   - name: Email
     description: Email enquiry endpoints
   - name: Agent
-    description: AI Assessment Agent (feature-flagged, SSE streaming)
+    description: AI Assessment Agent (paid, SSE streaming)
   - name: AdvancedAssessments
     description: Advanced (agent-based) assessment management — eligibility, results, reset
   - name: StudyMaterial
     description: Study material content for paid users
+  - name: Preview Access
+    description: Request access to preview features
 
 paths:
   /:
@@ -1045,26 +1047,9 @@ paths:
         2. If an in-progress assessment exists, it is returned for resume (HTTP 200).
         3. A 30-day cooldown applies after a completed assessment (HTTP 409).
 
-        Requires authentication (JWT cookie) and a valid feature flag query parameter.
-
-        **Feature flag**: Pass `?ff=<AGENT_FEATURE_FLAG>` — requests without a valid flag receive 404.
+        Requires authentication (JWT cookie) and a paid subscription.
       security:
         - cookieAuth: []
-      parameters:
-        - name: ff
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Feature flag value (must match AGENT_FEATURE_FLAG env var)
-          example: "aiagent_x7k9m2"
-        - name: strategy
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [module_based, fluency_based]
-          description: Optional A/B strategy override for question generation
       requestBody:
         required: true
         content:
@@ -1106,8 +1091,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '404':
-          description: Invalid or missing feature flag (endpoint hidden)
+        '403':
+          description: Paid subscription required
           content:
             application/json:
               schema:
@@ -1132,9 +1117,7 @@ paths:
       summary: AI Assessment Agent chat (SSE)
       description: |
         Conversational AI Fluency Assessment endpoint. Streams responses via Server-Sent Events (SSE).
-        Requires authentication (JWT cookie) and a valid feature flag query parameter.
-
-        **Feature flag**: Pass `?ff=<AGENT_FEATURE_FLAG>` — requests without a valid flag receive 404.
+        Requires authentication (JWT cookie) and a paid subscription.
 
         **Streaming**: The response is a `text/event-stream`. Each line is `data: <JSON>\n\n` with event objects.
 
@@ -1148,14 +1131,6 @@ paths:
         The agent uses persistent server-side state (file-based) keyed by `assessment_id`.
       security:
         - cookieAuth: []
-      parameters:
-        - name: ff
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Feature flag value (must match AGENT_FEATURE_FLAG env var)
-          example: "aiagent_x7k9m2"
       requestBody:
         required: true
         content:
@@ -1212,8 +1187,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '404':
-          description: Invalid or missing feature flag (endpoint hidden)
+        '403':
+          description: Paid subscription required
           content:
             application/json:
               schema:
@@ -1670,6 +1645,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /api/v1/preview-access:
+    post:
+      tags:
+        - Preview Access
+      summary: Request preview access
+      description: |
+        Submit a request for preview feature access. Returns 409 if a request already exists for the authenticated user.
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          description: Preview access request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      user_id:
+                        type: integer
+                        example: 123
+                      request_date:
+                        type: string
+                        format: date-time
+                      is_granted:
+                        type: boolean
+                        example: false
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Preview access request already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "fail"
+                  message:
+                    type: string
+                    example: "Preview access request already exists."
 
   /api/v1/agent/assessments/{sessionId}/upskill-plan/items:
     patch:

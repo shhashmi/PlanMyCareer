@@ -12,8 +12,7 @@ import { assessmentService } from '../services/assessmentService';
 import { getAssessmentStatus } from '../services/agentService';
 import { ErrorAlert, ComingSoonModal, Modal, ProgressBar } from '../components/ui';
 import { getLevelColor } from '../data/skillsData';
-import { isAdvancedAssessmentBeta } from '../data/assessmentData';
-import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
+import { AdvancedAssessmentTile } from '../components/assessment';
 import SEOHead from '../components/SEOHead';
 import type { AdvancedAssessmentSummary } from '../types/api.types';
 import type { IncompleteAssessmentSession } from '../types/context.types';
@@ -26,6 +25,7 @@ export default function AssessmentProgress() {
     profileData,
     skills,
     apiProfile,
+    isPaid,
     refreshPaidStatus
   } = useApp();
 
@@ -41,8 +41,6 @@ export default function AssessmentProgress() {
   const [showResetWarning, setShowResetWarning] = useState(false);
   const [assessedSkillNames, setAssessedSkillNames] = useState<string[] | null>(null);
   const [skillsLoading, setSkillsLoading] = useState(true);
-
-  const isProduction = import.meta.env.PROD;
 
   const basicInProgress = !!basicAssessment;
   const advancedInProgress = advancedAssessment?.status === 'in_progress';
@@ -206,19 +204,16 @@ export default function AssessmentProgress() {
 
   const handleAdvancedClick = async () => {
     await refreshPaidStatus();
+    if (!isPaid) {
+      setShowComingSoon(true);
+      return;
+    }
     // If basic is in progress, show reset warning before starting advanced
     if (basicInProgress) {
       setShowResetWarning(true);
       return;
     }
-
-    if (isAdvancedAssessmentBeta()) {
-      navigate('/advanced-assessment');
-    } else if (isProduction) {
-      setShowComingSoon(true);
-    } else {
-      navigate('/payment');
-    }
+    navigate('/advanced-assessment');
   };
 
   const handleConfirmResetAndStartAdvanced = async () => {
@@ -410,102 +405,16 @@ export default function AssessmentProgress() {
           </div>
         )}
 
-        {/* SECTION 3: Assessment Tiles Grid */}
+        {/* SECTION 3: Assessment Tile */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: advancedInProgress
-            ? '1fr'
-            : 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+          gridTemplateColumns: '1fr',
           gap: '24px',
           alignItems: 'start',
-          maxWidth: advancedInProgress ? '480px' : undefined,
-          margin: advancedInProgress ? '0 auto' : undefined
+          maxWidth: '480px',
+          margin: '0 auto'
         }}>
-
-          {/* Basic Assessment Tile — hidden when advanced (or both) in progress */}
-          {basicInProgress && !advancedInProgress && (
-            <BasicAssessmentTile
-              animationDelay={0.2}
-              animationDirection="left"
-              style={{ border: '2px solid var(--primary)' }}
-              showPaymentTier={false}
-              showDescription={false}
-            >
-              {/* Progress Section */}
-              <div style={{
-                background: 'var(--surface-light)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '24px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Progress</span>
-                  <span style={{ color: 'var(--primary)', fontWeight: '600' }}>
-                    {basicAssessment.answered_count} / {basicAssessment.total_questions} questions
-                  </span>
-                </div>
-                <ProgressBar progress={progress} height={8} />
-                <p style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'right', marginTop: '8px' }}>
-                  {progress}% complete
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: 'auto' }}>
-                <button
-                  onClick={handleReset}
-                  disabled={resetLoading}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '14px 20px',
-                    background: 'transparent',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    color: 'var(--text-secondary)',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    cursor: resetLoading ? 'wait' : 'pointer',
-                    opacity: resetLoading ? 0.7 : 1
-                  }}
-                >
-                  <RotateCcw size={18} />
-                  {resetLoading ? 'Resetting...' : 'Reset'}
-                </button>
-
-                <button
-                  onClick={handleResume}
-                  disabled={loading}
-                  style={{
-                    flex: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '14px 20px',
-                    background: 'var(--gradient-1)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    cursor: loading ? 'wait' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  <PlayCircle size={18} />
-                  {loading ? 'Resuming...' : 'Resume Assessment'}
-                </button>
-              </div>
-            </BasicAssessmentTile>
-          )}
-
-          {/* Advanced Assessment Tile */}
           {advancedInProgress ? (
-            // Reduced tile: no payment/description, tile handles its own status/buttons
             <AdvancedAssessmentTile
               onClick={() => navigate('/advanced-assessment')}
               animationDelay={0.2}
@@ -515,11 +424,11 @@ export default function AssessmentProgress() {
               style={{ border: '2px solid var(--primary)' }}
             />
           ) : (
-            // Full tile when only basic in progress
             <AdvancedAssessmentTile
               onClick={handleAdvancedClick}
               animationDelay={0.3}
               animationDirection="right"
+              showPaymentTier={!isPaid}
               style={{ border: '2px solid var(--border)' }}
             />
           )}

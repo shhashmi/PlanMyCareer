@@ -313,6 +313,13 @@ export default function Skills() {
             Take Assessment
             <ArrowRight size={20} />
           </button>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            marginTop: '12px',
+          }}>
+            Get a personalized AI-powered learning plan
+          </p>
         </motion.div>
       </div>
     </div>

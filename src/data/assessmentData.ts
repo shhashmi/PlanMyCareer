@@ -33,10 +33,3 @@ export const ADVANCED_ASSESSMENT_INFO = {
   priceNote: 'one-time',
   features: ADVANCED_ASSESSMENT_FEATURES
 };
-
-export function isAdvancedAssessmentBeta(): boolean {
-  const param = import.meta.env.VITE_BETA_FF_PARAM;
-  const value = import.meta.env.VITE_BETA_FF_VALUE;
-  if (!param || !value) return false;
-  return new URLSearchParams(window.location.search).get(param) === value;
-}

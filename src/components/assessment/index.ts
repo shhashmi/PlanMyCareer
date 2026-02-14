@@ -1,4 +1,3 @@
-export { BasicAssessmentTile } from './BasicAssessmentTile';
 export { AdvancedAssessmentTile } from './AdvancedAssessmentTile';
 export { FluencySelector } from './FluencySelector';
 export type { FluencySelectorProps } from './FluencySelector';

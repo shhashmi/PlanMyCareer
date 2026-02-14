@@ -232,29 +232,31 @@ class AssessmentService {
    * Returns the session summary if exists, null otherwise
    */
   async checkIncompleteAssessment(): Promise<ApiResponse<IncompleteAssessmentCheckResponse['session'] | null>> {
-    try {
-      const response = await api.get<{ status: string; data: IncompleteAssessmentCheckResponse }>('/v1/assessments/incomplete');
-      const { has_incomplete, session } = response.data.data;
-      return {
-        success: true,
-        data: has_incomplete ? session : null,
-      };
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        return {
-          success: true,
-          data: null,
-        };
-      }
-      return {
-        success: false,
-        error: {
-          status: error.response?.status || 0,
-          message: error.response?.data?.message || error.message || 'Failed to check incomplete assessment',
-          details: error.response?.data,
-        },
-      };
-    }
+    // API call disabled — always return no incomplete assessment
+    return { success: true, data: null };
+    // try {
+    //   const response = await api.get<{ status: string; data: IncompleteAssessmentCheckResponse }>('/v1/assessments/incomplete');
+    //   const { has_incomplete, session } = response.data.data;
+    //   return {
+    //     success: true,
+    //     data: has_incomplete ? session : null,
+    //   };
+    // } catch (error: any) {
+    //   if (error.response?.status === 404) {
+    //     return {
+    //       success: true,
+    //       data: null,
+    //     };
+    //   }
+    //   return {
+    //     success: false,
+    //     error: {
+    //       status: error.response?.status || 0,
+    //       message: error.response?.data?.message || error.message || 'Failed to check incomplete assessment',
+    //       details: error.response?.data,
+    //     },
+    //   };
+    // }
   }
 
   /**

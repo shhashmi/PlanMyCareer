@@ -232,6 +232,13 @@ export default function Home() {
           >
             Start Free Assessment <ArrowRight size={20} />
           </button>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            marginTop: '12px',
+          }}>
+            Get a personalized AI-powered learning plan
+          </p>
 
           <motion.div
             initial={{ opacity: 0 }}

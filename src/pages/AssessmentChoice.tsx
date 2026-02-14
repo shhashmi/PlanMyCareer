@@ -1,24 +1,20 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { assessmentService } from '../services/assessmentService';
 import { ComingSoonModal, ErrorAlert, Modal } from '../components/ui';
-import { BasicAssessmentTile, AdvancedAssessmentTile, FluencySelector } from '../components/assessment';
-import { isAdvancedAssessmentBeta } from '../data/assessmentData';
-import { splitSkillsByPriority, getSkillNamesFromCodes } from '../utils/profileUtils';
+import { AdvancedAssessmentTile, FluencySelector } from '../components/assessment';
+import { splitSkillsByPriority } from '../utils/profileUtils';
 import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
   const navigate = useNavigateWithParams()
-  const { isLoggedIn, skills, loading, apiProfile, isPaid, refreshPaidStatus } = useApp()
-  const [startingAssessment, setStartingAssessment] = useState(false)
+  const { isLoggedIn, loading, apiProfile, isPaid, refreshPaidStatus } = useApp()
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null)
   const [showMultiFluencyWarning, setShowMultiFluencyWarning] = useState(false)
-  const [pendingAssessmentType, setPendingAssessmentType] = useState<'basic' | 'advanced' | null>(null)
 
   const MAX_SELECTIONS = 3;
 
@@ -28,15 +24,6 @@ export default function AssessmentChoice() {
     const sorted = splitSkillsByPriority(apiProfile.profile, MAX_SELECTIONS);
     return new Set([sorted.priority[0]?.code].filter(Boolean));
   });
-
-  const estimatedMinutes = selectedSkillCodes.size * 12;
-  const isProduction = import.meta.env.PROD
-
-  // Get selected skill names for API
-  const selectedSkillNames = useMemo(() => {
-    if (!apiProfile?.profile) return [];
-    return getSkillNamesFromCodes(apiProfile.profile, Array.from(selectedSkillCodes));
-  }, [apiProfile, selectedSkillCodes]);
 
   const handleFluencyChange = useCallback((codes: Set<string>) => {
     setSelectionWarning(null);
@@ -86,62 +73,24 @@ export default function AssessmentChoice() {
     )
   }
 
-  const handleStartBasicClick = () => {
-    if (selectedSkillCodes.size > 1) {
-      setPendingAssessmentType('basic');
-      setShowMultiFluencyWarning(true);
-      return;
-    }
-    handleStartBasicAssessment();
-  };
-
   const handleAdvancedFlow = async () => {
     await refreshPaidStatus();
-    if (isAdvancedAssessmentBeta()) {
+    if (isPaid) {
       navigate('/advanced-assessment', {
         state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
       });
-    } else if (isProduction) {
-      setShowComingSoon(true);
     } else {
-      navigate('/payment');
+      setShowComingSoon(true);
     }
   };
 
   const handleStartAdvancedClick = async () => {
     if (selectedSkillCodes.size > 1) {
-      setPendingAssessmentType('advanced');
       setShowMultiFluencyWarning(true);
       return;
     }
     await handleAdvancedFlow();
   };
-
-  const handleStartBasicAssessment = async () => {
-    if (!apiProfile) {
-      setError('Profile data not available. Please complete your profile first.')
-      return
-    }
-
-    setStartingAssessment(true)
-    setError(null)
-
-    try {
-      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkillNames)
-      const response = await assessmentService.startAssessment(request)
-
-      if (response.success && response.data) {
-        // Store session data and navigate to assessment
-        navigate('/basic-assessment', { state: { assessmentData: response.data } })
-      } else {
-        setError(response.error?.message || 'Failed to start assessment')
-      }
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setStartingAssessment(false)
-    }
-  }
 
   return (
     <div style={{
@@ -159,7 +108,7 @@ export default function AssessmentChoice() {
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
           <h1 style={{ fontSize: '36px', fontWeight: '700', marginBottom: '12px' }}>
-            Choose Your Assessment Type
+            Start Your Assessment
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
             Select how you'd like to assess your AI skills
@@ -205,40 +154,13 @@ export default function AssessmentChoice() {
           </motion.div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-          <BasicAssessmentTile
-            onClick={handleStartBasicClick}
-            cursor={startingAssessment ? 'wait' : 'pointer'}
-            dimmed={startingAssessment}
-            animationDelay={0.1}
-            animationDirection="left"
-            showPaymentTier={!isPaid}
-            estimatedMinutes={estimatedMinutes}
-          >
-            <button
-              className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center' }}
-              disabled={startingAssessment}
-            >
-              {startingAssessment ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  Start Basic Assessment
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </BasicAssessmentTile>
-
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <AdvancedAssessmentTile
             onClick={handleStartAdvancedClick}
             animationDelay={0.2}
             animationDirection="right"
             showPaymentTier={!isPaid}
+            style={{ maxWidth: '480px', width: '100%' }}
           />
         </div>
       </div>
@@ -281,11 +203,7 @@ export default function AssessmentChoice() {
             <button
               onClick={() => {
                 setShowMultiFluencyWarning(false);
-                if (pendingAssessmentType === 'advanced') {
-                  handleAdvancedFlow();
-                } else {
-                  handleStartBasicAssessment();
-                }
+                handleAdvancedFlow();
               }}
               className="btn-primary"
               style={{ flex: 1 }}

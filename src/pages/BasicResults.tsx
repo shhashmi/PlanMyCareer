@@ -7,7 +7,6 @@ import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
 import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner, ComingSoonModal } from '../components/ui';
 import { getCompetencyStatus, calculatePercentage, getDifficultyOrder } from '../utils/statusHelpers';
-import { isAdvancedAssessmentBeta } from '../data/assessmentData';
 import SEOHead from '../components/SEOHead';
 import { trackAssessmentComplete } from '../lib/analytics';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
@@ -31,7 +30,6 @@ export default function BasicResults() {
   const [aggregateError, setAggregateError] = useState<string | null>(null);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
-  const isProduction = import.meta.env.PROD;
   const hasTrackedComplete = useRef(false);
 
   // Fetch summary and dimensions on mount
@@ -346,12 +344,10 @@ export default function BasicResults() {
           <button
             onClick={async () => {
               await refreshPaidStatus();
-              if (isAdvancedAssessmentBeta()) {
+              if (isPaid) {
                 navigate('/advanced-assessment');
-              } else if (isProduction) {
-                setShowComingSoon(true);
               } else {
-                navigate('/payment');
+                setShowComingSoon(true);
               }
             }}
             className="btn-primary"
@@ -359,16 +355,14 @@ export default function BasicResults() {
           >
             {isPaid ? (
               'Get Advanced Assessment'
-            ) : isAdvancedAssessmentBeta() ? (
+            ) : (
               <>
                 Get Advanced Assessment — <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>$20</span> Free
               </>
-            ) : (
-              'Get Advanced Assessment — $20'
             )}
             <ArrowRight size={18} />
           </button>
-          {!isPaid && isAdvancedAssessmentBeta() && (
+          {!isPaid && (
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '12px' }}>
               Complimentary during Beta
             </p>

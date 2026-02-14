@@ -19,7 +19,6 @@ import type {
   StudyMaterialContent,
 } from '../types/api.types';
 import { getTopCompetencies } from '../utils/profileUtils';
-import { buildUrlWithParams } from '../utils/queryParamStore';
 import api from './api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -91,7 +90,7 @@ export interface StreamCallbacks {
  * Throws CooldownActiveError if user is in cooldown period
  */
 export async function initialize(request: AgentInitializeRequest): Promise<AgentInitializeResponse> {
-  const url = buildUrlWithParams(`${API_BASE_URL}/v1/agent/initialize`);
+  const url = `${API_BASE_URL}/v1/agent/initialize`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -127,7 +126,7 @@ export function streamChat(
   callbacks: StreamCallbacks,
 ): AbortController {
   const controller = new AbortController();
-  const url = buildUrlWithParams(`${API_BASE_URL}/v1/agent/chat`);
+  const url = `${API_BASE_URL}/v1/agent/chat`;
 
   (async () => {
     try {
