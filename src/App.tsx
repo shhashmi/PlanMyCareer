@@ -34,6 +34,7 @@ const FAQ = lazy(() => import('./pages/FAQ'));
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const StudyMaterial = lazy(() => import('./pages/StudyMaterial'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function AppRoutes() {
   const { search } = useLocation();
@@ -69,6 +70,7 @@ function AppRoutes() {
       <Route path="/resume-assessment" element={<ProtectedRoute><ResumeAssessment /></ProtectedRoute>} />
       <Route path="/assessment-progress" element={<ProtectedRoute><AssessmentProgress /></ProtectedRoute>} />
       <Route path="/study-material/:track/:fluencyCode/:subtopicId" element={<ProtectedRoute><StudyMaterial /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
     </>
@@ -86,7 +88,7 @@ function App() {
     <div className="app" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <ErrorBoundary>
         <Header />
-        <main style={{ flex: 1 }}>
+        <main id="main-content" style={{ flex: 1 }}>
           <AppRoutes />
         </main>
         <Footer />

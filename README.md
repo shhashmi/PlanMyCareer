@@ -97,6 +97,7 @@ Users see a **Fluency Selector** where they pick up to 4 AI skill dimensions to 
 - Real-time streaming responses
 - Much deeper analysis with module-level scoring
 - Badge: **"RECOMMENDED"**
+- functionality available to selected users through invitation only
 
 ### Step 5a: Basic Assessment Flow (/basic-assessment)
 - 15 questions presented one at a time

@@ -3,13 +3,28 @@ const STORAGE_KEY = 'query_params';
 // Params injected by OAuth redirects that should never be persisted
 const TRANSIENT_PARAMS = new Set(['error', 'code', 'state']);
 
+let initialLoadHandled = false;
+
 /**
- * Merge any non-transient query params from the current URL into
- * sessionStorage. Runs on every location change so params added at
- * any point in the session are preserved until the tab is closed.
+ * On the very first call (full page load), reset stored params to match
+ * only the current URL so that manually removed params are respected.
+ * On subsequent in-app navigations, merge as before.
  */
 export function captureQueryParams(search: string): void {
   const params = new URLSearchParams(search);
+
+  if (!initialLoadHandled) {
+    initialLoadHandled = true;
+    const fresh: Record<string, string> = {};
+    params.forEach((value, key) => {
+      if (!TRANSIENT_PARAMS.has(key)) {
+        fresh[key] = value;
+      }
+    });
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+    return;
+  }
+
   const existing = getStoredQueryParams();
   let changed = false;
 
@@ -56,6 +71,25 @@ export function buildUrlWithParams(path: string): string {
 
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
+}
+
+/**
+ * Remove specific params from sessionStorage.
+ */
+export function removeStoredQueryParams(...keys: string[]): void {
+  const stored = getStoredQueryParams();
+  let changed = false;
+
+  for (const key of keys) {
+    if (key in stored) {
+      delete stored[key];
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+  }
 }
 
 /**

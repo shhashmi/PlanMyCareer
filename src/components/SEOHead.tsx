@@ -35,6 +35,7 @@ export default function SEOHead({ title, description, noIndex, structuredData }:
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:type" content="website" />
       <meta property="og:image" content={DEFAULT_IMAGE} />
+      <meta property="og:image:alt" content="AI Fluens — AI Skill Gap Analysis & Personalized Upskilling Plans" />
       <meta property="og:site_name" content={SITE_NAME} />
 
       {/* Twitter */}

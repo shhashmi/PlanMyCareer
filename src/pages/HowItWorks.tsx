@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { UserCircle, ClipboardCheck, Route, ArrowRight, Sparkles } from 'lucide-react';
 import { GetStartedCTA } from '../components/GetStartedCTA';
@@ -28,9 +29,22 @@ const steps = [
 ];
 
 export default function HowItWorks() {
+  const howToStructuredData = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Assess Your AI Skills and Get a Personalized Learning Plan',
+    description: 'Discover your AI skill gaps and build a personalized learning path in just three simple steps with AI Fluens.',
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.title,
+      text: step.description,
+    })),
+  }), []);
+
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
-      <SEOHead />
+      <SEOHead structuredData={howToStructuredData} />
       {/* Hero Section */}
       <section style={{
         padding: '60px 24px',

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { User, LogOut, LogIn, ChevronDown, Menu, X } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useSmartNavigation } from "../hooks/useSmartNavigation";
-import { useNavigateWithParams } from "../hooks/useNavigateWithParams";
+import { buildUrlWithParams } from "../utils/queryParamStore";
 import logoImage from "@assets/logo-1_1767800057394.png";
 
 const navLinks = [
@@ -14,7 +14,6 @@ const navLinks = [
 ];
 
 export default function Header() {
-  const navigate = useNavigateWithParams();
   const location = useLocation();
   const { isLoggedIn, user, logout, isPaid } = useApp();
   const { smartNavigate, isNavigating } = useSmartNavigation();
@@ -39,11 +38,18 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   const isActivePath = (path: string) => location.pathname === path;
   const filteredNavLinks = navLinks.filter(link => !(isPaid && link.path === '/pricing'));
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (isLoggedIn) {
+      e.preventDefault();
+      smartNavigate();
+    }
+  };
 
   return (
     <header
@@ -65,20 +71,17 @@ export default function Header() {
           padding: "4px 24px",
         }}
       >
-        {/* Logo */}
-        <div
-          onClick={() => {
-            if (isLoggedIn) {
-              smartNavigate();
-            } else {
-              navigate("/");
-            }
-          }}
+        {/* Logo — crawlable <a> tag, smart navigation for logged-in users */}
+        <Link
+          to="/"
+          onClick={handleLogoClick}
+          aria-label="AI Fluens — Home"
           style={{
             display: "flex",
             alignItems: "center",
             cursor: isNavigating ? "wait" : "pointer",
             opacity: isNavigating ? 0.7 : 1,
+            textDecoration: "none",
           }}
         >
           <img
@@ -94,9 +97,9 @@ export default function Header() {
               WebkitMaskComposite: "destination-in",
             }}
           />
-        </div>
+        </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation — crawlable <a> links */}
         <nav
           style={{
             display: "flex",
@@ -106,9 +109,10 @@ export default function Header() {
           className="desktop-nav"
         >
           {filteredNavLinks.map(link => (
-            <button
+            <Link
               key={link.path}
-              onClick={() => navigate(link.path)}
+              to={buildUrlWithParams(link.path)}
+              aria-current={isActivePath(link.path) ? "page" : undefined}
               style={{
                 padding: "8px 16px",
                 background: "transparent",
@@ -120,6 +124,7 @@ export default function Header() {
                 cursor: "pointer",
                 transition: "all 0.2s",
                 position: "relative",
+                textDecoration: "none",
               }}
               onMouseEnter={(e) => {
                 if (!isActivePath(link.path)) {
@@ -148,7 +153,7 @@ export default function Header() {
                   }}
                 />
               )}
-            </button>
+            </Link>
           ))}
         </nav>
 
@@ -168,15 +173,19 @@ export default function Header() {
               cursor: "pointer",
             }}
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          {/* User Menu / Login Button */}
+          {/* User Menu / Login Link */}
           {isLoggedIn ? (
             <div ref={menuRef} style={{ position: "relative" }}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="User menu"
+                aria-expanded={menuOpen}
+                aria-haspopup="true"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -200,6 +209,7 @@ export default function Header() {
 
               {menuOpen && (
                 <div
+                  role="menu"
                   style={{
                     position: "absolute",
                     top: "100%",
@@ -214,11 +224,10 @@ export default function Header() {
                     zIndex: 200,
                   }}
                 >
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate("/profile");
-                    }}
+                  <Link
+                    to={buildUrlWithParams("/profile")}
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
                     style={{
                       width: "100%",
                       display: "flex",
@@ -231,19 +240,22 @@ export default function Header() {
                       fontSize: "14px",
                       cursor: "pointer",
                       textAlign: "left",
+                      textDecoration: "none",
                     }}
                     onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
                     onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                   >
                     <User size={16} />
                     View Profile
-                  </button>
+                  </Link>
                   <div style={{ height: "1px", background: "var(--border)" }} />
                   <button
+                    role="menuitem"
                     onClick={() => {
                       setMenuOpen(false);
                       handleLogout();
                     }}
+                    aria-label="Logout"
                     style={{
                       width: "100%",
                       display: "flex",
@@ -267,8 +279,8 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <button
-              onClick={() => navigate("/login")}
+            <Link
+              to={buildUrlWithParams("/login")}
               style={{
                 background: "var(--gradient-1)",
                 border: "none",
@@ -281,18 +293,20 @@ export default function Header() {
                 fontSize: "14px",
                 fontWeight: "500",
                 cursor: "pointer",
+                textDecoration: "none",
               }}
             >
               <LogIn size={16} />
               Login
-            </button>
+            </Link>
           )}
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
-      <div
+      {/* Mobile Navigation Menu — crawlable <a> links */}
+      <nav
         className="mobile-nav"
+        aria-label="Mobile navigation"
         style={{
           display: mobileMenuOpen ? "flex" : "none",
           flexDirection: "column",
@@ -302,9 +316,10 @@ export default function Header() {
         }}
       >
         {filteredNavLinks.map(link => (
-          <button
+          <Link
             key={link.path}
-            onClick={() => navigate(link.path)}
+            to={buildUrlWithParams(link.path)}
+            aria-current={isActivePath(link.path) ? "page" : undefined}
             style={{
               padding: "14px 24px",
               background: isActivePath(link.path) ? "rgba(20, 184, 166, 0.1)" : "transparent",
@@ -316,12 +331,14 @@ export default function Header() {
               cursor: "pointer",
               textAlign: "left",
               transition: "all 0.2s",
+              textDecoration: "none",
+              display: "block",
             }}
           >
             {link.label}
-          </button>
+          </Link>
         ))}
-      </div>
+      </nav>
 
       {/* CSS for responsive behavior */}
       <style>{`
