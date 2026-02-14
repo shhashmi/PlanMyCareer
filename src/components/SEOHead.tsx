@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import { seoConfig, BASE_URL, DEFAULT_IMAGE, SITE_NAME } from '../config/seoConfig';
 import { generateBreadcrumbs } from '../lib/structuredData';
@@ -22,7 +21,7 @@ export default function SEOHead({ title, description, noIndex, structuredData }:
   const breadcrumbs = generateBreadcrumbs(pathname);
 
   return (
-    <Helmet>
+    <>
       <title>{pageTitle}</title>
       <meta name="description" content={pageDescription} />
       <link rel="canonical" href={canonicalUrl} />
@@ -53,6 +52,6 @@ export default function SEOHead({ title, description, noIndex, structuredData }:
       {structuredData && (
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       )}
-    </Helmet>
+    </>
   );
 }
