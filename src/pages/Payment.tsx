@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { CreditCard, Lock, Check, Shield, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import SEOHead from '../components/SEOHead';
+import { trackConversion } from '../lib/analytics';
 
 export default function Payment() {
-  const navigate = useNavigate()
+  const navigate = useNavigateWithParams()
   const { isLoggedIn, skills } = useApp()
   const [isProcessing, setIsProcessing] = useState(false)
   const [formData, setFormData] = useState({
@@ -43,7 +45,8 @@ export default function Payment() {
     setIsProcessing(true)
     
     await new Promise(resolve => setTimeout(resolve, 2000))
-    
+
+    trackConversion('advanced_assessment_purchase', 20)
     setIsProcessing(false)
     navigate('/advanced-assessment')
   }
@@ -61,13 +64,14 @@ export default function Payment() {
   }
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 

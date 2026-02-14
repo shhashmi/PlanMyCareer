@@ -1,34 +1,38 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { assessmentService } from '../services/assessmentService';
-import { ComingSoonModal } from '../components/ui';
-import { BasicAssessmentTile, AdvancedAssessmentTile } from '../components/assessment';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import { ComingSoonModal, ErrorAlert, Modal } from '../components/ui';
+import { AdvancedAssessmentTile, FluencySelector } from '../components/assessment';
+import { splitSkillsByPriority } from '../utils/profileUtils';
+import SEOHead from '../components/SEOHead';
 
 export default function AssessmentChoice() {
-  const navigate = useNavigate()
-  const { isLoggedIn, skills, loading, apiProfile } = useApp()
-  const [startingAssessment, setStartingAssessment] = useState(false)
+  const navigate = useNavigateWithParams()
+  const { isLoggedIn, loading, apiProfile, isPaid, refreshPaidStatus } = useApp()
   const [error, setError] = useState<string | null>(null)
   const [showComingSoon, setShowComingSoon] = useState(false)
-  const [includeAllSkills, setIncludeAllSkills] = useState(false)
+  const [selectionWarning, setSelectionWarning] = useState<string | null>(null)
+  const [showMultiFluencyWarning, setShowMultiFluencyWarning] = useState(false)
 
-  const isProduction = import.meta.env.PROD
+  const MAX_SELECTIONS = 3;
 
-  // Sort skills by priority and split into priority (top 4) and remaining
-  const sortedSkills = useMemo(() => {
-    if (!apiProfile?.profile) return { priority: [], remaining: [] };
-    const sorted = [...apiProfile.profile].sort((a, b) => a.priority - b.priority);
-    return { priority: sorted.slice(0, 4), remaining: sorted.slice(4) };
-  }, [apiProfile]);
+  // Initialize selected skill codes with top priority skills
+  const [selectedSkillCodes, setSelectedSkillCodes] = useState<Set<string>>(() => {
+    if (!apiProfile?.profile) return new Set();
+    const sorted = splitSkillsByPriority(apiProfile.profile, MAX_SELECTIONS);
+    return new Set([sorted.priority[0]?.code].filter(Boolean));
+  });
 
-  const hasExtraSkills = sortedSkills.remaining.length > 0;
-  const selectedSkills = includeAllSkills
-    ? apiProfile?.profile.map(s => s.name) || []
-    : sortedSkills.priority.map(s => s.name);
+  const handleFluencyChange = useCallback((codes: Set<string>) => {
+    setSelectionWarning(null);
+    if (codes.size > MAX_SELECTIONS) {
+      setSelectionWarning(`Maximum ${MAX_SELECTIONS} fluencies can be selected. Uncheck one to select another.`);
+      return;
+    }
+    setSelectedSkillCodes(codes);
+  }, []);
 
   if (loading) {
     return (
@@ -69,40 +73,34 @@ export default function AssessmentChoice() {
     )
   }
 
-  const handleStartBasicAssessment = async () => {
-    if (!apiProfile) {
-      setError('Profile data not available. Please complete your profile first.')
-      return
+  const handleAdvancedFlow = async () => {
+    await refreshPaidStatus();
+    if (isPaid) {
+      navigate('/advanced-assessment', {
+        state: { selectedSkillCodes: Array.from(selectedSkillCodes) }
+      });
+    } else {
+      setShowComingSoon(true);
     }
+  };
 
-    setStartingAssessment(true)
-    setError(null)
-
-    try {
-      const request = await assessmentService.buildStartRequest(apiProfile, 'basic', 15, selectedSkills)
-      const response = await assessmentService.startAssessment(request)
-
-      if (response.success && response.data) {
-        // Store session data and navigate to assessment
-        navigate('/basic-assessment', { state: { assessmentData: response.data } })
-      } else {
-        setError(response.error?.message || 'Failed to start assessment')
-      }
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setStartingAssessment(false)
+  const handleStartAdvancedClick = async () => {
+    if (selectedSkillCodes.size > 1) {
+      setShowMultiFluencyWarning(true);
+      return;
     }
-  }
+    await handleAdvancedFlow();
+  };
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '900px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -110,7 +108,7 @@ export default function AssessmentChoice() {
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
           <h1 style={{ fontSize: '36px', fontWeight: '700', marginBottom: '12px' }}>
-            Choose Your Assessment Type
+            Start Your Assessment
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
             Select how you'd like to assess your AI skills
@@ -131,112 +129,38 @@ export default function AssessmentChoice() {
           </div>
         )}
 
-        {/* Skill Selection Banner */}
-        {sortedSkills.priority.length > 0 && (
+        {/* Selection Warning */}
+        {selectionWarning && (
+          <ErrorAlert
+            message={selectionWarning}
+            variant="warning"
+            onDismiss={() => setSelectionWarning(null)}
+          />
+        )}
+
+        {/* Skill Selection */}
+        {apiProfile?.profile && apiProfile.profile.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            style={{
-              background: 'rgba(20, 184, 166, 0.06)',
-              border: '1px solid rgba(20, 184, 166, 0.15)',
-              borderRadius: '16px',
-              padding: '20px 24px',
-              marginBottom: '32px'
-            }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <Sparkles size={18} color="var(--primary-light)" />
-              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                Assessing skills most relevant to your daily work
-              </span>
-            </div>
-
-            {/* Skill chips row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: hasExtraSkills ? '16px' : 0 }}>
-              {(includeAllSkills ? apiProfile?.profile || [] : sortedSkills.priority).map(skill => (
-                <div key={skill.name} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  background: 'rgba(20, 184, 166, 0.1)',
-                  border: '1px solid rgba(20, 184, 166, 0.3)',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: 'var(--text-primary)'
-                }}>
-                  <Check size={14} color="var(--primary-light)" />
-                  {skill.name}
-                </div>
-              ))}
-            </div>
-
-            {/* Include all checkbox */}
-            {hasExtraSkills && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={includeAllSkills}
-                  onChange={(e) => setIncludeAllSkills(e.target.checked)}
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    accentColor: 'var(--primary)',
-                    cursor: 'pointer'
-                  }}
-                />
-                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                  {includeAllSkills
-                    ? `Assess on top priority skills`
-                    : `Include all ${apiProfile?.profile.length} skills`
-                  }
-                </span>
-              </label>
-            )}
+            <FluencySelector
+              skills={apiProfile.profile}
+              selectedCodes={selectedSkillCodes}
+              onSelectionChange={handleFluencyChange}
+              maxSelections={MAX_SELECTIONS}
+            />
           </motion.div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-          <BasicAssessmentTile
-            onClick={handleStartBasicAssessment}
-            cursor={startingAssessment ? 'wait' : 'pointer'}
-            dimmed={startingAssessment}
-            animationDelay={0.1}
-            animationDirection="left"
-          >
-            <button
-              className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center' }}
-              disabled={startingAssessment}
-            >
-              {startingAssessment ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Starting...
-                </>
-              ) : (
-                <>
-                  Start Basic Assessment
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </BasicAssessmentTile>
-
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <AdvancedAssessmentTile
-            onClick={() => {
-              if (IS_ADVANCED_ASSESSMENT_BETA) {
-                navigate('/advanced-assessment');
-              } else if (isProduction) {
-                setShowComingSoon(true);
-              } else {
-                navigate('/payment');
-              }
-            }}
+            onClick={handleStartAdvancedClick}
             animationDelay={0.2}
             animationDirection="right"
+            showPaymentTier={!isPaid}
+            style={{ maxWidth: '480px', width: '100%' }}
           />
         </div>
       </div>
@@ -245,6 +169,50 @@ export default function AssessmentChoice() {
         isOpen={showComingSoon}
         onClose={() => setShowComingSoon(false)}
       />
+
+      <Modal
+        isOpen={showMultiFluencyWarning}
+        onClose={() => setShowMultiFluencyWarning(false)}
+        title="Assess Multiple Fluencies?"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            Assessing fewer fluencies leads to more focused learning and a shorter assessment. You can always assess remaining fluencies later.
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            background: 'rgba(245, 158, 11, 0.1)',
+            borderRadius: '10px',
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+          }}>
+            <Clock size={16} color="var(--accent)" />
+            {selectedSkillCodes.size} fluencies &times; 12 min = ~{selectedSkillCodes.size * 12} min
+          </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <button
+              onClick={() => setShowMultiFluencyWarning(false)}
+              className="btn-secondary"
+              style={{ flex: 1 }}
+            >
+              Reduce Fluencies
+            </button>
+            <button
+              onClick={() => {
+                setShowMultiFluencyWarning(false);
+                handleAdvancedFlow();
+              }}
+              className="btn-primary"
+              style={{ flex: 1 }}
+            >
+              Continue with {selectedSkillCodes.size} Fluencies
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

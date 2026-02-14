@@ -1,6 +1,9 @@
+import SEOHead from '../components/SEOHead';
+
 export default function TermsOfUse() {
   return (
-    <main style={{ padding: "60px 24px", maxWidth: "800px", margin: "0 auto" }}>
+    <div style={{ padding: "60px 24px", maxWidth: "800px", margin: "0 auto" }}>
+      <SEOHead />
       <h1 style={{ color: "var(--text-primary)", marginBottom: "32px" }}>
         Terms of Use
       </h1>
@@ -68,6 +71,6 @@ export default function TermsOfUse() {
           legal@aifluens.com.
         </p>
       </div>
-    </main>
+    </div>
   );
 }

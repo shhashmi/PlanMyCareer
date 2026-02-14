@@ -33,6 +33,3 @@ export const ADVANCED_ASSESSMENT_INFO = {
   priceNote: 'one-time',
   features: ADVANCED_ASSESSMENT_FEATURES
 };
-
-export const IS_ADVANCED_ASSESSMENT_BETA =
-  import.meta.env.VITE_ADVANCED_ASSESSMENT_STAGE === 'beta';

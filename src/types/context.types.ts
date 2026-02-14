@@ -55,6 +55,8 @@ export interface AppContextType {
   setAssessmentResults: LocalStorageSetter<AssessmentResult[] | null>;
   advancedResults: any;
   setAdvancedResults: LocalStorageSetter<any>;
+  advancedSessionId: number | null;
+  setAdvancedSessionId: LocalStorageSetter<number | null>;
   upskillPlan: any;
   setUpskillPlan: LocalStorageSetter<any>;
   apiProfile: FluencyProfileResponse | null;
@@ -63,4 +65,6 @@ export interface AppContextType {
   setIncompleteAssessment: LocalStorageSetter<IncompleteAssessmentSession | null>;
   roles: Role[];
   rolesLoading: boolean;
+  isPaid: boolean;
+  refreshPaidStatus: () => Promise<void>;
 }

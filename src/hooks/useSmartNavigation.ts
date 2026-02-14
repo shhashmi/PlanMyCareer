@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useNavigateWithParams } from './useNavigateWithParams';
 import { profileService } from '../services/profileService';
 import { assessmentService } from '../services/assessmentService';
+import { getAssessmentStatus } from '../services/agentService';
 import { fluencyService } from '../services/fluencyService';
 import { isAuthError } from '../utils/errorUtils';
 import type { IncompleteAssessmentSession } from '../types/context.types';
@@ -17,7 +18,7 @@ export interface SmartNavigationResult {
 }
 
 export function useSmartNavigation() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const {
     isLoggedIn,
     logout,
@@ -118,19 +119,22 @@ export function useSmartNavigation() {
         return { destination: '/', hasProfile: false, incompleteAssessment: null };
       }
 
-      const incompleteCheck = await assessmentService.checkIncompleteAssessment();
+      const [incompleteCheck, advancedStatus] = await Promise.all([
+        assessmentService.checkIncompleteAssessment(),
+        getAssessmentStatus().catch(() => ({ data: null, can_start_new: true }))
+      ]);
 
       if (!incompleteCheck.success) {
         if (isAuthError(incompleteCheck.error)) {
           return { destination: '/login', hasProfile: false, incompleteAssessment: null, requiresLogout: true };
         }
         console.error('Incomplete assessment check failed:', incompleteCheck.error);
-        return { destination: '/skills', hasProfile: true, incompleteAssessment: null };
       }
 
-      const incompleteAssessment = incompleteCheck.data;
+      const incompleteAssessment = incompleteCheck.success ? incompleteCheck.data ?? null : null;
+      const hasAdvancedInProgress = advancedStatus?.data?.status === 'in_progress';
 
-      if (incompleteAssessment) {
+      if (incompleteAssessment || hasAdvancedInProgress) {
         return { destination: '/assessment-progress', hasProfile: true, incompleteAssessment };
       }
 
@@ -161,8 +165,8 @@ export function useSmartNavigation() {
         setIncompleteAssessment(result.incompleteAssessment);
       }
 
-      // Load profile data before navigating to skills page (not needed for assessment-progress)
-      if (result.hasProfile && result.destination === '/skills') {
+      // Load profile data before navigating to skills or assessment-progress page
+      if (result.hasProfile && (result.destination === '/skills' || result.destination === '/assessment-progress')) {
         const loaded = await loadProfileData();
         if (!loaded) {
           console.error('Failed to load profile data, staying on current page');

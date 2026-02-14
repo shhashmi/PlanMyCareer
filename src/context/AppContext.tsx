@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import type { AppContextType, User, ProfileData, Skill, AssessmentResult, IncompleteAssessmentSession } from '../types/context.types';
-import type { FluencyProfileResponse, Role } from '../types/api.types';
+import type { FluencyProfileResponse, PaidStatusResponse, Role } from '../types/api.types';
 import api from '../services/api';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -20,12 +20,27 @@ export function AppProvider({ children }: AppProviderProps) {
   const [skills, setSkills] = useLocalStorage<Skill[]>('skills', []);
   const [assessmentResults, setAssessmentResults] = useLocalStorage<AssessmentResult[] | null>('assessmentResults', null);
   const [advancedResults, setAdvancedResults] = useLocalStorage<any>('advancedResults', null);
+  const [advancedSessionId, setAdvancedSessionId] = useLocalStorage<number | null>('advancedSessionId', null);
   const [upskillPlan, setUpskillPlan] = useLocalStorage<any>('upskillPlan', null);
   const [apiProfile, setApiProfile] = useLocalStorage<FluencyProfileResponse | null>('apiProfile', null);
   const [incompleteAssessment, setIncompleteAssessment] = useLocalStorage<IncompleteAssessmentSession | null>('incompleteAssessment', null);
   const [roles, setRoles] = useLocalStorage<Role[]>('roles', []);
+  const [paidStatus, setPaidStatus] = useLocalStorage<PaidStatusResponse | null>('paidStatus', null);
 
   const [rolesLoading, setRolesLoading] = useState(false);
+
+  const isPaid = paidStatus?.is_paid ?? false;
+
+  const refreshPaidStatus = useCallback(async () => {
+    try {
+      const response = await api.get('/v1/auth/paid-status');
+      if (response.data.status === 'success') {
+        setPaidStatus(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch paid status:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -34,6 +49,7 @@ export function AppProvider({ children }: AppProviderProps) {
         if (response.data.status === 'success') {
           setUser(response.data.data.user);
           setIsLoggedIn(true);
+          refreshPaidStatus();
         }
       } catch (error) {
         console.log('No active session found.');
@@ -94,6 +110,8 @@ export function AppProvider({ children }: AppProviderProps) {
       setAssessmentResults,
       advancedResults,
       setAdvancedResults,
+      advancedSessionId,
+      setAdvancedSessionId,
       upskillPlan,
       setUpskillPlan,
       apiProfile,
@@ -101,7 +119,9 @@ export function AppProvider({ children }: AppProviderProps) {
       incompleteAssessment,
       setIncompleteAssessment,
       roles,
-      rolesLoading
+      rolesLoading,
+      isPaid,
+      refreshPaidStatus
     }}>
       {children}
     </AppContext.Provider>

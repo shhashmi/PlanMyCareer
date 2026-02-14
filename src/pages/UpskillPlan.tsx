@@ -1,116 +1,184 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, BookOpen, ExternalLink, CheckCircle, Play, Target } from 'lucide-react';
+import { CheckCircle, Clock, ArrowRight, Loader, BookOpen, ChevronRight, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { studyMaterials, getLevelNumber } from '../data/skillsData';
+import { getUpskillPlan, markPlanItemsDone, updateUpskillPlan } from '../services/agentService';
+import { ProgressBar } from '../components/ui/ProgressBar';
+import { Modal } from '../components/ui/Modal';
+import SEOHead from '../components/SEOHead';
+import type { UpskillPlanResponse, UpskillPlanItem } from '../types/api.types';
 
-const timeOptions = [
-  { value: 2, label: '2 hours/week', intensity: 'Light' },
-  { value: 5, label: '5 hours/week', intensity: 'Moderate' },
-  { value: 10, label: '10 hours/week', intensity: 'Intensive' },
-  { value: 15, label: '15+ hours/week', intensity: 'Immersive' }
-]
+interface LocationState {
+  plan?: UpskillPlanResponse;
+}
+
+interface FluencyProgress {
+  code: string;
+  name: string;
+  completed: number;
+  total: number;
+  percentage: number;
+}
+
+function computeFluencyProgress(plan: UpskillPlanResponse): FluencyProgress[] {
+  const map = new Map<string, { name: string; completed: number; total: number }>();
+
+  for (const week of plan.weeks) {
+    for (const item of week.items) {
+      const entry = map.get(item.fluency_code) || { name: item.fluency_name, completed: 0, total: 0 };
+      entry.total++;
+      if (item.status === 'done') entry.completed++;
+      map.set(item.fluency_code, entry);
+    }
+  }
+
+  return Array.from(map.entries()).map(([code, data]) => ({
+    code,
+    name: data.name,
+    completed: data.completed,
+    total: data.total,
+    percentage: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+  }));
+}
+
+function formatCooldownDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + 7);
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
 
 export default function UpskillPlan() {
-  const navigate = useNavigate()
-  const { advancedResults, setUpskillPlan, profileData } = useApp()
-  const [selectedTime, setSelectedTime] = useState(null)
-  const [showPlan, setShowPlan] = useState(false)
-  const [generatedPlan, setGeneratedPlan] = useState(null)
+  const navigate = useNavigateWithParams();
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
+  const { advancedSessionId } = useApp();
 
-  if (!advancedResults || advancedResults.length === 0) {
-    navigate('/')
-    return null
-  }
+  const [plan, setPlan] = useState<UpskillPlanResponse | null>(locationState?.plan ?? null);
+  const [isLoading, setIsLoading] = useState(!locationState?.plan);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isMarking, setIsMarking] = useState(false);
+  const [showCooldownModal, setShowCooldownModal] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [expandedRationales, setExpandedRationales] = useState<Set<number>>(new Set());
+  const hasFetched = useRef(false);
 
-  const focusSkills = advancedResults
-    .filter(s => s.score < getLevelNumber(s.level))
-    .sort((a, b) => (getLevelNumber(a.level) - a.score) - (getLevelNumber(b.level) - b.score))
-    .reverse()
+  const sessionId = plan?.session_id ?? advancedSessionId;
 
-  const generatePlan = () => {
-    const weeksNeeded = Math.ceil(focusSkills.length * 2)
-    const hoursPerSkill = selectedTime / focusSkills.length
+  // Fetch plan from API if not passed via location state
+  useEffect(() => {
+    if (plan || hasFetched.current) return;
+    hasFetched.current = true;
 
-    const plan = []
-    let currentWeek = 1
+    if (!advancedSessionId) {
+      navigate('/');
+      return;
+    }
 
-    focusSkills.forEach((skill, skillIndex) => {
-      const materials = studyMaterials[skill.name] || studyMaterials['default']
-      const weeksForSkill = Math.max(1, Math.ceil(2 * (10 - skill.score) / 5))
-
-      for (let w = 0; w < weeksForSkill && currentWeek <= 12; w++) {
-        const weekTasks = []
-        
-        if (w === 0) {
-          weekTasks.push({
-            type: 'learn',
-            title: `Introduction to ${skill.name}`,
-            description: 'Review fundamentals and core concepts',
-            duration: Math.round(hoursPerSkill * 0.4),
-            resources: materials.slice(0, 2)
-          })
-        }
-
-        weekTasks.push({
-          type: 'practice',
-          title: w === 0 ? `${skill.name} Fundamentals Practice` : `${skill.name} Advanced Practice`,
-          description: w === 0 ? 'Complete beginner exercises' : 'Work on intermediate challenges',
-          duration: Math.round(hoursPerSkill * 0.4),
-          resources: materials.slice(0, 1)
-        })
-
-        if (w === weeksForSkill - 1) {
-          weekTasks.push({
-            type: 'project',
-            title: `${skill.name} Mini Project`,
-            description: 'Apply your learning in a practical project',
-            duration: Math.round(hoursPerSkill * 0.2),
-            resources: []
-          })
-        }
-
-        plan.push({
-          week: currentWeek,
-          skill: skill.name,
-          skillLevel: skill.level,
-          currentScore: skill.score,
-          targetScore: getLevelNumber(skill.level),
-          tasks: weekTasks,
-          totalHours: selectedTime
-        })
-
-        currentWeek++
+    const fetchPlan = async () => {
+      setIsLoading(true);
+      try {
+        const response = await getUpskillPlan(advancedSessionId);
+        setPlan(response.data);
+      } catch {
+        navigate('/');
+      } finally {
+        setIsLoading(false);
       }
-    })
+    };
 
-    setGeneratedPlan(plan.slice(0, 12))
-    setUpskillPlan(plan.slice(0, 12))
-    setShowPlan(true)
-  }
+    fetchPlan();
+  }, [plan, advancedSessionId, navigate]);
 
-  const getTaskIcon = (type) => {
-    switch (type) {
-      case 'learn': return <BookOpen size={16} />
-      case 'practice': return <Play size={16} />
-      case 'project': return <Target size={16} />
-      default: return <CheckCircle size={16} />
+  const fluencyProgress = useMemo(() => (plan ? computeFluencyProgress(plan) : []), [plan]);
+
+  const toggleItem = (itemId: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const toggleRationale = (itemId: number) => {
+    setExpandedRationales(prev => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const handleMarkComplete = async () => {
+    if (!sessionId || selectedIds.size === 0) return;
+    setIsMarking(true);
+    try {
+      await markPlanItemsDone(sessionId, Array.from(selectedIds));
+      // Refresh plan data
+      const response = await getUpskillPlan(sessionId);
+      setPlan(response.data);
+      setSelectedIds(new Set());
+    } catch {
+      alert('Failed to mark items as complete. Please try again.');
+    } finally {
+      setIsMarking(false);
     }
+  };
+
+  const handleTakeFreshAssessment = async () => {
+    if (!plan || !sessionId) return;
+
+    const createdAt = new Date(plan.created_at);
+    const oneWeekAfter = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+
+    if (now < oneWeekAfter) {
+      setShowCooldownModal(true);
+      return;
+    }
+
+    setIsDeactivating(true);
+    try {
+      await updateUpskillPlan(sessionId, { is_active: false });
+      navigate('/assessment');
+    } catch {
+      alert('Failed to deactivate plan. Please try again.');
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}
+        >
+          <Loader size={32} style={{ animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: 'var(--text-muted)' }}>Loading your upskill plan...</p>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </motion.div>
+      </div>
+    );
   }
 
-  const getTaskColor = (type) => {
-    switch (type) {
-      case 'learn': return 'var(--primary-light)'
-      case 'practice': return 'var(--secondary)'
-      case 'project': return 'var(--accent)'
-      default: return 'var(--text-muted)'
-    }
-  }
+  if (!plan) return null;
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px', paddingBottom: selectedIds.size > 0 ? '100px' : '40px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '1000px' }}>
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -120,305 +188,375 @@ export default function UpskillPlan() {
             Your Personalized Upskill Plan
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
-            A structured learning path to close your AI skill gaps
+            {plan.total_items} items across {plan.total_weeks} weeks &middot; {plan.hours_per_week}h/week
           </p>
         </motion.div>
 
-        <AnimatePresence mode="wait">
-          {!showPlan ? (
-            <motion.div
-              key="time-selection"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              style={{
-                maxWidth: '600px',
-                margin: '0 auto',
-                background: 'var(--surface)',
-                borderRadius: '24px',
-                padding: '40px',
-                border: '1px solid var(--border)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <Clock size={28} color="var(--primary-light)" />
-                <h2 style={{ fontSize: '24px', fontWeight: '600' }}>
-                  How much time can you commit?
-                </h2>
+        {/* Overall Progress */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="card"
+          style={{ marginBottom: '32px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <BookOpen size={24} color="var(--primary-light)" />
+              Progress by Fluency
+            </h2>
+            <span style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: 'var(--secondary)',
+            }}>
+              {plan.progress.percentage}% overall
+            </span>
+          </div>
+          <div style={{ display: 'grid', gap: '16px' }}>
+            {fluencyProgress.map((fp, index) => (
+              <div key={fp.code}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '500' }}>{fp.name}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {fp.completed}/{fp.total} ({fp.percentage}%)
+                  </span>
+                </div>
+                <ProgressBar
+                  progress={fp.percentage}
+                  height={8}
+                  delay={0.1 + index * 0.05}
+                  fillColor={fp.percentage === 100 ? 'var(--secondary)' : 'var(--gradient-1)'}
+                />
               </div>
+            ))}
+          </div>
+        </motion.div>
 
-              <p style={{ color: 'var(--text-muted)', marginBottom: '32px' }}>
-                Select your weekly time commitment and we'll create an optimized learning schedule for you
-              </p>
-
-              <div style={{ display: 'grid', gap: '12px', marginBottom: '32px' }}>
-                {timeOptions.map((option) => (
-                  <motion.button
-                    key={option.value}
-                    onClick={() => setSelectedTime(option.value)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{
-                      padding: '20px 24px',
-                      background: selectedTime === option.value 
-                        ? 'rgba(20, 184, 166, 0.2)' 
-                        : 'var(--surface-light)',
-                      border: selectedTime === option.value 
-                        ? '2px solid var(--primary)' 
-                        : '2px solid transparent',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      color: 'var(--text-primary)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        border: selectedTime === option.value 
-                          ? '2px solid var(--primary)' 
-                          : '2px solid var(--border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        {selectedTime === option.value && (
-                          <div style={{
-                            width: '12px',
-                            height: '12px',
-                            borderRadius: '50%',
-                            background: 'var(--primary)'
-                          }} />
-                        )}
-                      </div>
-                      <span style={{ fontSize: '18px', fontWeight: '500' }}>{option.label}</span>
-                    </div>
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      background: 'rgba(20, 184, 166, 0.1)',
-                      color: 'var(--primary-light)'
-                    }}>
-                      {option.intensity}
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
-
-              <button
-                onClick={generatePlan}
-                disabled={!selectedTime}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  justifyContent: 'center',
-                  padding: '16px',
-                  opacity: selectedTime ? 1 : 0.5,
-                  cursor: selectedTime ? 'pointer' : 'not-allowed'
-                }}
-              >
-                <Calendar size={20} />
-                Generate My Learning Plan
-              </button>
-            </motion.div>
-          ) : (
+        {/* Weekly Plan Items */}
+        <div style={{ display: 'grid', gap: '24px', marginBottom: '40px' }}>
+          {plan.weeks.map((week, weekIndex) => (
             <motion.div
-              key="plan"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={week.week_number}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + weekIndex * 0.05 }}
+              className="card"
             >
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '32px',
-                padding: '20px 24px',
-                background: 'var(--surface)',
-                borderRadius: '16px',
-                border: '1px solid var(--border)'
+                gap: '16px',
+                marginBottom: '20px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)',
               }}>
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
-                    {generatedPlan?.length}-Week Learning Journey
-                  </h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                    {selectedTime} hours per week commitment
-                  </p>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'var(--gradient-1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '700',
+                  fontSize: '18px',
+                  flexShrink: 0,
+                }}>
+                  W{week.week_number}
                 </div>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  {['learn', 'practice', 'project'].map(type => (
-                    <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '3px',
-                        background: getTaskColor(type)
-                      }} />
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                        {type}
-                      </span>
-                    </div>
-                  ))}
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600' }}>Week {week.week_number}</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                    {week.items.filter(i => i.status === 'done').length}/{week.items.length} completed
+                  </p>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gap: '20px' }}>
-                {generatedPlan?.map((week, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="card"
-                  >
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'flex-start',
-                      marginBottom: '20px',
-                      paddingBottom: '16px',
-                      borderBottom: '1px solid var(--border)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '12px',
-                          background: 'var(--gradient-1)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: '700',
-                          fontSize: '18px'
-                        }}>
-                          W{week.week}
-                        </div>
-                        <div>
-                          <h3 style={{ fontSize: '18px', fontWeight: '600' }}>{week.skill}</h3>
-                          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                            Current: {week.currentScore}/10 → Target: {week.targetScore}/10
-                          </p>
-                        </div>
-                      </div>
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {week.items.map((item) => {
+                  const isDone = item.status === 'done';
+                  const isSelected = selectedIds.has(item.item_id);
+
+                  return (
+                    <div
+                      key={item.item_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px',
+                        padding: '14px 16px',
+                        background: isDone ? 'rgba(16, 185, 129, 0.06)' : 'var(--surface-light)',
+                        borderRadius: '12px',
+                        borderLeft: `3px solid ${isDone ? 'var(--secondary)' : isSelected ? 'var(--primary)' : 'transparent'}`,
+                        opacity: isDone ? 0.7 : 1,
+                        cursor: isDone ? 'default' : 'pointer',
+                      }}
+                      onClick={() => !isDone && toggleItem(item.item_id)}
+                    >
+                      {/* Checkbox */}
                       <div style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '6px',
+                        border: isDone ? 'none' : `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                        background: isDone ? 'var(--secondary)' : isSelected ? 'var(--primary)' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        background: 'var(--surface-light)',
-                        borderRadius: '8px'
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '2px',
                       }}>
-                        <Clock size={16} color="var(--text-muted)" />
-                        <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                          {week.totalHours}h total
+                        {(isDone || isSelected) && (
+                          <CheckCircle size={14} color="white" />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '15px',
+                          fontWeight: '500',
+                          textDecoration: isDone ? 'line-through' : 'none',
+                          color: isDone ? 'var(--text-muted)' : 'var(--text-primary)',
+                          marginBottom: '4px',
+                        }}>
+                          {item.subtopic_title}
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                          {item.module_title}
+                        </div>
+                        {item.rationale && (
+                          <>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRationale(item.item_id);
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                marginTop: '6px',
+                                fontSize: '12px',
+                                color: 'var(--primary-light)',
+                                cursor: 'pointer',
+                                userSelect: 'none',
+                              }}
+                            >
+                              {expandedRationales.has(item.item_id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                              Why this is in your plan
+                            </div>
+                            <AnimatePresence>
+                              {expandedRationales.has(item.item_id) && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                                  style={{ overflow: 'hidden' }}
+                                >
+                                  <div style={{
+                                    marginTop: '8px',
+                                    padding: '10px 12px',
+                                    background: 'var(--surface)',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    color: 'var(--text-secondary)',
+                                    lineHeight: '1.5',
+                                  }}>
+                                    {item.rationale}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Study link + Badges */}
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        {plan.track && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/study-material/${plan.track}/${item.fluency_code}/${item.subtopic_id}`);
+                            }}
+                            title="Study this topic"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px',
+                              height: '32px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(20, 184, 166, 0.3)',
+                              background: 'rgba(20, 184, 166, 0.15)',
+                              cursor: 'pointer',
+                              color: 'var(--primary-light)',
+                              flexShrink: 0,
+                              fontSize: '12px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            <BookOpen size={16} />
+                            Study
+                          </button>
+                        )}
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          background: 'rgba(20, 184, 166, 0.1)',
+                          color: 'var(--primary-light)',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {item.fluency_name}
+                        </span>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          background: 'var(--surface)',
+                          color: 'var(--text-muted)',
+                          textTransform: 'capitalize',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {item.level}
                         </span>
                       </div>
                     </div>
-
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      {week.tasks.map((task, taskIndex) => (
-                        <div
-                          key={taskIndex}
-                          style={{
-                            padding: '16px',
-                            background: 'var(--surface-light)',
-                            borderRadius: '12px',
-                            borderLeft: `3px solid ${getTaskColor(task.type)}`
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                                <div style={{ color: getTaskColor(task.type) }}>
-                                  {getTaskIcon(task.type)}
-                                </div>
-                                <h4 style={{ fontSize: '15px', fontWeight: '500' }}>{task.title}</h4>
-                              </div>
-                              <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '12px' }}>
-                                {task.description}
-                              </p>
-                              {task.resources.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                  {task.resources.map((resource, rIndex) => (
-                                    <a
-                                      key={rIndex}
-                                      href={resource.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '6px 12px',
-                                        background: 'var(--surface)',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        color: 'var(--primary-light)',
-                                        textDecoration: 'none'
-                                      }}
-                                    >
-                                      {resource.title}
-                                      <ExternalLink size={12} />
-                                    </a>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <div style={{
-                              padding: '6px 10px',
-                              background: 'var(--surface)',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              color: 'var(--text-muted)',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              ~{task.duration}h
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
+                  );
+                })}
               </div>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                style={{
-                  marginTop: '40px',
-                  textAlign: 'center',
-                  padding: '32px',
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                <CheckCircle size={48} color="var(--secondary)" style={{ marginBottom: '16px' }} />
-                <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>
-                  Your Learning Journey is Ready!
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                  Follow this plan consistently and you'll be AI-ready in {generatedPlan?.length} weeks
-                </p>
-                <button
-                  onClick={() => window.print()}
-                  className="btn-secondary"
-                >
-                  Download Plan
-                </button>
-              </motion.div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          ))}
+        </div>
+
+        {/* Take Fresh Assessment CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          style={{
+            textAlign: 'center',
+            padding: '40px',
+            background: 'var(--gradient-1)',
+            borderRadius: '24px',
+          }}
+        >
+          <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '12px' }}>
+            Ready for a Fresh Assessment?
+          </h2>
+          <p style={{ marginBottom: '24px', opacity: 0.9, maxWidth: '500px', margin: '0 auto 24px' }}>
+            Take a new assessment to measure your progress and get an updated upskill plan
+          </p>
+          <button
+            onClick={handleTakeFreshAssessment}
+            disabled={isDeactivating}
+            style={{
+              background: 'white',
+              color: 'var(--primary-dark)',
+              border: 'none',
+              padding: '16px 40px',
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '600',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: isDeactivating ? 'wait' : 'pointer',
+              opacity: isDeactivating ? 0.7 : 1,
+            }}
+          >
+            {isDeactivating ? (
+              <>
+                <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                Preparing...
+              </>
+            ) : (
+              <>
+                Take Fresh Assessment
+                <ArrowRight size={20} />
+              </>
+            )}
+          </button>
+        </motion.div>
       </div>
+
+      {/* Floating Mark as Complete Button */}
+      {selectedIds.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+          }}
+        >
+          <button
+            onClick={handleMarkComplete}
+            disabled={isMarking}
+            style={{
+              background: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              padding: '14px 32px',
+              borderRadius: '16px',
+              fontSize: '16px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              cursor: isMarking ? 'wait' : 'pointer',
+              boxShadow: '0 8px 24px rgba(20, 184, 166, 0.4)',
+            }}
+          >
+            {isMarking ? (
+              <>
+                <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={18} />
+                Mark {selectedIds.size} Item{selectedIds.size > 1 ? 's' : ''} as Complete
+              </>
+            )}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Cooldown Modal */}
+      <Modal
+        isOpen={showCooldownModal}
+        onClose={() => setShowCooldownModal(false)}
+        title="Assessment Not Available Yet"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+          <Clock size={48} color="var(--accent)" />
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            You can take your next assessment after a week of your latest upskill plan creation.
+            Please try after <strong>{formatCooldownDate(plan.created_at)}</strong>.
+          </p>
+          <button
+            onClick={() => setShowCooldownModal(false)}
+            className="btn-primary"
+            style={{ marginTop: '8px', padding: '12px 32px' }}
+          >
+            OK
+          </button>
+        </div>
+      </Modal>
     </div>
-  )
+  );
 }

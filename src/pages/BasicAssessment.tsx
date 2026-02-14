@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { assessmentService } from '../services/assessmentService';
 import { ErrorAlert, ProgressBar, InlineLoader } from '../components/ui';
+import SEOHead from '../components/SEOHead';
+import { trackAssessmentStart } from '../lib/analytics';
 import type { AssessmentStartResponse, AssessmentQuestion, SelectedOption, Dimension, DimensionCode } from '../types/api.types';
 
 // Map option index to option letter
 const OPTION_LETTERS: SelectedOption[] = ['A', 'B', 'C', 'D'];
 
 export default function BasicAssessment() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const location = useLocation();
   const { setIncompleteAssessment } = useApp();
 
@@ -23,6 +26,16 @@ export default function BasicAssessment() {
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState<Dimension[]>([]);
+
+  const hasTracked = useRef(false);
+
+  // Track assessment start
+  useEffect(() => {
+    if (assessmentData && !hasTracked.current) {
+      trackAssessmentStart('basic');
+      hasTracked.current = true;
+    }
+  }, [assessmentData]);
 
   // Fetch dimensions for display names
   useEffect(() => {
@@ -146,6 +159,7 @@ export default function BasicAssessment() {
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <div style={{ width: '100%', maxWidth: '600px' }}>
         <div style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>

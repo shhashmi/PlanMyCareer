@@ -14,15 +14,13 @@
     <meta name="language" content="English" />
     <meta name="revisit-after" content="7 days" />
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://aifluens.com" />
-    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://aifluens.com/" />
     <meta property="og:title" content="AI Fluens - AI Skill Gap Analysis & Personalized Upskilling Plans" />
     <meta property="og:description" content="Discover your AI skill gaps and get personalized upskilling plans. Assess your AI proficiency and create structured learning paths for career advancement." />
     <meta property="og:image" content="https://aifluens.com/og-image.png" />
+    <meta property="og:image:alt" content="AI Fluens — AI Skill Gap Analysis & Personalized Upskilling Plans" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="AI Fluens" />
@@ -43,6 +41,9 @@
     <meta name="theme-color" content="#0a1628" />
     <meta name="msapplication-TileColor" content="#0a1628" />
     
+    <!-- DNS Prefetch for API -->
+    <link rel="dns-prefetch" href="https://api.aifluens.com" />
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,41 +85,9 @@
     }
     </script>
     
-    <!-- Structured Data - FAQPage -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is AI Fluens?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "AI Fluens is an AI-powered platform that helps professionals identify their AI skill gaps and provides personalized upskilling plans to advance their careers."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How does the AI skill assessment work?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Our assessment evaluates your current AI knowledge across multiple dimensions relevant to your role. You'll answer questions tailored to your experience level and receive instant visualization of your strengths and areas for improvement."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is the basic assessment free?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, our basic assessment is completely free. It provides a quick evaluation and instant skill gap visualization to help you understand where you stand."
-          }
-        }
-      ]
-    }
-    </script>
   </head>
   <body>
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

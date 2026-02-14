@@ -1,18 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, AlertCircle, CheckCircle, ArrowRight, Sparkles, RefreshCw, BarChart3, X } from 'lucide-react';
 import { assessmentService } from '../services/assessmentService';
 import { useApp } from '../context/AppContext';
 import { PageHeader, Card, StatCard, ProgressBar, StatusBadge, Modal, ErrorAlert, LoadingSpinner, ComingSoonModal } from '../components/ui';
 import { getCompetencyStatus, calculatePercentage, getDifficultyOrder } from '../utils/statusHelpers';
-import { IS_ADVANCED_ASSESSMENT_BETA } from '../data/assessmentData';
+import SEOHead from '../components/SEOHead';
+import { trackAssessmentComplete } from '../lib/analytics';
 import type { AssessmentSummary, CompetencyBreakdown, Dimension, BasicAssessmentReport, DimensionScoreBreakdown } from '../types/api.types';
 
 export default function BasicResults() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const location = useLocation();
-  const { apiProfile } = useApp();
+  const { apiProfile, isPaid, refreshPaidStatus } = useApp();
 
   // Get session_id from route state
   const sessionId = location.state?.sessionId as number | undefined;
@@ -28,7 +30,7 @@ export default function BasicResults() {
   const [aggregateError, setAggregateError] = useState<string | null>(null);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
-  const isProduction = import.meta.env.PROD;
+  const hasTrackedComplete = useRef(false);
 
   // Fetch summary and dimensions on mount
   useEffect(() => {
@@ -50,6 +52,11 @@ export default function BasicResults() {
 
         if (summaryResponse.success && summaryResponse.data) {
           setSummary(summaryResponse.data);
+          if (!hasTrackedComplete.current) {
+            const score = Math.round((summaryResponse.data.total_correct / summaryResponse.data.total_questions) * 100);
+            trackAssessmentComplete('basic', score);
+            hasTrackedComplete.current = true;
+          }
         } else {
           setError(summaryResponse.error?.message || 'Failed to load assessment summary');
         }
@@ -160,6 +167,7 @@ export default function BasicResults() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', padding: '40px 24px' }}>
+      <SEOHead />
       <div className="container" style={{ maxWidth: '900px' }}>
         <PageHeader
           title="Your Assessment Results"
@@ -334,28 +342,27 @@ export default function BasicResults() {
             curated resources, and weekly action plans
           </p>
           <button
-            onClick={() => {
-              if (IS_ADVANCED_ASSESSMENT_BETA) {
+            onClick={async () => {
+              await refreshPaidStatus();
+              if (isPaid) {
                 navigate('/advanced-assessment');
-              } else if (isProduction) {
-                setShowComingSoon(true);
               } else {
-                navigate('/payment');
+                setShowComingSoon(true);
               }
             }}
             className="btn-primary"
             style={{ padding: '16px 32px', fontSize: '16px' }}
           >
-            {IS_ADVANCED_ASSESSMENT_BETA ? (
+            {isPaid ? (
+              'Get Advanced Assessment'
+            ) : (
               <>
                 Get Advanced Assessment — <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>$20</span> Free
               </>
-            ) : (
-              'Get Advanced Assessment — $20'
             )}
             <ArrowRight size={18} />
           </button>
-          {IS_ADVANCED_ASSESSMENT_BETA && (
+          {!isPaid && (
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '12px' }}>
               Complimentary during Beta
             </p>

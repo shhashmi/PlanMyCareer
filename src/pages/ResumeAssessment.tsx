@@ -1,18 +1,20 @@
 import { motion } from 'framer-motion';
 import { PlayCircle, ArrowLeft } from 'lucide-react';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
+import SEOHead from '../components/SEOHead';
 
 export default function ResumeAssessment() {
   const { smartNavigate } = useSmartNavigation()
 
   return (
-    <div style={{ 
-      minHeight: 'calc(100vh - 80px)', 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
       padding: '40px 24px'
     }}>
+      <SEOHead />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

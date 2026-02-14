@@ -1,19 +1,25 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://aifluens.com/sitemap.xml
+# Protected routes
+Disallow: /basic-assessment
+Disallow: /basic-results
+Disallow: /advanced-assessment
+Disallow: /advanced-results
+Disallow: /upskill-plan
+Disallow: /payment
+Disallow: /assessment
+Disallow: /resume-assessment
+Disallow: /assessment-progress
+Disallow: /auth-callback
+Disallow: /profile
 
-# Disallow admin and private paths
+# Private paths
 Disallow: /api/
 Disallow: /admin/
 
-# Allow search engines to crawl all public pages
-Allow: /
-Allow: /skills
-Allow: /login
-Allow: /privacy-policy
-Allow: /terms-of-use
+# Sitemap
+Sitemap: https://aifluens.com/sitemap.xml
 
-# Crawl delay (optional, be respectful to servers)
+# Crawl delay
 Crawl-delay: 1

@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { ArrowRight, Briefcase, MapPin, Target, Clock, Building, Zap, Lightbulb, TrendingUp, Users, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -7,6 +7,8 @@ import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { fluencyService } from '../services/fluencyService';
 import { profileService, type CreateProfileRequest } from '../services/profileService';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import SEOHead from '../components/SEOHead';
+import { trackEvent } from '../lib/analytics';
 import type { ProfileFormData } from '../types/api.types';
 
 const values = [
@@ -37,7 +39,7 @@ const values = [
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const { isLoggedIn, loading, setProfileData, setSkills, setApiProfile, roles, rolesLoading } = useApp();
   const { smartNavigate, isNavigating } = useSmartNavigation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -72,6 +74,7 @@ export default function Home() {
   formData.geography = formData.country;
 
   const scrollToForm = () => {
+    trackEvent('cta_click', 'engagement', 'hero_start_assessment');
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
@@ -179,6 +182,7 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <SEOHead />
       {/* Hero Section */}
       <section style={{
         padding: '80px 24px 60px',
@@ -228,6 +232,13 @@ export default function Home() {
           >
             Start Free Assessment <ArrowRight size={20} />
           </button>
+          <p style={{
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            marginTop: '12px',
+          }}>
+            Get a personalized AI-powered learning plan
+          </p>
 
           <motion.div
             initial={{ opacity: 0 }}

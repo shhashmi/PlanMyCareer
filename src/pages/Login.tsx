@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
 import { Chrome, Linkedin, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { ErrorAlert, Button } from '../components/ui';
+import SEOHead from '../components/SEOHead';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithParams();
   const [searchParams] = useSearchParams();
   const { isLoggedIn } = useApp();
   const { smartNavigate } = useSmartNavigation();
@@ -61,6 +63,7 @@ export default function Login() {
       padding: '40px 24px',
       background: 'radial-gradient(ellipse at center, rgba(20, 184, 166, 0.1) 0%, transparent 50%)'
     }}>
+      <SEOHead />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
