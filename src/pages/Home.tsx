@@ -489,9 +489,14 @@ export default function Home() {
                     disabled={isLoading || rolesLoading}
                   >
                     <option value="">{rolesLoading ? 'Loading roles...' : 'Select role'}</option>
-                    {roles.map(role => (
-                      <option key={role.role_id} value={role.name}>{role.name}</option>
-                    ))}
+                    {roles.map(role => {
+                      const isAvailable = role.name.toLowerCase().includes('engineering manager');
+                      return (
+                        <option key={role.role_id} value={isAvailable ? role.name : ''} disabled={!isAvailable}>
+                          {isAvailable ? role.name : `${role.name} — Coming Soon`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 {errors.role && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.role}</span>}
