@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent, useRef } from 'react';
 import { useNavigateWithParams } from '../hooks/useNavigateWithParams';
 import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, MapPin, Target, Clock, Building, Zap, Lightbulb, TrendingUp, Users, ChevronDown } from 'lucide-react';
+import { ArrowRight, Briefcase, MapPin, Target, Clock, Building, TrendingUp, Users, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useSmartNavigation } from '../hooks/useSmartNavigation';
 import { fluencyService } from '../services/fluencyService';
@@ -36,6 +36,12 @@ const values = [
     description: 'From marketers to engineers, we tailor AI skills to your function.',
     color: '#ec4899'
   }
+];
+
+const trustSignals = [
+  { label: '3-Min Setup', icon: Clock },
+  { label: 'Instant Results', icon: Sparkles },
+  { label: 'Personalized Plan', icon: Target }
 ];
 
 export default function Home() {
@@ -161,209 +167,316 @@ export default function Home() {
 
   const inputStyle = {
     width: '100%',
-    padding: '14px 16px',
-    paddingLeft: '44px',
+    padding: '12px 14px',
+    paddingLeft: '40px',
     background: 'var(--surface)',
     border: '2px solid var(--border)',
-    borderRadius: '12px',
+    borderRadius: '10px',
     color: 'var(--text-primary)',
-    fontSize: '16px',
+    fontSize: '15px',
     outline: 'none',
     transition: 'border-color 0.2s'
   };
 
   const labelStyle = {
     display: 'block',
-    marginBottom: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
+    marginBottom: '6px',
+    fontSize: '13px',
+    fontWeight: '500' as const,
     color: 'var(--text-secondary)'
   };
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)' }}>
       <SEOHead />
-      {/* Hero Section */}
-      <section style={{
-        padding: '80px 24px 60px',
-        textAlign: 'center',
+
+      {/* Hero Section — Split Layout */}
+      <section className="home-hero" style={{
+        padding: '60px 24px 40px',
         background: 'radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
-        minHeight: '80vh',
+        minHeight: 'calc(100vh - 80px)',
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 style={{
-            fontSize: 'clamp(36px, 6vw, 56px)',
-            fontWeight: '700',
-            lineHeight: '1.15',
-            marginBottom: '24px'
-          }}>
-            The World Isn't Waiting
-            <br />
-            <span style={{
-              background: 'var(--gradient-1)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>And Neither Should You</span>
-          </h1>
-
-          <p style={{
-            fontSize: '20px',
-            color: 'var(--text-secondary)',
-            maxWidth: '700px',
-            margin: '0 auto 40px',
-            lineHeight: '1.6'
-          }}>
-            AI is raising the bar while shrinking your time to clear it.
-            <br />
-            We help you leap smarter, not longer.
-          </p>
-
-          <button
-            onClick={scrollToForm}
-            className="btn-primary"
-            style={{ padding: '16px 40px', fontSize: '17px' }}
-          >
-            Start Free Assessment <ArrowRight size={20} />
-          </button>
-          <p style={{
-            color: 'var(--text-secondary)',
-            fontSize: '14px',
-            marginTop: '12px',
-          }}>
-            Get a personalized AI-powered learning plan
-          </p>
-
+        <div className="home-hero-grid" style={{
+          maxWidth: '1200px',
+          width: '100%',
+          margin: '0 auto',
+          display: 'grid',
+          gap: '48px',
+          alignItems: 'center'
+        }}>
+          {/* Left Column — Messaging */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.5 }}
-            style={{ marginTop: '60px' }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <ChevronDown
-              size={32}
-              color="var(--text-muted)"
-              style={{
-                animation: 'bounce 2s infinite',
-                cursor: 'pointer'
-              }}
-              onClick={scrollToForm}
-            />
+            {/* Beta Badge */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '5px 14px',
+              background: 'linear-gradient(135deg, #14b8a6, #8b5cf6)',
+              borderRadius: '20px',
+              marginBottom: '24px'
+            }}>
+              <Sparkles size={14} color="white" />
+              <span style={{
+                color: 'white',
+                fontSize: '13px',
+                fontWeight: '600',
+                letterSpacing: '0.3px'
+              }}>
+                Free During Beta
+              </span>
+            </div>
+
+            <h1 style={{
+              fontSize: 'clamp(32px, 5vw, 52px)',
+              fontWeight: '700',
+              lineHeight: '1.15',
+              marginBottom: '20px'
+            }}>
+              The World Isn't Waiting
+              <br />
+              <span style={{
+                background: 'var(--gradient-1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>And Neither Should You</span>
+            </h1>
+
+            <p style={{
+              fontSize: '18px',
+              color: 'var(--text-secondary)',
+              lineHeight: '1.6',
+              marginBottom: '28px',
+              maxWidth: '500px'
+            }}>
+              Get a personalized AI skills assessment and actionable learning plan tailored to your role and career goals.
+            </p>
+
+            {/* Trust Signals */}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              {trustSignals.map((signal) => (
+                <div
+                  key={signal.label}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    background: 'var(--surface)',
+                    borderRadius: '20px',
+                    border: '1px solid var(--border)',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)',
+                    fontWeight: '500'
+                  }}
+                >
+                  <signal.icon size={14} color="var(--primary-light)" />
+                  {signal.label}
+                </div>
+              ))}
+            </div>
           </motion.div>
-        </motion.div>
+
+          {/* Right Column — Form */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+          >
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              style={{
+                background: 'var(--surface)',
+                borderRadius: '20px',
+                padding: 'clamp(20px, 4vw, 32px)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              <h2 style={{ fontSize: '20px', marginBottom: '6px', fontWeight: '600' }}>
+                Start Your Free Assessment
+              </h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>
+                Tell us about yourself and we'll analyze the AI skills most relevant to your career
+              </p>
+
+              {apiError && (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '8px',
+                  color: 'var(--error)',
+                  marginBottom: '20px',
+                  fontSize: '13px'
+                }}>
+                  {apiError}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div className="home-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>Experience *</label>
+                    <div style={{ position: 'relative' }}>
+                      <Clock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                      <input
+                        type="number"
+                        name="experience"
+                        placeholder="Years"
+                        value={formData.experience}
+                        onChange={handleChange}
+                        style={{
+                          ...inputStyle,
+                          borderColor: errors.experience ? 'var(--error)' : 'var(--border)'
+                        }}
+                        min="0"
+                        max="50"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.experience && <span style={{ color: 'var(--error)', fontSize: '11px' }}>{errors.experience}</span>}
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Role *</label>
+                    <div style={{ position: 'relative' }}>
+                      <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                        style={{
+                          ...inputStyle,
+                          cursor: 'pointer',
+                          borderColor: errors.role ? 'var(--error)' : 'var(--border)'
+                        }}
+                        disabled={isLoading || rolesLoading}
+                      >
+                        <option value="">{rolesLoading ? 'Loading...' : 'Select role'}</option>
+                        {roles.map(role => {
+                          const isAvailable = role.name.toLowerCase().includes('engineering manager');
+                          return (
+                            <option key={role.role_id} value={isAvailable ? role.name : ''} disabled={!isAvailable}>
+                              {isAvailable ? role.name : `${role.name} — Coming Soon`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    {errors.role && <span style={{ color: 'var(--error)', fontSize: '11px' }}>{errors.role}</span>}
+                  </div>
+                </div>
+
+                <div className="home-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>Company *</label>
+                    <div style={{ position: 'relative' }}>
+                      <Building size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        name="company"
+                        placeholder="e.g., Google"
+                        value={formData.company}
+                        onChange={handleChange}
+                        style={{
+                          ...inputStyle,
+                          borderColor: errors.company ? 'var(--error)' : 'var(--border)'
+                        }}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.company && <span style={{ color: 'var(--error)', fontSize: '11px' }}>{errors.company}</span>}
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Country *</label>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        name="country"
+                        placeholder="e.g., United States"
+                        value={formData.country}
+                        onChange={handleChange}
+                        style={{
+                          ...inputStyle,
+                          borderColor: errors.country ? 'var(--error)' : 'var(--border)'
+                        }}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.country && <span style={{ color: 'var(--error)', fontSize: '11px' }}>{errors.country}</span>}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Career Goal <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Target size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
+                    <textarea
+                      name="goal"
+                      placeholder="e.g., Become an AI/ML engineer within 2 years..."
+                      value={formData.goal}
+                      onChange={handleChange}
+                      rows={2}
+                      style={{
+                        ...inputStyle,
+                        paddingTop: '12px',
+                        resize: 'vertical',
+                        minHeight: '60px'
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    opacity: isLoading ? 0.7 : 1,
+                    cursor: isLoading ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Analyzing...' : 'Analyze My Skills'}
+                  {!isLoading && <ArrowRight size={18} />}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       </section>
 
-      {/* The Paradox Section */}
-      <section className="container" style={{ padding: '60px 24px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            padding: '40px',
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%)',
-            borderRadius: '24px',
-            border: '1px solid rgba(239, 68, 68, 0.2)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <Zap size={28} color="#f59e0b" />
-            <h2 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>
-              The AI Paradox
-            </h2>
-          </div>
-          <p style={{
-            fontSize: '18px',
-            color: 'var(--text-secondary)',
-            lineHeight: '1.8',
-            marginBottom: '16px'
-          }}>
-            AI is evolving at an unprecedented pace, fundamentally reshaping how work gets done. But here's the paradox: <strong style={{ color: 'var(--text-primary)' }}>the very productivity AI enables is leaving professionals with less time to learn the skills they need to stay relevant.</strong>
-          </p>
-          <p style={{
-            fontSize: '18px',
-            color: 'var(--text-secondary)',
-            lineHeight: '1.8',
-            margin: 0
-          }}>
-            You're expected to deliver more. Move faster. Do it with AI. Yet carving out hours for courses and certifications? That's a luxury most can't afford.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* The Solution Section */}
-      <section className="container" style={{ padding: '40px 24px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 16px',
-            background: 'rgba(20, 184, 166, 0.1)',
-            borderRadius: '20px',
-            marginBottom: '24px',
-            border: '1px solid rgba(20, 184, 166, 0.3)'
-          }}>
-            <Lightbulb size={16} color="var(--primary-light)" />
-            <span style={{ fontSize: '14px', color: 'var(--primary-light)' }}>Our Solution</span>
-          </div>
-
-          <h2 style={{ fontSize: '28px', marginBottom: '20px', fontWeight: '600' }}>
-            AI Fluens Breaks This Cycle
-          </h2>
-          <p style={{
-            fontSize: '18px',
-            color: 'var(--text-secondary)',
-            lineHeight: '1.8',
-            marginBottom: '16px'
-          }}>
-            We assess exactly where you stand, identify the AI skills that matter most for <em>your</em> career, and build a focused, actionable plan that respects the reality of your schedule.
-          </p>
-          <p style={{
-            fontSize: '22px',
-            fontWeight: '600',
-            background: 'var(--gradient-1)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: '32px 0 0'
-          }}>
-            Learn what matters. Skip what doesn't. Get ahead — on your terms.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* What Sets Us Apart */}
+      {/* Value Props + Condensed Message */}
       <section className="container" style={{ padding: '40px 24px 60px' }}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          style={{ maxWidth: '900px', margin: '0 auto' }}
+          style={{ maxWidth: '1000px', margin: '0 auto' }}
         >
-          <div style={{
+          <div className="home-value-grid" style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px'
+            gap: '16px',
+            marginBottom: '40px'
           }}>
             {values.map((value, index) => (
               <motion.div
@@ -373,230 +486,97 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 style={{
-                  padding: '24px',
+                  padding: '16px',
                   background: 'var(--surface)',
-                  borderRadius: '16px',
+                  borderRadius: '14px',
                   border: '1px solid var(--border)',
                   textAlign: 'center'
                 }}
               >
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
                   background: `${value.color}20`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 12px'
+                  margin: '0 auto 10px'
                 }}>
-                  <value.icon size={24} color={value.color} />
+                  <value.icon size={20} color={value.color} />
                 </div>
-                <h3 style={{ fontSize: '16px', marginBottom: '8px', fontWeight: '600' }}>
+                <h3 style={{ fontSize: '14px', marginBottom: '6px', fontWeight: '600' }}>
                   {value.title}
                 </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: '1.5', margin: 0 }}>
                   {value.description}
                 </p>
               </motion.div>
             ))}
           </div>
+
+          {/* Condensed Problem/Solution */}
+          <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto' }}>
+            <p style={{
+              fontSize: '16px',
+              color: 'var(--text-secondary)',
+              lineHeight: '1.7',
+              marginBottom: '20px'
+            }}>
+              AI is reshaping every role, but most professionals don't have time to figure out what to learn.
+              We assess exactly where you stand and build a focused plan that respects your schedule.
+            </p>
+            <p style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              background: 'var(--gradient-1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '28px'
+            }}>
+              Learn what matters. Skip what doesn't. Get ahead — on your terms.
+            </p>
+            <button
+              onClick={scrollToForm}
+              className="btn-primary"
+              style={{ padding: '14px 36px', fontSize: '16px' }}
+            >
+              Start Free Assessment <ArrowRight size={18} />
+            </button>
+          </div>
         </motion.div>
       </section>
 
-      {/* Profile Form Section */}
-      <section
-        className="container"
-        style={{
-          padding: 'clamp(30px, 6vw, 60px) 24px clamp(40px, 8vw, 80px)',
-          background: 'radial-gradient(ellipse at bottom, rgba(20, 184, 166, 0.1) 0%, transparent 50%)'
-        }}
-      >
-        <motion.form
-          ref={formRef}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          onSubmit={handleSubmit}
-          style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            background: 'var(--surface)',
-            borderRadius: '24px',
-            padding: 'clamp(20px, 5vw, 40px)',
-            border: '1px solid var(--border)'
-          }}
-        >
-          <h2 style={{ fontSize: '24px', marginBottom: '8px', fontWeight: '600', textAlign: 'center' }}>
-            Start Your Free Assessment
-          </h2>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center' }}>
-            Tell us about yourself and we'll analyze the AI skills most relevant to your career
-          </p>
-
-          {apiError && (
-            <div style={{
-              padding: '12px 16px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '8px',
-              color: 'var(--error)',
-              marginBottom: '24px',
-              fontSize: '14px'
-            }}>
-              {apiError}
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gap: '24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Years of Experience *</label>
-                <div style={{ position: 'relative' }}>
-                  <Clock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="number"
-                    name="experience"
-                    placeholder="e.g., 5"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    style={{
-                      ...inputStyle,
-                      borderColor: errors.experience ? 'var(--error)' : 'var(--border)'
-                    }}
-                    min="0"
-                    max="50"
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.experience && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.experience}</span>}
-              </div>
-
-              <div>
-                <label style={labelStyle}>Role/Function *</label>
-                <div style={{ position: 'relative' }}>
-                  <Briefcase size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    style={{
-                      ...inputStyle,
-                      cursor: 'pointer',
-                      borderColor: errors.role ? 'var(--error)' : 'var(--border)'
-                    }}
-                    disabled={isLoading || rolesLoading}
-                  >
-                    <option value="">{rolesLoading ? 'Loading roles...' : 'Select role'}</option>
-                    {roles.map(role => {
-                      const isAvailable = role.name.toLowerCase().includes('engineering manager');
-                      return (
-                        <option key={role.role_id} value={isAvailable ? role.name : ''} disabled={!isAvailable}>
-                          {isAvailable ? role.name : `${role.name} — Coming Soon`}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-                {errors.role && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.role}</span>}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Company *</label>
-                <div style={{ position: 'relative' }}>
-                  <Building size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    name="company"
-                    placeholder="e.g., Google"
-                    value={formData.company}
-                    onChange={handleChange}
-                    style={{
-                      ...inputStyle,
-                      borderColor: errors.company ? 'var(--error)' : 'var(--border)'
-                    }}
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.company && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.company}</span>}
-              </div>
-
-              <div>
-                <label style={labelStyle}>Country *</label>
-                <div style={{ position: 'relative' }}>
-                  <MapPin size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    name="country"
-                    placeholder="e.g., United States"
-                    value={formData.country}
-                    onChange={handleChange}
-                    style={{
-                      ...inputStyle,
-                      borderColor: errors.country ? 'var(--error)' : 'var(--border)'
-                    }}
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.country && <span style={{ color: 'var(--error)', fontSize: '12px' }}>{errors.country}</span>}
-              </div>
-            </div>
-
-            <div>
-              <label style={labelStyle}>
-                Career Goal <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Target size={18} style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--text-muted)' }} />
-                <textarea
-                  name="goal"
-                  placeholder="e.g., Become an AI/ML engineer within 2 years..."
-                  value={formData.goal}
-                  onChange={handleChange}
-                  rows={3}
-                  style={{
-                    ...inputStyle,
-                    paddingTop: '14px',
-                    resize: 'vertical',
-                    minHeight: '80px'
-                  }}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="btn-primary"
-              style={{
-                width: '100%',
-                justifyContent: 'center',
-                opacity: isLoading ? 0.7 : 1,
-                cursor: isLoading ? 'not-allowed' : 'pointer'
-              }}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Analyzing...' : 'Analyze My Skills'}
-              {!isLoading && <ArrowRight size={18} />}
-            </button>
-          </div>
-        </motion.form>
-      </section>
-
-      {/* CSS for bounce animation */}
+      {/* Responsive Styles */}
       <style>{`
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
+        .home-hero-grid {
+          grid-template-columns: 55fr 45fr;
+        }
+        .home-value-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        @media (max-width: 900px) {
+          .home-hero-grid {
+            grid-template-columns: 1fr !important;
+            text-align: center;
           }
-          40% {
-            transform: translateY(-10px);
+          .home-hero-grid > div:first-child {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
-          60% {
-            transform: translateY(-5px);
+          .home-hero {
+            min-height: auto !important;
+            padding-top: 40px !important;
+            padding-bottom: 24px !important;
+          }
+        }
+        @media (max-width: 700px) {
+          .home-value-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .home-form-row {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
